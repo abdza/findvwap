@@ -68,6 +68,8 @@ def find_bounce(candles):
                     else:
                         break
                 else:
+                    if i-1<len(candles.index)*-1:
+                        i=(len(candles.index)*-1) + 1
                     prevcandle = candles.iloc[i-1]
                     if clean_bear(prevcandle,finalcandle)>1:
                         pullback += bounce
@@ -148,6 +150,8 @@ for i in range(int(len(stocks.index))-1):
             curcandle = candles.iloc[-1]
             if curcandle['volume']==0:
                 endloop -= 1
+            if endloop < len(candles.index) * -1:
+                endloop = len(candles.index) * -1
             for i in range(-1,endloop,-1):
                 curcandle = candles.iloc[i]
                 if curcandle['volume']>0:
