@@ -2,3 +2,6 @@ yahooquery
 yfinance
 ta
 pandas
+scikit-learn
+numerize
+numpy
