@@ -8,6 +8,9 @@ import yahooquery as yq
 from ta.volume import VolumeWeightedAveragePrice
 import time
 
+
+high_limit = 4
+
 def green_candle(candle):
     if candle['open']<candle['close']:
         return True
@@ -47,7 +50,7 @@ def clean_bear(first,second):
 def find_bounce(candles):
     bounce = 0
     pullback = 0
-    for i in range(-1,(len(candles.index) + 1)*-1,-1):
+    for i in range(0,len(candles.index)):
         finalcandle = candles.iloc[i]
         if finalcandle['volume']>0:
             if bounce==0:
@@ -57,8 +60,8 @@ def find_bounce(candles):
                     break
             elif bounce>=1:
                 if green_candle(finalcandle):
-                    nextcandle = candles.iloc[i+1]
-                    if clean_bull(finalcandle,nextcandle)>2:
+                    prevcandle = candles.iloc[i+1]
+                    if clean_bull(prevcandle,finalcandle)>2:
                         bounce += 1
                     else:
                         break
@@ -68,9 +71,7 @@ def find_bounce(candles):
                     else:
                         break
                 else:
-                    if i-1<len(candles.index)*-1:
-                        i=(len(candles.index)*-1) + 1
-                    prevcandle = candles.iloc[i-1]
+                    prevcandle = candles.iloc[i+1]
                     if clean_bear(prevcandle,finalcandle)>1:
                         pullback += bounce
                     else:
@@ -79,15 +80,42 @@ def find_bounce(candles):
 
 def count_above_vwap(candles):
     above = 0
-    for i in range(-1,(len(candles.index) + 1)*-1,-1):
+    for i in range(0,len(candles.index)):
         finalcandle = candles.iloc[i]
-        prevfinalcandle = candles.iloc[i-1]
+        prevfinalcandle = candles.iloc[i+1]
         if finalcandle['volume']>0:
             if finalcandle['low'] > finalcandle['vwap'] and prevfinalcandle['low']<finalcandle['low']:
                 above += 1
             else:
                 break
     return above
+
+def green_high(candles):
+    gothigh = None
+    gotdiff = None
+    for i in range(0,3):
+        curcandle = candles.iloc[i]
+        if curcandle['volume'] > 0:
+            prevcandle = candles.iloc[i+1]
+            diff = curcandle['volume']/prevcandle['volume']
+            if diff > high_limit and green_candle(curcandle) and curcandle['high']>prevcandle['high']:
+                gothigh = i
+                gotdiff = diff
+    return gothigh, gotdiff
+
+def red_high(candles):
+    gothigh = None
+    gotdiff = None
+    for i in range(0,3):
+        curcandle = candles.iloc[i]
+        if curcandle['volume'] > 0:
+            prevcandle = candles.iloc[i+1]
+            diff = curcandle['volume']/prevcandle['volume']
+            if diff > high_limit and red_candle(curcandle) and curcandle['high']<prevcandle['high']:
+                gothigh = i
+                gotdiff = diff
+
+    return gothigh, gotdiff
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
@@ -115,11 +143,18 @@ if candle_count<3:
     candle_count = 3
 print("Candle count:",candle_count)
 
+# dticker = yq.Ticker('SANA')
+# candles = dticker.history(start=start_date,end=end_date,interval='5m')
+# candles = candles.iloc[::-1]
+# print('SANA',candles)
+
 for i in range(int(len(stocks.index))-1):
+# for i in range(1,2):
     if isinstance(stocks.iloc[i]['Ticker'], str):
         ticker = stocks.iloc[i]['Ticker'].upper()
         dticker = yq.Ticker(ticker)
         candles = dticker.history(start=start_date,end=end_date,interval='5m')
+        candles = candles.iloc[::-1]
     else:
         continue
 
@@ -133,12 +168,25 @@ for i in range(int(len(stocks.index))-1):
         above = count_above_vwap(candles)
         if above==2:
             print("Ticker ",ticker," above vwap:",above)
-            endloop = (above + 1) * -1
-            curcandle = candles.iloc[-1]
-            if curcandle['volume']==0:
-                endloop -= 1
+            endloop = above + 1
+            curcandle = candles.iloc[0]
+            for i in range(0,endloop):
+                curcandle = candles.iloc[i]
+                if curcandle['volume']>0:
+                    print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
 
-            for i in range(-1,endloop,-1):
+        green_h, green_diff = green_high(candles)
+        if green_h:
+            print("Ticker ",ticker," got green high ",green_diff)
+            for i in range(green_h,green_h+2):
+                curcandle = candles.iloc[i]
+                if curcandle['volume']>0:
+                    print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
+
+        red_h, red_diff = red_high(candles)
+        if red_h:
+            print("Ticker ",ticker," got red high ",red_diff)
+            for i in range(red_h,red_h+2):
                 curcandle = candles.iloc[i]
                 if curcandle['volume']>0:
                     print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
@@ -146,13 +194,11 @@ for i in range(int(len(stocks.index))-1):
         pullback = find_bounce(candles)
         if pullback>2:
             print("Ticker ",ticker," just bounced:",pullback)
-            endloop = (pullback + 1) * -1
-            curcandle = candles.iloc[-1]
-            if curcandle['volume']==0:
-                endloop -= 1
-            if endloop < len(candles.index) * -1:
-                endloop = len(candles.index) * -1
-            for i in range(-1,endloop,-1):
+            endloop = pullback + 1
+            curcandle = candles.iloc[0]
+            if endloop >= len(candles.index):
+                endloop = len(candles.index) - 1
+            for i in range(0,endloop):
                 curcandle = candles.iloc[i]
                 if curcandle['volume']>0:
                     print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
