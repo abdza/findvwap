@@ -97,10 +97,11 @@ def green_high(candles):
         curcandle = candles.iloc[i]
         if curcandle['volume'] > 0:
             prevcandle = candles.iloc[i+1]
-            diff = curcandle['volume']/prevcandle['volume']
-            if diff > high_limit and green_candle(curcandle) and curcandle['high']>prevcandle['high']:
-                gothigh = i
-                gotdiff = diff
+            if prevcandle['volume']:
+                diff = curcandle['volume']/prevcandle['volume']
+                if diff > high_limit and green_candle(curcandle) and curcandle['high']>prevcandle['high']:
+                    gothigh = i
+                    gotdiff = diff
     return gothigh, gotdiff
 
 def red_high(candles):
@@ -110,11 +111,11 @@ def red_high(candles):
         curcandle = candles.iloc[i]
         if curcandle['volume'] > 0:
             prevcandle = candles.iloc[i+1]
-            diff = curcandle['volume']/prevcandle['volume']
-            if diff > high_limit and red_candle(curcandle) and curcandle['high']<prevcandle['high']:
-                gothigh = i
-                gotdiff = diff
-
+            if prevcandle['volume']:
+                diff = curcandle['volume']/prevcandle['volume']
+                if diff > high_limit and red_candle(curcandle) and curcandle['high']<prevcandle['high']:
+                    gothigh = i
+                    gotdiff = diff
     return gothigh, gotdiff
 
 script_path = os.path.abspath(__file__)
