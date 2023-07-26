@@ -144,11 +144,6 @@ if candle_count<3:
     candle_count = 3
 print("Candle count:",candle_count)
 
-# dticker = yq.Ticker('SANA')
-# candles = dticker.history(start=start_date,end=end_date,interval='5m')
-# candles = candles.iloc[::-1]
-# print('SANA',candles)
-
 for i in range(int(len(stocks.index))-1):
 # for i in range(1,2):
     if isinstance(stocks.iloc[i]['Ticker'], str):

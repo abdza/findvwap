@@ -50,7 +50,7 @@ def clean_bear(first,second):
 def find_bounce(candles):
     bounce = 0
     pullback = 0
-    for i in range(0,len(candles.index)-1):
+    for i in range(0,len(candles.index)):
         finalcandle = candles.iloc[i]
         if finalcandle['volume']>0:
             if bounce==0:
@@ -151,6 +151,7 @@ print("Candle count:",candle_count)
 
 for i in range(int(len(stocks.index))-1):
 # for i in range(1,2):
+    gotinput = False
     if isinstance(stocks.iloc[i]['Ticker'], str):
         ticker = stocks.iloc[i]['Ticker'].upper()
         dticker = yq.Ticker(ticker)
@@ -160,40 +161,63 @@ for i in range(int(len(stocks.index))-1):
         continue
 
     if len(candles.index):
+
         candles = candles.reset_index(level=[0,1])
         candles['vwap'] = VolumeWeightedAveragePrice(high=candles['high'],low=candles['low'],close=candles['close'],volume=candles['volume'],window=candle_count).volume_weighted_average_price()
         # for i in range(-1,-10,-1):
         #     curcandle = candles.iloc[i]
         #     print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
 
+        daycandle = candles.iloc[0:candle_count]
+        maxhigh = daycandle['high'].max()
+        minlow = daycandle['low'].min()
+        highindex = daycandle[['high']].idxmax()['high']
+        lowindex = daycandle[['low']].idxmin()['low']
+        daydiff = maxhigh - minlow
+
+        if daydiff>0.5 and lowindex>highindex:
+            gotinput = True
+            print("Ticker Grow ",ticker, " already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
+
+        if daydiff>0.5 and lowindex<highindex:
+            gotinput = True
+            print("Ticker Shrink ",ticker, " already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
+
         above = count_above_vwap(candles)
         if above==2:
+            gotinput = True
             print("Ticker ",ticker," above vwap:",above)
             endloop = above + 1
             curcandle = candles.iloc[0]
             for i in range(0,endloop):
                 curcandle = candles.iloc[i]
                 if curcandle['volume']>0:
+                    gotinput = True
                     print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
 
         green_h, green_diff = green_high(candles)
         if green_h:
+            gotinput = True
             print("Ticker ",ticker," got green high ",green_diff)
             for i in range(green_h,green_h+2):
                 curcandle = candles.iloc[i]
                 if curcandle['volume']>0:
+                    gotinput = True
                     print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
 
         red_h, red_diff = red_high(candles)
         if red_h:
+            gotinput = True
             print("Ticker ",ticker," got red high ",red_diff)
             for i in range(red_h,red_h+2):
                 curcandle = candles.iloc[i]
                 if curcandle['volume']>0:
+                    gotinput = True
                     print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
             
         pullback = find_bounce(candles)
         if pullback>2:
+            gotinput = True
             print("Ticker ",ticker," just bounced:",pullback)
             endloop = pullback + 1
             curcandle = candles.iloc[0]
@@ -202,4 +226,8 @@ for i in range(int(len(stocks.index))-1):
             for i in range(0,endloop):
                 curcandle = candles.iloc[i]
                 if curcandle['volume']>0:
+                    gotinput = True
                     print(ticker,curcandle[1],curcandle['open'],curcandle['high'],curcandle['low'],curcandle['close'],curcandle['volume'],curcandle['vwap'])
+
+        if gotinput:
+            print("\n")
