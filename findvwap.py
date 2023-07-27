@@ -74,20 +74,16 @@ def clean_bear(first,second):
 def bullrun(candles):
     runscore = 0 
     bearscore = 0
-    prevstat = None
+    limit = 0
     for i in range(0,len(candles.index)-1):
-        if candle_bull(candles.iloc[i+1],candles.iloc[i]):
+        if candle_bull(candles.iloc[i+1],candles.iloc[i])>limit:
             runscore += 1
-            if prevstat=='bull':
-                runscore += 1
-            prevstat = 'bull'
-        if candle_bear(candles.iloc[i+1],candles.iloc[i]):
+            if limit<2:
+                limit += 1
+        else:
             bearscore += 1
-            if prevstat=='bear':
-                bearscore += 1
-            prevstat = 'bear'
-    if bearscore<1:
-        bearscore = 1
+            if limit>0:
+                limit -= 1
     return runscore,bearscore
 
 def find_bounce(candles):
@@ -232,17 +228,19 @@ for i in range(int(len(stocks.index))-1):
 
         if daydiff>0.5 and lowindex>highindex:
             gotinput = True
-            print("Ticker Grow ",ticker, " already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
+            print("Ticker ",ticker, " Grow  already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
 
         runscore,bullscore = bullrun(daycandle)
+        if bullscore<=0:
+            bullscore = 1
         runratio = runscore/bullscore
-        if runratio > 1.4:
+        if runratio > 1.3:
             gotinput = True
-            print("Ticker ",ticker," on bullrun ",runscore, ":",bullscore, " Ratio:",(runscore/bullscore))
+            print("Ticker ",ticker," on bullrun ",runscore, ":",bullscore, " Ratio:",(runratio))
 
         if daydiff>0.5 and lowindex<highindex:
             gotinput = True
-            print("Ticker Shrink ",ticker, " already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
+            print("Ticker ",ticker, " Shrink already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
 
 
         above = count_above_vwap(candles)
