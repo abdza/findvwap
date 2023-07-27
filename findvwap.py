@@ -79,14 +79,16 @@ def bullrun(candles):
         if candle_bull(candles.iloc[i+1],candles.iloc[i]):
             runscore += 1
             if prevstat=='bull':
-                bearscore -= 1
+                runscore += 1
             prevstat = 'bull'
         if candle_bear(candles.iloc[i+1],candles.iloc[i]):
             bearscore += 1
             if prevstat=='bear':
-                runscore -= 1
+                bearscore += 1
             prevstat = 'bear'
-    return runscore - bearscore
+    if bearscore<1:
+        bearscore = 1
+    return runscore,bearscore
 
 def find_bounce(candles):
     bounce = 0
@@ -174,7 +176,7 @@ days = 2
 start_date = end_date - timedelta(days=days)
 
 start_time = '21:30:00'
-if end_date.time().strftime('%H:%M:%S') > '07:00:00':
+if end_date.time().strftime('%H:%M:%S') >= start_time:
     trade_start = datetime.strptime(end_date.date().strftime('%d:%m:%Y') + ' ' + start_time,'%d:%m:%Y %H:%M:%S')
 else:
     trade_start = datetime.strptime((end_date - timedelta(days=1)).date().strftime('%d:%m:%Y') + ' ' + start_time,'%d:%m:%Y %H:%M:%S')
@@ -232,10 +234,11 @@ for i in range(int(len(stocks.index))-1):
             gotinput = True
             print("Ticker Grow ",ticker, " already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
 
-        gotbull = bullrun(daycandle)
-        if gotbull>half_candles:
+        runscore,bullscore = bullrun(daycandle)
+        runratio = runscore/bullscore
+        if runratio > 1.4:
             gotinput = True
-            print("Ticker ",ticker," on bullrun ",gotbull)
+            print("Ticker ",ticker," on bullrun ",runscore, ":",bullscore, " Ratio:",(runscore/bullscore))
 
         if daydiff>0.5 and lowindex<highindex:
             gotinput = True
