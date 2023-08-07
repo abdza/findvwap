@@ -257,11 +257,11 @@ for i in range(int(len(stocks.index))-1):
 
         if daydiff>0.5 and lowindex<highindex:
             gotinput = True
-            print("Ticker ",ticker, " Shrink already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
+            print("Ticker ",ticker, " Grow already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
 
         if daydiff>0.5 and lowindex>highindex:
             gotinput = True
-            print("Ticker ",ticker, " Grow  already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
+            print("Ticker ",ticker, " Shrunk already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
 
         runscore,bullscore = bullrun(daycandle)
         if bullscore<=0:
