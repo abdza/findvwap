@@ -260,11 +260,11 @@ for i in range(int(len(stocks.index))-1):
 
         if daydiff>price_alert_limit and lowindex<highindex:
             gotinput = True
-            print("Ticker ",ticker, " Grow already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
+            print("Ticker ",ticker, " Grow already has day diff more than ",price_alert_limit,"  : ",daydiff, " High:",highindex," Low:",lowindex)
 
         if daydiff>price_alert_limit and lowindex>highindex:
             gotinput = True
-            print("Ticker ",ticker, " Shrunk already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
+            print("Ticker ",ticker, " Shrunk already has day diff more than ",price_alert_limit,"  : ",daydiff, " High:",highindex," Low:",lowindex)
 
         runscore,bullscore = bullrun(daycandle)
         if bullscore<=0:
