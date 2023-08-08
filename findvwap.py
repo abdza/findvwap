@@ -224,6 +224,8 @@ print("Candle count:",candle_count)
 half_candles = math.floor(candle_count*0.25)
 print("Half candles:",half_candles)
 
+price_alert_limit = 0.3
+
 # dticker = yq.Ticker('SANA')
 # candles = dticker.history(start=start_date,end=end_date,interval='5m')
 # candles = candles.iloc[::-1]
@@ -255,11 +257,12 @@ for i in range(int(len(stocks.index))-1):
         lowindex = daycandle[['low']].idxmin()['low']
         daydiff = maxhigh - minlow
 
-        if daydiff>0.5 and lowindex<highindex:
+
+        if daydiff>price_alert_limit and lowindex<highindex:
             gotinput = True
             print("Ticker ",ticker, " Grow already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
 
-        if daydiff>0.5 and lowindex>highindex:
+        if daydiff>price_alert_limit and lowindex>highindex:
             gotinput = True
             print("Ticker ",ticker, " Shrunk already has day diff more than 0.50 : ",daydiff, " High:",highindex," Low:",lowindex)
 
