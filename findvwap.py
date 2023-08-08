@@ -2,12 +2,12 @@
 
 import pandas as pd 
 import os
+import sys
+import getopt
 import math
 from datetime import datetime,timedelta
 import yahooquery as yq
 from ta.volume import VolumeWeightedAveragePrice
-import time
-
 
 high_limit = 4
 
@@ -192,9 +192,16 @@ def red_high(candles):
                     gotdiff = diff
     return gothigh, gotdiff
 
+inputfile = 'stocks.csv'
+opts, args = getopt.getopt(sys.argv[1:],"i:",["input=",])
+print("opts:",opts," args:",args)
+for opt, arg in opts:
+    if opt in ("-i", "--input"):
+        inputfile = arg
+
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
-stocks = pd.read_csv(os.path.join(script_dir,'stocks.csv'),header=0)
+stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
 end_date = datetime.now()
 days = 2
