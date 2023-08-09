@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 
 stocks.csv
+shorts.csv

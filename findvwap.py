@@ -192,9 +192,8 @@ def red_high(candles):
                     gotdiff = diff
     return gothigh, gotdiff
 
-inputfile = 'stocks.csv'
+inputfile = 'shorts.csv'
 opts, args = getopt.getopt(sys.argv[1:],"i:",["input=",])
-print("opts:",opts," args:",args)
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg

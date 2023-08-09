@@ -2,11 +2,10 @@
 
 import pandas as pd 
 import os
-import math
+import sys
+import getopt
 from datetime import datetime,timedelta
 import yahooquery as yq
-from ta.volume import VolumeWeightedAveragePrice
-import time
 import numpy as np
 from numerize import numerize
 from sklearn.cluster import KMeans
@@ -23,7 +22,7 @@ def red_candle(candle):
     else:
         return False
 
-def clean_bull(first,second):
+def clean_bull(first,second):   # second is higher than first
     score = 0
     if first['low']<second['low']:
         score += 1
@@ -35,7 +34,7 @@ def clean_bull(first,second):
                     score += 1
     return score
 
-def clean_bear(first,second):
+def clean_bear(first,second):   # second is lower than first
     score = 0
     if first['low']>second['low']:
         score += 1
@@ -47,38 +46,48 @@ def clean_bear(first,second):
                     score += 1
     return score
 
+def bull(first,second):   # second is higher than first
+    score = 0
+    if first['low']<second['low']:
+        score += 1
+    if first['high']<second['high']:
+        score += 1
+    if first['open']<second['open']:
+        score += 1
+    if first['close']<second['close']:
+        score += 1
+    return score
+
+def bear(first,second):   # second is lower than first
+    score = 0
+    if first['low']>second['low']:
+        score += 1
+    if first['high']>second['high']:
+        score += 1
+    if first['open']>second['open']:
+        score += 1
+    if first['close']>second['close']:
+        score += 1
+    return score
+
 def find_bounce(candles):
+    reversed_candles = candles.iloc[::-1]
     bounce = 0
     pullback = 0
-    for i in range(-1,(len(candles.index) + 1)*-1,-1):
-        finalcandle = candles.iloc[i]
-        if finalcandle['volume']>0:
-            if bounce==0:
-                if green_candle(finalcandle):
-                    bounce += 1
-                else:
-                    break
-            elif bounce>=1:
-                if green_candle(finalcandle):
-                    nextcandle = candles.iloc[i+1]
-                    if clean_bull(finalcandle,nextcandle)>2:
-                        bounce += 1
-                    else:
-                        break
-                elif pullback==0:
-                    if red_candle(finalcandle):
-                        pullback += bounce
-                    else:
-                        break
-                else:
-                    if i-1<len(candles.index)*-1:
-                        i=(len(candles.index)*-1) + 1
-                    prevcandle = candles.iloc[i-1]
-                    if clean_bear(prevcandle,finalcandle)>1:
-                        pullback += bounce
-                    else:
-                        break
-    return pullback
+    for i in range(len(reversed_candles.index)-2):
+        curcandle = reversed_candles.iloc[i]
+        prevcandle = reversed_candles.iloc[i+1]
+        if bounce==0:     # currently in pullback mode
+            if green_candle(curcandle) and bull(prevcandle,curcandle)>2:
+                pullback += 1
+            else:     # curcandle is red, so now in bounce mode
+                bounce += 1
+        else:
+            if red_candle(curcandle) and bear(prevcandle,curcandle)>2:
+                bounce += 1
+            else:
+                break
+    return pullback,bounce
 
 def find_levels(candles):
     response = "Levels:"
@@ -173,13 +182,24 @@ def find_levels(candles):
     response += "\n\n" + dresponse
     return sortedreslevels, sortedsuplevels
 
+inputfile = 'stocks.csv'
+outfile = 'shorts.csv'
+opts, args = getopt.getopt(sys.argv[1:],"i:o:",["input=","out="])
+for opt, arg in opts:
+    if opt in ("-i", "--input"):
+        inputfile = arg
+    if opt in ("-o", "--out"):
+        outfile = arg
+
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
-stocks = pd.read_csv(os.path.join(script_dir,'stocks.csv'),header=0)
+stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
 end_date = datetime.now()
 days = 200
 start_date = end_date - timedelta(days=days)
+
+filtered = []
 
 for i in range(int(len(stocks.index))-1):
     if isinstance(stocks.iloc[i]['Ticker'], str):
@@ -192,17 +212,11 @@ for i in range(int(len(stocks.index))-1):
     if len(candles.index):
         candles = candles.reset_index(level=[0,1])
             
-        pullback = find_bounce(candles)
-        if pullback>2:
-            print("Ticker ===",ticker,"=== just bounced:",pullback)
-            endloop = (pullback + 1) * -1
-            curcandle = candles.iloc[-1]
+        pullback,bounce = find_bounce(candles)
+        if pullback>0:
+            filtered.append(ticker)
+            print("Ticker ===",ticker,"=== just bounced:",bounce," pullback:",pullback)
 
-            resistance,support = find_levels(candles)
-            print("Resistance:")
-            for res in resistance:
-                print("Level:",res['level']," Count:",res['count'])
-            print("Support:")
-            for res in support:
-                print("Level:",res['level']," Count:",res['count'])
-            print("\n\n")
+outdata = pd.DataFrame()
+outdata['Ticker'] = filtered
+outdata.to_csv(outfile,header=True,index=False)
