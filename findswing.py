@@ -9,6 +9,7 @@ import yahooquery as yq
 import numpy as np
 from numerize import numerize
 from sklearn.cluster import KMeans
+from ta.trend import EMAIndicator
 
 def green_candle(candle):
     if candle['open']<candle['close']:
@@ -211,11 +212,23 @@ for i in range(int(len(stocks.index))-1):
 
     if len(candles.index):
         candles = candles.reset_index(level=[0,1])
-            
-        pullback,bounce = find_bounce(candles)
-        if pullback>0:
+
+        candles['ema10'] = EMAIndicator(close=candles['close'],window=10,fillna=True).ema_indicator()
+        candles['ema20'] = EMAIndicator(close=candles['close'],window=20,fillna=True).ema_indicator()
+
+        latestcandle = candles.iloc[-1]
+        prevcandle = candles.iloc[-2]
+        emadifflatest = latestcandle['ema10'] - latestcandle['ema20']
+        emadiffprev = prevcandle['ema10'] - latestcandle['ema20']
+
+        if latestcandle['ema10'] > latestcandle['ema20'] and emadifflatest > emadiffprev:
             filtered.append(ticker)
-            print("Ticker ===",ticker,"=== just bounced:",bounce," pullback:",pullback)
+            print("Ticker ",ticker," got higher ema10")
+            
+        # pullback,bounce = find_bounce(candles)
+        # if pullback>0:
+        #     filtered.append(ticker)
+        #     print("Ticker ===",ticker,"=== just bounced:",bounce," pullback:",pullback)
 
 outdata = pd.DataFrame()
 outdata['Ticker'] = filtered
