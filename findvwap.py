@@ -152,8 +152,13 @@ def count_above_vwap(candles):
     for i in range(0,len(candles.index)-1):
         finalcandle = candles.iloc[i]
         prevfinalcandle = candles.iloc[i+1]
-        if finalcandle['low'] > finalcandle['vwap'] and prevfinalcandle['low']<finalcandle['low'] and prevfinalcandle['low'] > prevfinalcandle['vwap']:
+        if finalcandle['low'] > finalcandle['vwap']:
+            # print("Index:",finalcandle['date'])
+            # print("Final date:",finalcandle['date'], " low:",finalcandle['low'], " Vwap:",finalcandle['vwap'], " High:",finalcandle['high'] )
+            # print("Prev low:",prevfinalcandle['low'], " Vwap:",prevfinalcandle['vwap'], " High:",prevfinalcandle['high'] )
             above += 1
+            if prevfinalcandle['low'] < prevfinalcandle['vwap']:
+                break
         else:
             break
     return above
@@ -291,7 +296,7 @@ for i in range(int(len(stocks.index))-1):
         above = count_above_vwap(candles)
         if above>1:
             gotinput = True
-            print("Ticker ",ticker," above vwap:",above)
+            print("Ticker ",ticker," above VWAP: ",above)
             # endloop = above + 1
             # curcandle = candles.iloc[0]
             # for i in range(0,endloop):
@@ -336,4 +341,4 @@ for i in range(int(len(stocks.index))-1):
             
 
         if gotinput:
-            print("\n")
+            print("Latest close:",candles.iloc[0]['close'],"\n")
