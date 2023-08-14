@@ -221,7 +221,7 @@ for i in range(int(len(stocks.index))-1):
         emadifflatest = latestcandle['ema10'] - latestcandle['ema20']
         emadiffprev = prevcandle['ema10'] - latestcandle['ema20']
 
-        if latestcandle['ema10'] > latestcandle['ema20'] and emadifflatest > emadiffprev:
+        if latestcandle['ema10'] > latestcandle['ema20'] and emadifflatest > emadiffprev and latestcandle['volume'] > candles['volume'].mean() * 2:
             filtered.append(ticker)
             print("Ticker ",ticker," got higher ema10")
             
