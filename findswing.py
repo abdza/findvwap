@@ -216,13 +216,15 @@ for i in range(int(len(stocks.index))-1):
 
         candles['ema10'] = EMAIndicator(close=candles['close'],window=10,fillna=True).ema_indicator()
         candles['ema20'] = EMAIndicator(close=candles['close'],window=20,fillna=True).ema_indicator()
+        candles['tr'] = candles['high'] - candles['low']
 
         latestcandle = candles.iloc[-1]
         prevcandle = candles.iloc[-2]
         emadifflatest = latestcandle['ema10'] - latestcandle['ema20']
         emadiffprev = prevcandle['ema10'] - latestcandle['ema20']
+        atr = candles['tr'].mean()
 
-        if latestcandle['ema10'] > latestcandle['ema20'] and emadifflatest > emadiffprev: # and latestcandle['volume'] > candles['volume'].mean() * volume_multiplier:
+        if latestcandle['ema10'] > latestcandle['ema20'] and emadifflatest > emadiffprev and latestcandle['tr'] > atr and prevcandle['tr'] > atr: # and latestcandle['volume'] > candles['volume'].mean() * volume_multiplier:
             filtered.append(ticker)
             print("Ticker ",ticker," got higher ema10")
             

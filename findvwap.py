@@ -197,6 +197,46 @@ def red_high(candles):
                     gotdiff = diff
     return gothigh, gotdiff
 
+def find_trend(candles):
+    highs = []
+    lows = []
+    for i in range(0,len(candles.index)-1):
+        curcandle = candles.iloc[i]
+        if i-1>0:
+            aftercandle = candles.iloc[i-1]
+        else:
+            aftercandle = curcandle
+        if i+1<len(candles.index)-1:
+            prevcandle = candles.iloc[i+1]
+        else:
+            prevcandle = curcandle
+
+        fronthigh = aftercandle['high'] < curcandle['high']
+        backhigh = prevcandle['high'] < curcandle['high']
+        if fronthigh and backhigh:
+            highs.append(curcandle['high'])
+
+        frontlow = aftercandle['low'] > curcandle['low']
+        backlow = prevcandle['low'] > curcandle['low']
+        if frontlow and backlow:
+            lows.append(curcandle['low'])
+
+    hscore = 0 
+    lscore = 0 
+    if len(highs)>2 and len(lows)>2:
+        for i in range(0,2):
+            if highs[i] > highs[i+1] and lows[i] > lows[i+1]:
+                hscore += 1
+            if highs[i] < highs[i+1] and lows[i] < lows[i+1]:
+                lscore += 1
+
+    if hscore > lscore:
+        return 'up'
+    elif hscore < lscore:
+        return 'down'
+    else:
+        return 'ranging'
+
 inputfile = 'shorts.csv'
 difflimit = 0
 opts, args = getopt.getopt(sys.argv[1:],"i:l:",["input=","limit="])
@@ -212,7 +252,9 @@ stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
 end_date = datetime.now()
 days = 2
+hour_days = 5
 start_date = end_date - timedelta(days=days)
+hour_start_date = end_date - timedelta(days=hour_days)
 
 start_time = '21:30:00'
 if end_date.time().strftime('%H:%M:%S') >= start_time:
@@ -236,12 +278,14 @@ for i in range(int(len(stocks.index))-1):
         ticker = stocks.iloc[i]['Ticker'].upper()
         dticker = yq.Ticker(ticker)
         candles = dticker.history(start=start_date,end=end_date,interval='1m')
+        hourcandles = dticker.history(start=hour_start_date,end=end_date,interval='1h')
     else:
         continue
 
     if len(candles.index):
 
         candles = candles.reset_index(level=[0,1])
+        hourcandles = hourcandles.reset_index(level=[0,1])
         lastcandle = candles.iloc[-1]
         ldate = str(lastcandle['date'].date())
         bdate = str(datetime.date(lastcandle['date'])-timedelta(days=1))
@@ -250,6 +294,7 @@ for i in range(int(len(stocks.index))-1):
         clen = len(cdcandle.index)
         candles['vwap'] = VolumeWeightedAveragePrice(high=candles['high'],low=candles['low'],close=candles['close'],volume=candles['volume'],window=clen).volume_weighted_average_price()
         candles = candles.iloc[::-1]
+        hourcandles = hourcandles.iloc[::-1]
 
         daycandle = candles.iloc[0:clen]
         maxhigh = daycandle['high'].max()
@@ -305,4 +350,5 @@ for i in range(int(len(stocks.index))-1):
                 print("Ticker ",ticker," got red high ",red_diff)
 
         if gotinput:
-            print("Latest close:",candles.iloc[0]['close'],"\n")
+            trend = find_trend(hourcandles)
+            print("Latest close:",candles.iloc[0]['close']," Trending:",trend,"\n")
