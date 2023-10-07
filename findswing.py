@@ -183,6 +183,71 @@ def find_levels(candles):
     response += "\n\n" + dresponse
     return sortedreslevels, sortedsuplevels
 
+def is_peak(candles,c_pos,dlen=1):
+    if c_pos>0 and c_pos<len(candles)-dlen:
+        before = False
+        cloop = dlen
+        while cloop>0 and not before:
+            before = candles.iloc[c_pos]['high']>candles.iloc[c_pos-cloop]['high']
+            cloop -= 1
+        after = False
+        cloop = dlen
+        while cloop>0 and not after:
+            after = candles.iloc[c_pos]['high']>candles.iloc[c_pos+cloop]['high']
+            cloop -= 1
+        return before and after
+    else:
+        return False
+
+def is_bottom(candles,c_pos,dlen=1):
+    if c_pos>0 and c_pos<len(candles)-dlen:
+        before = False
+        cloop = dlen
+        while cloop>0 and not before:
+            before = candles.iloc[c_pos]['low']<candles.iloc[c_pos-cloop]['low']
+            cloop -= 1
+        after = False
+        cloop = dlen
+        while cloop>0 and not after:
+            after = candles.iloc[c_pos]['low']<candles.iloc[c_pos+cloop]['low']
+            cloop -= 1
+        return before and after
+    else:
+        return False
+
+def gather_range(candles):
+    peaks = []
+    bottoms = []
+    for i in range(len(candles)):
+        if is_peak(candles,i):
+            peaks.append(candles.iloc[i])
+        if is_bottom(candles,i):
+            bottoms.append(candles.iloc[i])
+    if len(peaks)==0:
+        for i in range(len(candles)):
+            if is_peak(candles,i,2):
+                peaks.append(candles.iloc[i])
+    if len(bottoms)==0:
+        for i in range(len(candles)):
+            if is_peak(candles,i,2):
+                bottoms.append(candles.iloc[i])
+
+    return peaks,bottoms
+
+def min_bottom(bottoms):
+    curbottom = bottoms[0]
+    for candle in bottoms:
+        if candle['low'] < curbottom['low']:
+            curbottom = candle
+    return curbottom
+
+def max_peak(peaks):
+    curpeak = peaks[0]
+    for candle in peaks:
+        if candle['high'] > curpeak['high']:
+            curpeak = candle
+    return curpeak
+
 inputfile = 'stocks.csv'
 outfile = 'shorts.csv'
 opts, args = getopt.getopt(sys.argv[1:],"i:o:",["input=","out="])
@@ -197,42 +262,71 @@ script_dir = os.path.dirname(script_path)
 stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
 end_date = datetime.now()
-days = 200
+days = 6
 start_date = end_date - timedelta(days=days)
 
 filtered = []
+highrangetickers = []
 
-for i in range(int(len(stocks.index))-1):
+for i in range(len(stocks.index)):
     if isinstance(stocks.iloc[i]['Ticker'], str):
         ticker = stocks.iloc[i]['Ticker'].upper()
         dticker = yq.Ticker(ticker)
-        candles = dticker.history(start=start_date,end=end_date,interval='1d')
+        candles = dticker.history(start=start_date,end=end_date,interval='15m')
     else:
         continue
 
     if len(candles.index):
+        print("Processing ticker ",ticker)
         candles = candles.reset_index(level=[0,1])
-        volume_multiplier = 0.5
+        lastcandle = candles.iloc[-1]
+        ldate = str(lastcandle['date'].date())
+        bdate = str(datetime.date(lastcandle['date'])-timedelta(days=1))
+        adate = str(datetime.date(lastcandle['date'])+timedelta(days=1))
+        # cdcandle = candles.loc[(candles['date']>ldate) & (candles['date']<adate)]
+        cdcandle = candles.loc[(candles['date']>ldate)]
+        peaks,bottoms = gather_range(cdcandle)
+        maxpeak = minbottom = None
+        if len(peaks):
+            maxpeak = max_peak(peaks)
+        if len(bottoms):
+            minbottom = min_bottom(bottoms)
+        if maxpeak is not None and minbottom is not None:
+            openingrange = cdcandle.iloc[0]['high']-bottoms[0]['low']
+            if openingrange>1:
+                print("Opening range is ============================ ",openingrange)
+                highrangetickers.append(ticker)
+            if maxpeak['date']>minbottom['date'] and cdcandle.iloc[0]['high']>minbottom['high']:
+                print("Max peak happen after min bottom")
+                print("Range:",maxpeak['high']-minbottom['low']," Min:",minbottom['date'], " Max:",maxpeak['date'], " Bottom count:",len(bottoms), " Peak count:",len(peaks))
+                if peaks[0]['date'] < bottoms[0]['date']:
+                    print("First peak happen before first bottom")
+                    print("Min:",bottoms[0]['date'], " Max:",peaks[0]['date'])
 
-        candles['ema10'] = EMAIndicator(close=candles['close'],window=10,fillna=True).ema_indicator()
-        candles['ema20'] = EMAIndicator(close=candles['close'],window=20,fillna=True).ema_indicator()
-        candles['tr'] = candles['high'] - candles['low']
+print("High range tickers:",highrangetickers)
 
-        latestcandle = candles.iloc[-1]
-        prevcandle = candles.iloc[-2]
-        emadifflatest = latestcandle['ema10'] - latestcandle['ema20']
-        emadiffprev = prevcandle['ema10'] - latestcandle['ema20']
-        atr = candles['tr'].mean()
-
-        if latestcandle['ema10'] > latestcandle['ema20'] and emadifflatest > emadiffprev and latestcandle['tr'] > atr and prevcandle['tr'] > atr: # and latestcandle['volume'] > candles['volume'].mean() * volume_multiplier:
-            filtered.append(ticker)
-            print("Ticker ",ticker," got higher ema10")
+        # candles = candles.reset_index(level=[0,1])
+        # volume_multiplier = 0.5
+        #
+        # candles['ema10'] = EMAIndicator(close=candles['close'],window=10,fillna=True).ema_indicator()
+        # candles['ema20'] = EMAIndicator(close=candles['close'],window=20,fillna=True).ema_indicator()
+        # candles['tr'] = candles['high'] - candles['low']
+        #
+        # latestcandle = candles.iloc[-1]
+        # prevcandle = candles.iloc[-2]
+        # emadifflatest = latestcandle['ema10'] - latestcandle['ema20']
+        # emadiffprev = prevcandle['ema10'] - latestcandle['ema20']
+        # atr = candles['tr'].mean()
+        #
+        # if latestcandle['ema10'] > latestcandle['ema20'] and emadifflatest > emadiffprev and latestcandle['tr'] > atr and prevcandle['tr'] > atr: # and latestcandle['volume'] > candles['volume'].mean() * volume_multiplier:
+        #     filtered.append(ticker)
+        #     print("Ticker ",ticker," got higher ema10")
             
         # pullback,bounce = find_bounce(candles)
         # if pullback>0:
         #     filtered.append(ticker)
         #     print("Ticker ===",ticker,"=== just bounced:",bounce," pullback:",pullback)
 
-outdata = pd.DataFrame()
-outdata['Ticker'] = filtered
-outdata.to_csv(outfile,header=True,index=False)
+# outdata = pd.DataFrame()
+# outdata['Ticker'] = filtered
+# outdata.to_csv(outfile,header=True,index=False)
