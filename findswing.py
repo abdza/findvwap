@@ -250,19 +250,28 @@ def max_peak(peaks):
 
 inputfile = 'stocks.csv'
 outfile = 'shorts.csv'
-opts, args = getopt.getopt(sys.argv[1:],"i:o:",["input=","out="])
+stockdate = None
+openrangelimit = 1
+opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:",["input=","out=","date=","range="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
     if opt in ("-o", "--out"):
         outfile = arg
+    if opt in ("-d", "--date"):
+        stockdate = datetime.strptime(arg + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
+    if opt in ("-r", "--range"):
+        openrangelimit = float(arg)
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
-end_date = datetime.now()
-days = 6
+if stockdate:
+    end_date = stockdate
+else:
+    end_date = datetime.now()
+days = 4
 start_date = end_date - timedelta(days=days)
 
 filtered = []
@@ -273,6 +282,7 @@ for i in range(len(stocks.index)):
         ticker = stocks.iloc[i]['Ticker'].upper()
         dticker = yq.Ticker(ticker)
         candles = dticker.history(start=start_date,end=end_date,interval='15m')
+        candles = candles.loc[(candles['volume']>0)]
     else:
         continue
 
@@ -291,17 +301,22 @@ for i in range(len(stocks.index)):
             maxpeak = max_peak(peaks)
         if len(bottoms):
             minbottom = min_bottom(bottoms)
-        if maxpeak is not None and minbottom is not None:
+        if minbottom is not None:
             openingrange = cdcandle.iloc[0]['high']-bottoms[0]['low']
-            if openingrange>1:
+            before1045 = minbottom['date'].hour<10 or (minbottom['date'].hour==10 and minbottom['date'].minute<45)
+            bottombelowstart = cdcandle.iloc[0]['high']>minbottom['high']
+            bottombelowend = cdcandle.iloc[-1]['high']>minbottom['high']
+            if openingrange>openrangelimit:
                 print("Opening range is ============================ ",openingrange)
-                highrangetickers.append(ticker)
-            if maxpeak['date']>minbottom['date'] and cdcandle.iloc[0]['high']>minbottom['high']:
-                print("Max peak happen after min bottom")
-                print("Range:",maxpeak['high']-minbottom['low']," Min:",minbottom['date'], " Max:",maxpeak['date'], " Bottom count:",len(bottoms), " Peak count:",len(peaks))
-                if peaks[0]['date'] < bottoms[0]['date']:
-                    print("First peak happen before first bottom")
-                    print("Min:",bottoms[0]['date'], " Max:",peaks[0]['date'])
+                if before1045 and bottombelowstart and bottombelowend:
+                    highrangetickers.append(ticker)
+            if maxpeak is not None:
+                if maxpeak['date']>minbottom['date']:
+                    print("Max peak happen after min bottom")
+                    print("Range:",maxpeak['high']-minbottom['low']," Min:",minbottom['date'], " Max:",maxpeak['date'], " Bottom count:",len(bottoms), " Peak count:",len(peaks))
+                    if peaks[0]['date'] < bottoms[0]['date']:
+                        print("First peak happen before first bottom")
+                        print("Min:",bottoms[0]['date'], " Max:",peaks[0]['date'])
 
 print("High range tickers:",highrangetickers)
 
