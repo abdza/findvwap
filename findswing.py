@@ -7,6 +7,8 @@ import getopt
 from datetime import datetime,timedelta
 import yahooquery as yq
 import numpy as np
+import math
+from tabulate import tabulate
 from numerize import numerize
 from sklearn.cluster import KMeans
 from ta.trend import EMAIndicator
@@ -252,7 +254,8 @@ inputfile = 'stocks.csv'
 outfile = 'shorts.csv'
 stockdate = None
 openrangelimit = 1
-opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:",["input=","out=","date=","range="])
+purchaselimit = 300
+opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:",["input=","out=","date=","range=","purchaselimit="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
@@ -262,6 +265,8 @@ for opt, arg in opts:
         stockdate = datetime.strptime(arg + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
     if opt in ("-r", "--range"):
         openrangelimit = float(arg)
+    if opt in ("-p", "--purchaselimit"):
+        purchaselimit = float(arg)
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
@@ -309,7 +314,19 @@ for i in range(len(stocks.index)):
             if openingrange>openrangelimit:
                 print("Opening range is ============================ ",openingrange)
                 if before1045 and bottombelowstart and bottombelowend:
-                    highrangetickers.append(ticker)
+                    price = cdcandle.iloc[-1]['close']
+                    lastcandle = cdcandle.iloc[-1]
+                    if lastcandle['date'].hour>=15 and lastcandle['date'].minute>=30:   #it is past 3.30 so consider the day closed
+                        lossrange = bottoms[0]['high'] - bottoms[0]['low']
+                        profitrange = cdcandle.iloc[0]['open'] - bottoms[0]['high']
+                    else:
+                        lossrange = price - bottoms[0]['low']
+                        profitrange = cdcandle.iloc[0]['open'] - price
+                    maxunit = math.floor(purchaselimit/price)
+                    lossamount = lossrange * maxunit
+                    profitamount = profitrange * maxunit
+                    ratio = profitamount/lossamount
+                    highrangetickers.append({'Ticker':ticker,'Price':price,'Loss Range':lossrange,'Profit Range':profitrange,'Unit':maxunit,'Loss Amount':lossamount,'Profit Amount':profitamount,'Ratio':ratio})
             if maxpeak is not None:
                 if maxpeak['date']>minbottom['date']:
                     print("Max peak happen after min bottom")
@@ -318,7 +335,8 @@ for i in range(len(stocks.index)):
                         print("First peak happen before first bottom")
                         print("Min:",bottoms[0]['date'], " Max:",peaks[0]['date'])
 
-print("High range tickers:",highrangetickers)
+print("High range tickers:")
+print(tabulate(highrangetickers,headers="keys"))
 
         # candles = candles.reset_index(level=[0,1])
         # volume_multiplier = 0.5
