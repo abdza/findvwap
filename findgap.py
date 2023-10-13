@@ -4,12 +4,14 @@ import pandas as pd
 import os
 import sys
 import getopt
-import math
 from datetime import datetime,timedelta
 import yahooquery as yq
-from ta.volume import VolumeWeightedAveragePrice
-
-high_limit = 4
+import numpy as np
+import math
+from tabulate import tabulate
+from numerize import numerize
+from sklearn.cluster import KMeans
+from ta.trend import EMAIndicator
 
 def green_candle(candle):
     if candle['open']<candle['close']:
@@ -23,31 +25,7 @@ def red_candle(candle):
     else:
         return False
 
-def candle_bull(first,second):
-    score = 0
-    if first['low']<second['low']:
-        score += 1
-    if first['high']<second['high']:
-        score += 1
-    if first['open']<second['open']:
-        score += 1
-    if first['close']<second['close']:
-        score += 1
-    return score
-
-def candle_bear(first,second):
-    score = 0
-    if first['low']>second['low']:
-        score += 1
-    if first['high']>second['high']:
-        score += 1
-    if first['open']>second['open']:
-        score += 1
-    if first['close']>second['close']:
-        score += 1
-    return score
-
-def clean_bull(first,second):
+def clean_bull(first,second):   # second is higher than first
     score = 0
     if first['low']<second['low']:
         score += 1
@@ -59,7 +37,7 @@ def clean_bull(first,second):
                     score += 1
     return score
 
-def clean_bear(first,second):
+def clean_bear(first,second):   # second is lower than first
     score = 0
     if first['low']>second['low']:
         score += 1
@@ -71,311 +49,307 @@ def clean_bear(first,second):
                     score += 1
     return score
 
-def tribull(candles):
-    limit = 3 
-    totalbull = 0
-    limit = min(3,len(candles.index)-1)
-    for i in range(0,limit):
-        curcandle = candles.iloc[i]
-        if green_candle(curcandle):
-            totalbull += clean_bull(candles.iloc[i+1],curcandle)
-    if totalbull>10:
-        return True
+def bull(first,second):   # second is higher than first
+    score = 0
+    if first['low']<second['low']:
+        score += 1
+    if first['high']<second['high']:
+        score += 1
+    if first['open']<second['open']:
+        score += 1
+    if first['close']<second['close']:
+        score += 1
+    return score
+
+def bear(first,second):   # second is lower than first
+    score = 0
+    if first['low']>second['low']:
+        score += 1
+    if first['high']>second['high']:
+        score += 1
+    if first['open']>second['open']:
+        score += 1
+    if first['close']>second['close']:
+        score += 1
+    return score
+
+def find_bounce(candles):
+    reversed_candles = candles.iloc[::-1]
+    bounce = 0
+    pullback = 0
+    for i in range(len(reversed_candles.index)-2):
+        curcandle = reversed_candles.iloc[i]
+        prevcandle = reversed_candles.iloc[i+1]
+        if bounce==0:     # currently in pullback mode
+            if green_candle(curcandle) and bull(prevcandle,curcandle)>2:
+                pullback += 1
+            else:     # curcandle is red, so now in bounce mode
+                bounce += 1
+        else:
+            if red_candle(curcandle) and bear(prevcandle,curcandle)>2:
+                bounce += 1
+            else:
+                break
+    return pullback,bounce
+
+def find_levels(candles):
+    response = "Levels:"
+    min = candles['low'].min()
+    max = candles['high'].max()
+    p_range = candles['high'] - candles['low']
+    range_avg = p_range.mean()
+    vol_avg = candles['volume'].mean()
+    response += "\nStart: " + str(start_date)
+    response += "\nEnd: " + str(end_date)
+    response += "\nMin: " + str(min)
+    response += "\nMax: " + str(max)
+    response += "\nRange Avg: " + str(numerize.numerize(range_avg))
+    response += "\nVol Avg: " + str(numerize.numerize(vol_avg))
+
+    datarange = max - min
+    if datarange < 50:
+        kint = int(datarange / 0.5)
+    else:
+        kint = int(datarange % 20)
+
+    datalen = len(candles)
+
+    highlevels = np.array(candles['high'])
+    kmeans = KMeans(n_clusters=kint,n_init=10).fit(highlevels.reshape(-1,1))
+    highclusters = kmeans.predict(highlevels.reshape(-1,1))
+
+    resistancelevels = {}
+
+    for cidx in range(datalen):
+        curcluster = highclusters[cidx]
+        if curcluster not in resistancelevels:
+            resistancelevels[curcluster] = 1
+        else:
+            resistancelevels[curcluster] += 1
+
+    donecluster = []
+    finalreslevels = {}
+    dresponse = ""
+    for cidx in range(datalen):
+        candle = candles.iloc[cidx]
+        curcluster = highclusters[cidx]
+        if resistancelevels[curcluster] > 2:
+            if curcluster not in donecluster:
+                donecluster.append(curcluster)
+                finalreslevels[curcluster] = {'level':candle['high'],'count':1}
+            else:
+                finalreslevels[curcluster] = {'level':(finalreslevels[curcluster]['level'] + candle['high'])/2,'count':finalreslevels[curcluster]['count']+1}
+
+    response += "\n\nResistance levels:"
+    sortedreslevels = []
+    for lvl,clstr in sorted(finalreslevels.items(),key=lambda x: x[1]['level']):
+        sortedreslevels.append(clstr)
+        response += "\n" + str(clstr['level']) + " : " + str(clstr['count'])
+
+    if datarange < 50:
+        kint = int(datarange / 0.5)
+    else:
+        kint = int(datarange % 20)
+    lowlevels = np.array(candles['low'])
+    kmeans = KMeans(n_clusters=kint,n_init=10).fit(lowlevels.reshape(-1,1))
+    lowclusters = kmeans.predict(lowlevels.reshape(-1,1))
+
+    supportlevels = {}
+
+    for cidx in range(datalen):
+        curcluster = lowclusters[cidx]
+        if curcluster not in supportlevels:
+            supportlevels[curcluster] = 1
+        else:
+            supportlevels[curcluster] += 1
+
+    donecluster = []
+    finalsuplevels = {}
+    dresponse = ""
+    for cidx in range(datalen):
+        candle = candles.iloc[cidx]
+        curcluster = lowclusters[cidx]
+        if supportlevels[curcluster] > 2:
+            if curcluster not in donecluster:
+                donecluster.append(curcluster)
+                finalsuplevels[curcluster] = {'level':candle['low'],'count':1}
+            else:
+                finalsuplevels[curcluster] = {'level':(finalsuplevels[curcluster]['level'] + candle['low'])/2,'count':finalsuplevels[curcluster]['count']+1}
+
+    response += "\n\nSupport levels:"
+    sortedsuplevels = []
+    for lvl,clstr in sorted(finalsuplevels.items(),key=lambda x: x[1]['level']):
+        sortedsuplevels.append(clstr)
+        response += "\n" + str(clstr['level']) + " : " + str(clstr['count'])
+    
+    response += "\n\n" + dresponse
+    return sortedreslevels, sortedsuplevels
+
+def is_peak(candles,c_pos,dlen=1):
+    if c_pos>0 and c_pos<len(candles)-dlen:
+        before = False
+        cloop = dlen
+        while cloop>0 and not before:
+            before = candles.iloc[c_pos]['high']>candles.iloc[c_pos-cloop]['high']
+            cloop -= 1
+        after = False
+        cloop = dlen
+        while cloop>0 and not after:
+            after = candles.iloc[c_pos]['high']>candles.iloc[c_pos+cloop]['high']
+            cloop -= 1
+        return before and after
     else:
         return False
 
-def tripattern(candles):
-    candles['size'] = abs(candles['close'] - candles['open'])
-    avg_size = candles['size'].mean()
-    curcandle = candles.iloc[0]
-    found = False
-    if green_candle(curcandle) and curcandle['size'] > avg_size * 2:
-        i = 1 
-        gotrest = False
-        while i<5 and not found:
-            thiscandle = candles.iloc[i]
-            if green_candle(thiscandle) and thiscandle['high'] < curcandle['open'] and thiscandle['size'] > avg_size * 2:
-                found = True
-            if not found and not gotrest and thiscandle['size'] < avg_size / 2 and thiscandle['high'] < curcandle['open']:
-                gotrest = True
-            i += 1
-    return found
-
-def bullrun(candles):
-    runscore = 0 
-    bearscore = 0
-    limit = 0
-    for i in range(0,len(candles.index)-1):
-        if candle_bull(candles.iloc[i+1],candles.iloc[i])>limit:
-            runscore += 1
-            if limit<2:
-                limit += 1
-        else:
-            bearscore += 1
-            if limit>0:
-                limit -= 1
-    return runscore,bearscore
-
-def find_bounce(candles):
-    bounce = 0
-    pullback = 0
-    for i in range(0,len(candles.index)-1):
-        finalcandle = candles.iloc[i]
-        if finalcandle['volume']>0:
-            if bounce==0:
-                if green_candle(finalcandle):
-                    bounce += 1
-                else:
-                    break
-            elif bounce>=1:
-                if green_candle(finalcandle):
-                    prevcandle = candles.iloc[i+1]
-                    if clean_bull(prevcandle,finalcandle)>2:
-                        bounce += 1
-                    else:
-                        break
-                elif pullback==0:
-                    if red_candle(finalcandle):
-                        pullback += bounce
-                    else:
-                        break
-                else:
-                    prevcandle = candles.iloc[i+1]
-                    if clean_bear(prevcandle,finalcandle)>1:
-                        pullback += bounce
-                    else:
-                        break
-    return pullback
-
-def count_above_vwap(candles):
-    above = 0
-    for i in range(0,len(candles.index)-1):
-        finalcandle = candles.iloc[i]
-        prevfinalcandle = candles.iloc[i+1]
-        if finalcandle['low'] > finalcandle['vwap']:
-            # print("Index:",finalcandle['date'])
-            # print("Final date:",finalcandle['date'], " low:",finalcandle['low'], " Vwap:",finalcandle['vwap'], " High:",finalcandle['high'] )
-            # print("Prev low:",prevfinalcandle['low'], " Vwap:",prevfinalcandle['vwap'], " High:",prevfinalcandle['high'] )
-            above += 1
-            if prevfinalcandle['low'] < prevfinalcandle['vwap']:
-                break
-        else:
-            break
-    return above
-
-def green_high(candles):
-    gothigh = None
-    gotdiff = None
-    highest = 5 
-    if len(candles.index) - 2 > highest:
-        highest = len(candles.index) - 2
-    for i in range(0,highest-1):
-        curcandle = candles.iloc[i]
-        if curcandle['volume'] > 0:
-            prevcandle = candles.iloc[i+1]
-            if prevcandle['volume']:
-                diff = curcandle['volume']/prevcandle['volume']
-                if diff > high_limit and green_candle(curcandle) and curcandle['high']>prevcandle['high']:
-                    gothigh = i
-                    gotdiff = diff
-    return gothigh, gotdiff
-
-def red_high(candles):
-    gothigh = None
-    gotdiff = None
-    highest = 5 
-    if len(candles.index) - 2 > highest:
-        highest = len(candles.index) - 2
-    for i in range(0,highest-1):
-        curcandle = candles.iloc[i]
-        if curcandle['volume'] > 0:
-            prevcandle = candles.iloc[i+1]
-            if prevcandle['volume']:
-                diff = curcandle['volume']/prevcandle['volume']
-                if diff > high_limit and red_candle(curcandle) and curcandle['high']<prevcandle['high']:
-                    gothigh = i
-                    gotdiff = diff
-    return gothigh, gotdiff
-
-def find_trend(candles):
-    highs = []
-    lows = []
-    for i in range(0,len(candles.index)-1):
-        curcandle = candles.iloc[i]
-        if i-1>0:
-            aftercandle = candles.iloc[i-1]
-        else:
-            aftercandle = curcandle
-        if i+1<len(candles.index)-1:
-            prevcandle = candles.iloc[i+1]
-        else:
-            prevcandle = curcandle
-
-        fronthigh = aftercandle['high'] < curcandle['high']
-        backhigh = prevcandle['high'] < curcandle['high']
-        if fronthigh and backhigh:
-            highs.append(curcandle['high'])
-
-        frontlow = aftercandle['low'] > curcandle['low']
-        backlow = prevcandle['low'] > curcandle['low']
-        if frontlow and backlow:
-            lows.append(curcandle['low'])
-
-    hscore = 0 
-    lscore = 0 
-    if len(highs)>2 and len(lows)>2:
-        for i in range(0,2):
-            if highs[i] > highs[i+1] and lows[i] > lows[i+1]:
-                hscore += 1
-            if highs[i] < highs[i+1] and lows[i] < lows[i+1]:
-                lscore += 1
-
-    if hscore > lscore:
-        return 'up'
-    elif hscore < lscore:
-        return 'down'
+def is_bottom(candles,c_pos,dlen=1):
+    if c_pos>0 and c_pos<len(candles)-dlen:
+        before = False
+        cloop = dlen
+        while cloop>0 and not before:
+            before = candles.iloc[c_pos]['low']<candles.iloc[c_pos-cloop]['low']
+            cloop -= 1
+        after = False
+        cloop = dlen
+        while cloop>0 and not after:
+            after = candles.iloc[c_pos]['low']<candles.iloc[c_pos+cloop]['low']
+            cloop -= 1
+        return before and after
     else:
-        return 'ranging'
+        return False
 
-def findgap(candles):
-    gaps = []
-    for i in range(0,len(candles.index)-2):
-        curcandle = candles.iloc[i]
-        nextcandle = candles.iloc[i+1]
-        if abs(nextcandle['open'] - curcandle['close'])>0.5 and curcandle['open']!=curcandle['close']:
-            gaps.append(curcandle)
-    return gaps
+def gather_range(candles):
+    peaks = []
+    bottoms = []
+    for i in range(len(candles)):
+        if is_peak(candles,i):
+            peaks.append(candles.iloc[i])
+        if is_bottom(candles,i):
+            bottoms.append(candles.iloc[i])
+    if len(peaks)==0:
+        for i in range(len(candles)):
+            if is_peak(candles,i,2):
+                peaks.append(candles.iloc[i])
+    if len(bottoms)==0:
+        for i in range(len(candles)):
+            if is_peak(candles,i,2):
+                bottoms.append(candles.iloc[i])
 
-inputfile = 'shorts.csv'
-difflimit = 0
-argtickers = {}
-opts, args = getopt.getopt(sys.argv[1:],"i:l:t:",["input=","limit=","tickers="])
+    return peaks,bottoms
+
+def min_bottom(bottoms):
+    curbottom = bottoms[0]
+    for candle in bottoms:
+        if candle['low'] < curbottom['low']:
+            curbottom = candle
+    return curbottom
+
+def max_peak(peaks):
+    curpeak = peaks[0]
+    for candle in peaks:
+        if candle['high'] > curpeak['high']:
+            curpeak = candle
+    return curpeak
+
+inputfile = 'stocks.csv'
+outfile = 'shorts.csv'
+stockdate = None
+openrangelimit = 1
+purchaselimit = 300
+opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:",["input=","out=","date=","range=","purchaselimit="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
-    elif opt in ("-l","--limit"):
-        difflimit = float(arg)
-    elif opt in ("-t","--tickers"):
-        argtickers['Ticker'] = arg.split(",")
+    if opt in ("-o", "--out"):
+        outfile = arg
+    if opt in ("-d", "--date"):
+        stockdate = datetime.strptime(arg + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
+    if opt in ("-r", "--range"):
+        openrangelimit = float(arg)
+    if opt in ("-p", "--purchaselimit"):
+        purchaselimit = float(arg)
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
-stocks = None
+stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
-if 'Ticker' in argtickers:
-    stocks = pd.DataFrame(argtickers)
+if stockdate:
+    end_date = stockdate
 else:
-    stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
-
-print("Stocks:",stocks)
-
-end_date = datetime.now()
-days = 2
-hour_days = 5
+    end_date = datetime.now()
+days = 5
 start_date = end_date - timedelta(days=days)
-hour_start_date = end_date - timedelta(days=hour_days)
 
-start_time = '21:30:00'
-if end_date.time().strftime('%H:%M:%S') >= start_time:
-    trade_start = datetime.strptime(end_date.date().strftime('%d:%m:%Y') + ' ' + start_time,'%d:%m:%Y %H:%M:%S')
-else:
-    trade_start = datetime.strptime((end_date - timedelta(days=1)).date().strftime('%d:%m:%Y') + ' ' + start_time,'%d:%m:%Y %H:%M:%S')
-print("Trade start:",trade_start)
-print("End Date:",end_date)
-if end_date > trade_start:
-    time_diff = end_date - trade_start
-    minutes_diff = math.floor(time_diff.seconds/60)
-    print("Minutes in:",minutes_diff)
-else:
-    time_diff = trade_start - end_date
-
-price_alert_limit = 0.3
+filtered = []
+highrangetickers = []
 
 for i in range(len(stocks.index)):
-    gotinput = False
+# for i in range(1):
     if isinstance(stocks.iloc[i]['Ticker'], str):
         ticker = stocks.iloc[i]['Ticker'].upper()
         dticker = yq.Ticker(ticker)
-        print("Ticker ",ticker)
-        candles = dticker.history(start=start_date,end=end_date,interval='5m')
-        hourcandles = dticker.history(start=hour_start_date,end=end_date,interval='1h')
+        candles = dticker.history(start=start_date,end=end_date,interval='15m')
+        candles = candles.loc[(candles['volume']>0)]
     else:
         continue
 
     if len(candles.index):
-
+        print("Processing ticker ",ticker)
         candles = candles.reset_index(level=[0,1])
-        hourcandles = hourcandles.reset_index(level=[0,1])
         lastcandle = candles.iloc[-1]
         ldate = str(lastcandle['date'].date())
         bdate = str(datetime.date(lastcandle['date'])-timedelta(days=1))
         adate = str(datetime.date(lastcandle['date'])+timedelta(days=1))
-        cdcandle = candles.loc[(candles['date']>ldate) & (candles['date']<adate)]
-        clen = len(cdcandle.index)
-        candles['vwap'] = VolumeWeightedAveragePrice(high=candles['high'],low=candles['low'],close=candles['close'],volume=candles['volume'],window=clen).volume_weighted_average_price()
-        candles = candles.iloc[::-1]
-        hourcandles = hourcandles.iloc[::-1]
+        # cdcandle = candles.loc[(candles['date']>ldate) & (candles['date']<adate)]
+        cdcandle = candles.loc[(candles['date']>ldate)]
+        prevcandle = candles.loc[(candles['date']>bdate) & (candles['date']<ldate)]
+        daydiff = 1
+        while len(prevcandle)<1 and daydiff<4:
+            bdate = str(datetime.date(lastcandle['date'])-timedelta(days=daydiff))
+            prevcandle = candles.loc[(candles['date']>bdate) & (candles['date']<ldate)]
+            daydiff -= 1
+        # print("Cdcandle:",cdcandle)
+        # print("prevcandle:",prevcandle)
 
-        daycandle = candles.iloc[0:clen]
-        maxhigh = daycandle['high'].max()
-        minlow = daycandle['low'].min()
-        highindex = daycandle[['high']].idxmax()['high']
-        lowindex = daycandle[['low']].idxmin()['low']
-        daydiff = maxhigh - minlow
+        if cdcandle.iloc[0]['open'] > prevcandle.iloc[-1]['close']:
+            gap = cdcandle.iloc[0]['open']-prevcandle.iloc[-1]['close']
+            valuegap = cdcandle.iloc[0]['low']-prevcandle.iloc[-1]['high']
+            print("Gap:",gap)
+            highrangetickers.append({'Ticker':ticker,'Gap':gap,'Value Gap':valuegap})
 
-        gaps = findgap(hourcandles)
-
-        if gaps:
-            print("Found gaps for ",ticker)
-            for gap in gaps:
-                print("Gap: ",gap)
-
-        # if difflimit==0 or daydiff>difflimit:
-        #
-        #     if daydiff>price_alert_limit and lowindex<highindex:
-        #         gotinput = True
-        #         print("Ticker ",ticker, " Grow already has day diff more than ",price_alert_limit,"  : ",daydiff, " High:",highindex," Low:",lowindex)
-        #
-        #     if daydiff>price_alert_limit and lowindex>highindex:
-        #         gotinput = True
-        #         print("Ticker ",ticker, " Shrunk already has day diff more than ",price_alert_limit,"  : ",daydiff, " High:",highindex," Low:",lowindex)
-        #
-        #     runscore,bullscore = bullrun(daycandle)
-        #     if bullscore<=0:
-        #         bullscore = 1
-        #     runratio = runscore/bullscore
-        #     if runratio > 1.3:
-        #         gotinput = True
-        #         print("Ticker ",ticker," on bullrun ",runscore, ":",bullscore, " Ratio:",(runratio))
-        #
-        #     if tribull(candles):
-        #         gotinput = True
-        #         print("Ticker ",ticker," got a clean tribull")
-        #
-        #     if tripattern(candles):
-        #         gotinput = True
-        #         print("Ticker ",ticker," just got a tripattern")
-        #
-        #     above = count_above_vwap(candles)
-        #     if above>1:
-        #         gotinput = True
-        #         print("Ticker ",ticker," above VWAP: ",above)
-        #
-        #     pullback = find_bounce(candles)
-        #     if pullback>2:
-        #         gotinput = True
-        #         print("Ticker ",ticker," just bounced:",pullback)
-        #
-        #     green_h, green_diff = green_high(candles)
-        #     if green_h:
-        #         gotinput = True
-        #         print("Ticker ",ticker," got green high ",green_diff)
-        #
-        #     red_h, red_diff = red_high(candles)
-        #     if red_h:
-        #         gotinput = True
-        #         print("Ticker ",ticker," got red high ",red_diff)
-
-        if gotinput:
-            trend = find_trend(hourcandles)
-            print("Latest close:",candles.iloc[0]['close']," Trending:",trend,"\n")
+#         peaks,bottoms = gather_range(cdcandle)
+#         maxpeak = minbottom = None
+#         if len(peaks):
+#             maxpeak = max_peak(peaks)
+#         if len(bottoms):
+#             minbottom = min_bottom(bottoms)
+#         if minbottom is not None:
+#             openingrange = cdcandle.iloc[0]['high']-bottoms[0]['low']
+#             before1045 = minbottom['date'].hour<10 or (minbottom['date'].hour==10 and minbottom['date'].minute<45)
+#             bottombelowstart = cdcandle.iloc[0]['high']>minbottom['high']
+#             bottombelowend = cdcandle.iloc[-1]['high']>minbottom['high']
+#             if openingrange>openrangelimit:
+#                 print("Opening range is ============================ ",openingrange)
+#                 if before1045 and bottombelowstart and bottombelowend:
+#                     price = cdcandle.iloc[-1]['close']
+#                     lastcandle = cdcandle.iloc[-1]
+#                     if lastcandle['date'].hour>=15 and lastcandle['date'].minute>=30:   #it is past 3.30 so consider the day closed
+#                         lossrange = bottoms[0]['high'] - bottoms[0]['low']
+#                         profitrange = cdcandle.iloc[0]['open'] - bottoms[0]['high']
+#                     else:
+#                         lossrange = price - bottoms[0]['low']
+#                         profitrange = cdcandle.iloc[0]['open'] - price
+#                     maxunit = math.floor(purchaselimit/price)
+#                     lossamount = lossrange * maxunit
+#                     profitamount = profitrange * maxunit
+#                     ratio = profitamount/lossamount
+#                     highrangetickers.append({'Ticker':ticker,'Price':price,'Loss Range':lossrange,'Profit Range':profitrange,'Unit':maxunit,'Loss Amount':lossamount,'Profit Amount':profitamount,'Ratio':ratio})
+#             if maxpeak is not None:
+#                 if maxpeak['date']>minbottom['date']:
+#                     print("Max peak happen after min bottom")
+#                     print("Range:",maxpeak['high']-minbottom['low']," Min:",minbottom['date'], " Max:",maxpeak['date'], " Bottom count:",len(bottoms), " Peak count:",len(peaks))
+#                     if peaks[0]['date'] < bottoms[0]['date']:
+#                         print("First peak happen before first bottom")
+#                         print("Min:",bottoms[0]['date'], " Max:",peaks[0]['date'])
+#
+# print("High range tickers:")
+print(tabulate(highrangetickers,headers="keys"))
