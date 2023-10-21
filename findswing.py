@@ -185,6 +185,73 @@ def find_levels(candles):
     response += "\n\n" + dresponse
     return sortedreslevels, sortedsuplevels
 
+def body_top(candle):
+    if candle['open']>candle['close']:
+        return candle['open']
+    else:
+        return candle['close']
+
+def body_bottom(candle):
+    if candle['open']<candle['close']:
+        return candle['open']
+    else:
+        return candle['close']
+
+def is_peak_body(candles,c_pos,dlen=1):
+    if c_pos>0 and c_pos<len(candles)-dlen:
+        before = False
+        cloop = dlen
+        while cloop>0 and not before:
+            before = body_top(candles.iloc[c_pos])>body_top(candles.iloc[c_pos-cloop])
+            cloop -= 1
+        after = False
+        cloop = dlen
+        while cloop>0 and not after:
+            after = body_top(candles.iloc[c_pos])>body_top(candles.iloc[c_pos+cloop])
+            cloop -= 1
+        return before and after
+    else:
+        return False
+
+def is_bottom_body(candles,c_pos,dlen=1):
+    if c_pos>0 and c_pos<len(candles)-dlen:
+        before = False
+        cloop = dlen
+        while cloop>0 and not before:
+            before = body_bottom(candles.iloc[c_pos])<body_bottom(candles.iloc[c_pos-cloop])
+            cloop -= 1
+        after = False
+        cloop = dlen
+        while cloop>0 and not after:
+            after = body_bottom(candles.iloc[c_pos])<body_bottom(candles.iloc[c_pos+cloop])
+            cloop -= 1
+        return before and after
+    else:
+        return False
+
+def gather_range_body(candles):
+    peaks = []
+    bottoms = []
+    peakindex = []
+    bottomindex = []
+    for i in range(len(candles)):
+        if is_peak_body(candles,i):
+            peaks.append(candles.iloc[i])
+        if is_bottom_body(candles,i):
+            bottoms.append(candles.iloc[i])
+    if len(peaks)==0:
+        for i in range(len(candles)):
+            if is_peak_body(candles,i,2) and i-1 not in peakindex:
+                peaks.append(candles.iloc[i])
+                peakindex.append(i)
+    if len(bottoms)==0:
+        for i in range(len(candles)):
+            if is_bottom_body(candles,i,2) and i-1 not in bottomindex:
+                bottoms.append(candles.iloc[i])
+                bottomindex.append(i)
+
+    return peaks,bottoms
+
 def is_peak(candles,c_pos,dlen=1):
     if c_pos>0 and c_pos<len(candles)-dlen:
         before = False
@@ -231,7 +298,7 @@ def gather_range(candles):
                 peaks.append(candles.iloc[i])
     if len(bottoms)==0:
         for i in range(len(candles)):
-            if is_peak(candles,i,2):
+            if is_bottom(candles,i,2):
                 bottoms.append(candles.iloc[i])
 
     return peaks,bottoms
@@ -255,7 +322,8 @@ outfile = 'shorts.csv'
 stockdate = None
 openrangelimit = 1
 purchaselimit = 300
-opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:",["input=","out=","date=","range=","purchaselimit="])
+completelist = False
+opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:",["input=","out=","date=","range=","purchaselimit=","complete="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
@@ -267,6 +335,8 @@ for opt, arg in opts:
         openrangelimit = float(arg)
     if opt in ("-p", "--purchaselimit"):
         purchaselimit = float(arg)
+    if opt in ("-c", "--complete"):
+        completelist = True
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
@@ -278,15 +348,22 @@ else:
     end_date = datetime.now()
 days = 4
 start_date = end_date - timedelta(days=days)
+day_start_date = end_date - timedelta(days=days*10)
+hour_start_date = end_date - timedelta(days=days*4)
 
 filtered = []
 highrangetickers = []
+dayrangetickers = []
+hourrangetickers = []
+hourdetails = []
 
 for i in range(len(stocks.index)):
     if isinstance(stocks.iloc[i]['Ticker'], str):
         ticker = stocks.iloc[i]['Ticker'].upper()
         dticker = yq.Ticker(ticker)
         candles = dticker.history(start=start_date,end=end_date,interval='15m')
+        day_candles = dticker.history(start=day_start_date,end=end_date,interval='1d')
+        hour_candles = dticker.history(start=hour_start_date,end=end_date,interval='1h')
         candles = candles.loc[(candles['volume']>0)]
     else:
         continue
@@ -294,6 +371,8 @@ for i in range(len(stocks.index)):
     if len(candles.index):
         print("Processing ticker ",ticker)
         candles = candles.reset_index(level=[0,1])
+        day_candles = day_candles.reset_index(level=[0,1])
+        hour_candles = hour_candles.reset_index(level=[0,1])
         lastcandle = candles.iloc[-1]
         ldate = str(lastcandle['date'].date())
         bdate = str(datetime.date(lastcandle['date'])-timedelta(days=1))
@@ -301,19 +380,76 @@ for i in range(len(stocks.index)):
         # cdcandle = candles.loc[(candles['date']>ldate) & (candles['date']<adate)]
         cdcandle = candles.loc[(candles['date']>ldate)]
         peaks,bottoms = gather_range(cdcandle)
+        # day_peaks,day_bottoms = gather_range(day_candles)
+        day_peaks,day_bottoms = gather_range_body(day_candles)
+        if len(day_bottoms)>2 and len(day_peaks)>2:
+            last_low_higher = day_bottoms[-1]['low']>day_bottoms[-2]['low']
+            second_last_low_higher = day_bottoms[-2]['low']>day_bottoms[-3]['low']
+            last_high_higher = day_peaks[-1]['high']>day_peaks[-2]['high']
+            second_last_high_higher = day_peaks[-2]['high']>day_peaks[-3]['high']
+            if last_low_higher and second_last_low_higher and last_high_higher and second_last_high_higher:
+                bottom_last = False
+                if day_bottoms[-1]['date']>day_peaks[-1]['date']:
+                    bottom_last = True
+                closing_range = body_top(day_peaks[-1]) - body_bottom(day_bottoms[-1])
+                second_closing_range = body_top(day_peaks[-2]) - body_bottom(day_bottoms[-2])
+                third_closing_range = body_top(day_peaks[-3]) - body_bottom(day_bottoms[-3])
+                avg_range = (closing_range+second_closing_range+third_closing_range)/3
+                est_closing = body_bottom(day_bottoms[-1]) + closing_range
+                est_avg = body_bottom(day_bottoms[-1]) + avg_range
+                last_top = body_top(day_bottoms[-1])
+                last_bottom = body_bottom(day_bottoms[-1])
+                last_high = day_bottoms[-1]['high']
+                last_low = day_bottoms[-1]['low']
+                last_height = last_high - last_low
+                bullish_tick = last_top - last_bottom < 0.1 and last_high - last_top > (last_height / 2)
+                if not bullish_tick:
+                    if completelist or bottom_last:
+                        dayrangetickers.append({'Ticker':ticker,'Bottom Last':bottom_last,'Closing Range':closing_range,'Avg Range':avg_range,'Est Closing': est_closing,'Est Avg':est_avg,'Bottom 1':day_bottoms[-1]['date'],'Bottom 2':day_bottoms[-2]['date'],'Bottom 3':day_bottoms[-3]['date'],'Peak 1':day_peaks[-1]['date'],'Peak 2':day_peaks[-2]['date'],'Peak 3':day_peaks[-3]['date']})
+
+        hour_peaks,hour_bottoms = gather_range_body(hour_candles)
+        if len(hour_bottoms)>2 and len(hour_peaks)>2:
+            last_low_higher = hour_bottoms[-1]['low']>hour_bottoms[-2]['low']
+            second_last_low_higher = hour_bottoms[-2]['low']>hour_bottoms[-3]['low']
+            last_high_higher = hour_peaks[-1]['high']>hour_peaks[-2]['high']
+            second_last_high_higher = hour_peaks[-2]['high']>hour_peaks[-3]['high']
+            if last_low_higher and second_last_low_higher and last_high_higher and second_last_high_higher:
+                bottom_last = False
+                if hour_bottoms[-1]['date']>hour_peaks[-1]['date']:
+                    bottom_last = True
+                closing_range = body_top(hour_peaks[-1]) - body_bottom(hour_bottoms[-1])
+                second_closing_range = body_top(hour_peaks[-2]) - body_bottom(hour_bottoms[-2])
+                third_closing_range = body_top(hour_peaks[-3]) - body_bottom(hour_bottoms[-3])
+                avg_range = (closing_range+second_closing_range+third_closing_range)/3
+                est_closing = body_bottom(hour_bottoms[-1]) + closing_range
+                est_avg = body_bottom(hour_bottoms[-1]) + avg_range
+                last_top = body_top(hour_bottoms[-1])
+                last_bottom = body_bottom(hour_bottoms[-1])
+                last_high = hour_bottoms[-1]['high']
+                last_low = hour_bottoms[-1]['low']
+                last_height = last_high - last_low
+                bullish_tick = last_top - last_bottom < 0.1 and last_high - last_top > (last_height / 2)
+                if not bullish_tick:
+                    if completelist or bottom_last:
+                        hourrangetickers.append({'Ticker':ticker,'Bottom Last':bottom_last,'Closing Range':closing_range,'Avg Range':avg_range,'Est Closing': est_closing,'Est Avg':est_avg})
+                        hourdetails.append({'Ticker':ticker,'Bottom 1':hour_bottoms[-1]['date'],'Bottom 2':hour_bottoms[-2]['date'],'Bottom 3':hour_bottoms[-3]['date'],'Peak 1':hour_peaks[-1]['date'],'Peak 2':hour_peaks[-2]['date'],'Peak 3':hour_peaks[-3]['date']})
+                        hourdetails.append({'Ticker':ticker,'Bottom 1':body_bottom(hour_bottoms[-1]),'Bottom 2':body_bottom(hour_bottoms[-2]),'Bottom 3':body_bottom(hour_bottoms[-3]),'Peak 1':body_top(hour_peaks[-1]),'Peak 2':body_top(hour_peaks[-2]),'Peak 3':body_top(hour_peaks[-3])})
+                    # hourrangetickers.append({'Ticker':ticker,'Bottom Last':bottom_last,'Closing Range':closing_range,'Avg Range':avg_range,'Est Closing': est_closing,'Est Avg':est_avg,'Bottom 1':hour_bottoms[-1]['date'],'Bottom 2':hour_bottoms[-2]['date'],'Bottom 3':hour_bottoms[-3]['date'],'Peak 1':hour_peaks[-1]['date'],'Peak 2':hour_peaks[-2]['date'],'Peak 3':hour_peaks[-3]['date']})
+
         maxpeak = minbottom = None
         if len(peaks):
             maxpeak = max_peak(peaks)
         if len(bottoms):
-            minbottom = min_bottom(bottoms)
+            # minbottom = min_bottom(bottoms)
+            minbottom = bottoms[0]
         if minbottom is not None:
             openingrange = cdcandle.iloc[0]['high']-bottoms[0]['low']
-            before1045 = minbottom['date'].hour<10 or (minbottom['date'].hour==10 and minbottom['date'].minute<45)
+            before1045 = minbottom['date'].hour<11 # or (minbottom['date'].hour==10 and minbottom['date'].minute<45)
             bottombelowstart = cdcandle.iloc[0]['high']>minbottom['high']
             bottombelowend = cdcandle.iloc[-1]['high']>minbottom['high']
             if openingrange>openrangelimit:
                 print("Opening range is ============================ ",openingrange)
-                if before1045 and bottombelowstart and bottombelowend:
+                if before1045 and bottombelowstart: # and bottombelowend:
                     price = cdcandle.iloc[-1]['close']
                     lastcandle = cdcandle.iloc[-1]
                     if lastcandle['date'].hour>=15 and lastcandle['date'].minute>=30:   #it is past 3.30 so consider the day closed
@@ -326,7 +462,7 @@ for i in range(len(stocks.index)):
                     lossamount = lossrange * maxunit
                     profitamount = profitrange * maxunit
                     ratio = profitamount/lossamount
-                    highrangetickers.append({'Ticker':ticker,'Price':price,'Loss Range':lossrange,'Profit Range':profitrange,'Unit':maxunit,'Loss Amount':lossamount,'Profit Amount':profitamount,'Ratio':ratio})
+                    highrangetickers.append({'Ticker':ticker,'Price':price,'Loss Range':lossrange,'Profit Range':profitrange,'Unit':maxunit,'Loss Amount':lossamount,'Profit Amount':profitamount,'Ratio':ratio,'Bottom':str(bottoms[0]['date'].hour) + ':' + str(bottoms[0]['date'].minute)})
             if maxpeak is not None:
                 if maxpeak['date']>minbottom['date']:
                     print("Max peak happen after min bottom")
@@ -337,6 +473,12 @@ for i in range(len(stocks.index)):
 
 print("High range tickers:")
 print(tabulate(highrangetickers,headers="keys"))
+print("Hour range tickers:")
+print(tabulate(hourrangetickers,headers="keys"))
+print("Hour details:")
+print(tabulate(hourdetails,headers="keys"))
+print("Day range tickers:")
+print(tabulate(dayrangetickers,headers="keys"))
 
         # candles = candles.reset_index(level=[0,1])
         # volume_multiplier = 0.5
