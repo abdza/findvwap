@@ -252,6 +252,57 @@ def gather_range_body(candles):
 
     return peaks,bottoms
 
+def is_peak_unit(unit,candles,c_pos,dlen=1):
+    if c_pos>0 and c_pos<len(candles)-dlen:
+        before = False
+        cloop = dlen
+        while cloop>0 and not before:
+            before = candles.iloc[c_pos][unit]>candles.iloc[c_pos-cloop][unit]
+            cloop -= 1
+        after = False
+        cloop = dlen
+        while cloop>0 and not after:
+            after = candles.iloc[c_pos][unit]>candles.iloc[c_pos+cloop][unit]
+            cloop -= 1
+        return before and after
+    else:
+        return False
+
+def is_bottom_unit(unit,candles,c_pos,dlen=1):
+    if c_pos>0 and c_pos<len(candles)-dlen:
+        before = False
+        cloop = dlen
+        while cloop>0 and not before:
+            before = candles.iloc[c_pos][unit]<candles.iloc[c_pos-cloop][unit]
+            cloop -= 1
+        after = False
+        cloop = dlen
+        while cloop>0 and not after:
+            after = candles.iloc[c_pos][unit]<candles.iloc[c_pos+cloop][unit]
+            cloop -= 1
+        return before and after
+    else:
+        return False
+
+def gather_range_unit(unit,candles):
+    peaks = []
+    bottoms = []
+    for i in range(len(candles)):
+        if is_peak_unit(unit,candles,i):
+            peaks.append(candles.iloc[i])
+        if is_bottom_unit(unit,candles,i):
+            bottoms.append(candles.iloc[i])
+    if len(peaks)==0:
+        for i in range(len(candles)):
+            if is_peak_unit(unit,candles,i,2):
+                peaks.append(candles.iloc[i])
+    if len(bottoms)==0:
+        for i in range(len(candles)):
+            if is_bottom_unit(unit,candles,i,2):
+                bottoms.append(candles.iloc[i])
+
+    return peaks,bottoms
+
 def is_peak(candles,c_pos,dlen=1):
     if c_pos>0 and c_pos<len(candles)-dlen:
         before = False
@@ -323,7 +374,8 @@ stockdate = None
 openrangelimit = 1
 purchaselimit = 300
 completelist = False
-opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:",["input=","out=","date=","range=","purchaselimit=","complete="])
+trackunit = None
+opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:u:",["input=","out=","date=","range=","purchaselimit=","complete=","unit="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
@@ -337,6 +389,9 @@ for opt, arg in opts:
         purchaselimit = float(arg)
     if opt in ("-c", "--complete"):
         completelist = True
+    if opt in ("-u", "--unit"):
+        if arg in ['close','high','low','open']:
+            trackunit = arg
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
@@ -381,7 +436,10 @@ for i in range(len(stocks.index)):
         cdcandle = candles.loc[(candles['date']>ldate)]
         peaks,bottoms = gather_range(cdcandle)
         # day_peaks,day_bottoms = gather_range(day_candles)
-        day_peaks,day_bottoms = gather_range_body(day_candles)
+        if trackunit:
+            day_peaks,day_bottoms = gather_range_unit(trackunit,day_candles)
+        else:
+            day_peaks,day_bottoms = gather_range_body(day_candles)
         if len(day_bottoms)>2 and len(day_peaks)>2:
             last_low_higher = day_bottoms[-1]['low']>day_bottoms[-2]['low']
             second_last_low_higher = day_bottoms[-2]['low']>day_bottoms[-3]['low']
@@ -407,13 +465,27 @@ for i in range(len(stocks.index)):
                     if completelist or bottom_last:
                         dayrangetickers.append({'Ticker':ticker,'Bottom Last':bottom_last,'Closing Range':closing_range,'Avg Range':avg_range,'Est Closing': est_closing,'Est Avg':est_avg,'Bottom 1':day_bottoms[-1]['date'],'Bottom 2':day_bottoms[-2]['date'],'Bottom 3':day_bottoms[-3]['date'],'Peak 1':day_peaks[-1]['date'],'Peak 2':day_peaks[-2]['date'],'Peak 3':day_peaks[-3]['date']})
 
-        hour_peaks,hour_bottoms = gather_range_body(hour_candles)
+        if trackunit:
+            hour_peaks,hour_bottoms = gather_range_unit(trackunit,hour_candles)
+        else:
+            hour_peaks,hour_bottoms = gather_range_body(hour_candles)
         if len(hour_bottoms)>2 and len(hour_peaks)>2:
             last_low_higher = hour_bottoms[-1]['low']>hour_bottoms[-2]['low']
             second_last_low_higher = hour_bottoms[-2]['low']>hour_bottoms[-3]['low']
             last_high_higher = hour_peaks[-1]['high']>hour_peaks[-2]['high']
             second_last_high_higher = hour_peaks[-2]['high']>hour_peaks[-3]['high']
-            if last_low_higher and second_last_low_higher and last_high_higher and second_last_high_higher:
+            if trackunit:
+                last_low_higher = hour_bottoms[-1][trackunit]>hour_bottoms[-2][trackunit]
+                second_last_low_higher = hour_bottoms[-2][trackunit]>hour_bottoms[-3][trackunit]
+                last_high_higher = hour_peaks[-1][trackunit]>hour_peaks[-2][trackunit]
+                second_last_high_higher = hour_peaks[-2][trackunit]>hour_peaks[-3][trackunit]
+            else:
+                last_low_higher = hour_bottoms[-1]['low']>hour_bottoms[-2]['low']
+                second_last_low_higher = hour_bottoms[-2]['low']>hour_bottoms[-3]['low']
+                last_high_higher = hour_peaks[-1]['high']>hour_peaks[-2]['high']
+                second_last_high_higher = hour_peaks[-2]['high']>hour_peaks[-3]['high']
+            valid = last_low_higher and second_last_low_higher and last_high_higher and second_last_high_higher
+            if valid:
                 bottom_last = False
                 if hour_bottoms[-1]['date']>hour_peaks[-1]['date']:
                     bottom_last = True
@@ -433,7 +505,10 @@ for i in range(len(stocks.index)):
                     if completelist or bottom_last:
                         hourrangetickers.append({'Ticker':ticker,'Bottom Last':bottom_last,'Closing Range':closing_range,'Avg Range':avg_range,'Est Closing': est_closing,'Est Avg':est_avg})
                         hourdetails.append({'Ticker':ticker,'Bottom 1':hour_bottoms[-1]['date'],'Bottom 2':hour_bottoms[-2]['date'],'Bottom 3':hour_bottoms[-3]['date'],'Peak 1':hour_peaks[-1]['date'],'Peak 2':hour_peaks[-2]['date'],'Peak 3':hour_peaks[-3]['date']})
-                        hourdetails.append({'Ticker':ticker,'Bottom 1':body_bottom(hour_bottoms[-1]),'Bottom 2':body_bottom(hour_bottoms[-2]),'Bottom 3':body_bottom(hour_bottoms[-3]),'Peak 1':body_top(hour_peaks[-1]),'Peak 2':body_top(hour_peaks[-2]),'Peak 3':body_top(hour_peaks[-3])})
+                        if trackunit:
+                            hourdetails.append({'Ticker':ticker,'Bottom 1':hour_bottoms[-1][trackunit],'Bottom 2':hour_bottoms[-2][trackunit],'Bottom 3':hour_bottoms[-3][trackunit],'Peak 1':hour_peaks[-1][trackunit],'Peak 2':hour_peaks[-2][trackunit],'Peak 3':hour_peaks[-3][trackunit]})
+                        else:
+                            hourdetails.append({'Ticker':ticker,'Bottom 1':body_bottom(hour_bottoms[-1]),'Bottom 2':body_bottom(hour_bottoms[-2]),'Bottom 3':body_bottom(hour_bottoms[-3]),'Peak 1':body_top(hour_peaks[-1]),'Peak 2':body_top(hour_peaks[-2]),'Peak 3':body_top(hour_peaks[-3])})
                     # hourrangetickers.append({'Ticker':ticker,'Bottom Last':bottom_last,'Closing Range':closing_range,'Avg Range':avg_range,'Est Closing': est_closing,'Est Avg':est_avg,'Bottom 1':hour_bottoms[-1]['date'],'Bottom 2':hour_bottoms[-2]['date'],'Bottom 3':hour_bottoms[-3]['date'],'Peak 1':hour_peaks[-1]['date'],'Peak 2':hour_peaks[-2]['date'],'Peak 3':hour_peaks[-3]['date']})
 
         maxpeak = minbottom = None
