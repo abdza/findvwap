@@ -369,7 +369,7 @@ def max_peak(peaks):
     return curpeak
 
 inputfile = 'stocks.csv'
-outfile = 'shorts.csv'
+outfile = 'swings.csv'
 stockdate = None
 openrangelimit = 1
 purchaselimit = 300
@@ -417,6 +417,11 @@ hourdetails = []
 openrangetickers = []
 highopeners = []
 
+outputfile = open(outfile,"w")
+outdata = 'Category\tTicker\tOpen\t\t\tClose\t\t\tPercent\t\t\tFirst\n'
+outputfile.writelines(outdata)
+outputfile.close()
+
 for i in range(len(stocks.index)):
     if isinstance(stocks.iloc[i]['Ticker'], str):
         ticker = stocks.iloc[i]['Ticker'].upper()
@@ -454,11 +459,15 @@ for i in range(len(stocks.index)):
         else:
             day_peaks,day_bottoms = gather_range_body(day_candles)
 
+        outputfile = open(outfile,"a")
+
         if cdcandle.iloc[0]['open']<cdcandle.iloc[-1]['close']:
             oprange = cdcandle.iloc[-1]['close'] - cdcandle.iloc[0]['open']
             rangeperc = (oprange / cdcandle.iloc[0]['open']) * 100
             if rangeperc > perctarget:
                 openrangetickers.append({'Ticker':ticker,'Open':cdcandle.iloc[0]['open'],'End':cdcandle.iloc[-1]['close'],'Percent':rangeperc,'First':cdcandle.iloc[0]['date']})
+                outdata = 'Open Range\t' + ticker + '\t' + str(cdcandle.iloc[0]['open']) + '\t' + str(cdcandle.iloc[-1]['close']) + '\t' + str(rangeperc) + '\t' + str(cdcandle.iloc[0]['date']) + '\n'
+                outputfile.writelines(outdata)
 
         if cdcandle.iloc[0]['open']<cdcandle.iloc[0]['close']:
             oprange = cdcandle.iloc[0]['close'] - cdcandle.iloc[0]['open']
@@ -469,6 +478,8 @@ for i in range(len(stocks.index)):
                 goodsec = secrange > 0 or abs(secrange)<oprange/3
             if rangeperc > (perctarget/2) and goodsec:
                 highopeners.append({'Ticker':ticker,'Open':cdcandle.iloc[0]['open'],'Close':cdcandle.iloc[0]['close'],'Percent':rangeperc,'First':cdcandle.iloc[0]['date']})
+                outdata = 'High Opener\t' + ticker + '\t' + str(cdcandle.iloc[0]['open']) + '\t' + str(cdcandle.iloc[0]['close']) + '\t' + str(rangeperc) + '\t' + str(cdcandle.iloc[0]['date']) + '\n'
+                outputfile.writelines(outdata)
 
 
         if len(day_bottoms)>2 and len(day_peaks)>2:
@@ -495,6 +506,8 @@ for i in range(len(stocks.index)):
                 if not bullish_tick:
                     if completelist or bottom_last:
                         dayrangetickers.append({'Ticker':ticker,'Bottom Last':bottom_last,'Closing Range':closing_range,'Avg Range':avg_range,'Est Closing': est_closing,'Est Avg':est_avg,'Bottom 1':day_bottoms[-1]['date'],'Bottom 2':day_bottoms[-2]['date'],'Bottom 3':day_bottoms[-3]['date'],'Peak 1':day_peaks[-1]['date'],'Peak 2':day_peaks[-2]['date'],'Peak 3':day_peaks[-3]['date']})
+                        outdata = 'Day Range\t' + ticker + '\t' + str(bottom_last) + '\t\t\t' + str(closing_range) + '\t' + str(avg_range) + '\t' + str(est_closing) + '\n'
+                        outputfile.writelines(outdata)
 
         if trackunit:
             hour_peaks,hour_bottoms = gather_range_unit(trackunit,hour_candles)
@@ -535,6 +548,8 @@ for i in range(len(stocks.index)):
                 if not bullish_tick:
                     if completelist or bottom_last:
                         hourrangetickers.append({'Ticker':ticker,'Bottom Last':bottom_last,'Closing Range':closing_range,'Avg Range':avg_range,'Est Closing': est_closing,'Est Avg':est_avg})
+                        outdata = 'Hour Range\t' + ticker + '\t' + str(bottom_last) + '\t\t\t' + str(closing_range) + '\t' + str(avg_range) + '\t' + str(est_closing) + '\n'
+                        outputfile.writelines(outdata)
                         hourdetails.append({'Ticker':ticker,'Bottom 1':hour_bottoms[-1]['date'],'Bottom 2':hour_bottoms[-2]['date'],'Bottom 3':hour_bottoms[-3]['date'],'Peak 1':hour_peaks[-1]['date'],'Peak 2':hour_peaks[-2]['date'],'Peak 3':hour_peaks[-3]['date']})
                         if trackunit:
                             hourdetails.append({'Ticker':ticker,'Bottom 1':hour_bottoms[-1][trackunit],'Bottom 2':hour_bottoms[-2][trackunit],'Bottom 3':hour_bottoms[-3][trackunit],'Peak 1':hour_peaks[-1][trackunit],'Peak 2':hour_peaks[-2][trackunit],'Peak 3':hour_peaks[-3][trackunit]})
@@ -567,6 +582,8 @@ for i in range(len(stocks.index)):
                     profitamount = profitrange * maxunit
                     ratio = profitamount/lossamount
                     highrangetickers.append({'Ticker':ticker,'Price':price,'Loss Range':lossrange,'Profit Range':profitrange,'Unit':maxunit,'Loss Amount':lossamount,'Profit Amount':profitamount,'Ratio':ratio,'Bottom':str(bottoms[0]['date'].hour) + ':' + str(bottoms[0]['date'].minute)})
+                    outdata = 'High Range\t' + ticker + '\t' + str(price) + '\t' + str(maxunit) + '\t' + str(lossamount) + '\t' + str(profitamount) + '\n'
+                    outputfile.writelines(outdata)
             if maxpeak is not None:
                 if maxpeak['date']>minbottom['date']:
                     print("Max peak happen after min bottom")
@@ -574,6 +591,8 @@ for i in range(len(stocks.index)):
                     if peaks[0]['date'] < bottoms[0]['date']:
                         print("First peak happen before first bottom")
                         print("Min:",bottoms[0]['date'], " Max:",peaks[0]['date'])
+
+        outputfile.close()
 
 print("High range tickers:")
 print(tabulate(highrangetickers,headers="keys"))
