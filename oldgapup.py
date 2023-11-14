@@ -401,9 +401,8 @@ openrangelimit = 1
 purchaselimit = 300
 completelist = False
 trackunit = None
-manualstocks = None
 perctarget = 10
-opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:u:x:s:",["input=","out=","date=","range=","purchaselimit=","complete=","unit=","perctarget=","stocks="])
+opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:u:x:",["input=","out=","date=","range=","purchaselimit=","complete=","unit=","perctarget="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
@@ -422,15 +421,10 @@ for opt, arg in opts:
     if opt in ("-u", "--unit"):
         if arg in ['close','high','low','open']:
             trackunit = arg
-    if opt in ("-s", "--stocks"):
-        manualstocks = arg.split(',')
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
-if manualstocks:
-    stocks = pd.DataFrame({'Ticker':manualstocks})
-else:
-    stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
+stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
 def minute_test(peaks,bottoms):
     if len(bottoms)>0 and len(peaks)>0:
@@ -512,12 +506,6 @@ def prev_avg_test(today,yesterday,target_multiple=4):
             return True
     return False
 
-def append_hash_set(hashdata,key,value):
-    if not key in hashdata:
-        hashdata[key] = []
-    hashdata[key].append(value)
-    return hashdata
-
 def findgap():
     end_date = datetime.now()
     if instockdate:
@@ -528,12 +516,10 @@ def findgap():
     print("Got end date:",end_date)
     start_date = end_date - timedelta(days=365)
     foundgap = []
-    tickers_data = {}
-    prop_data = {}
 
 
     for i in range(len(stocks.index)):
-    # for i in range(1):
+    # for i in range(10):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -545,21 +531,12 @@ def findgap():
 
         if len(candles):
             candles = candles.reset_index(level=[0,1])
-            candles['range'] = candles['high'] - candles['low']
-            candles['body_length'] = candles['close'] - candles['open']
-            # print("Candles:",candles)
-            curcandle = candles.iloc[-1]
-            print("Type:",type(curcandle['date']))
-            if isinstance(curcandle['date'],datetime):
-                curkey = str(curcandle['date'].date())
-            else:
-                curkey = str(curcandle['date'])
-            print("Curkey:",curkey)
+            curcandle = candles.iloc[-2]
+            curkey = str(curcandle['date'])
             minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
             minute_start_date = minute_end_date - timedelta(days=5)
             full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
             full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
-            full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
             peaks = []
             bottoms = []
             if len(full_minute_candles)>0:
@@ -567,9 +544,6 @@ def findgap():
                 minutelastcandle = full_minute_candles.iloc[-2]
                 ldate = str(minutelastcandle['date'].date())
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
-
-                if manualstocks:
-                    print("Minute Candles:",minute_candles)
 
                 datediff = 1
                 bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
@@ -581,8 +555,6 @@ def findgap():
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                     bminute_candles = bminute_candles.loc[(full_minute_candles['date']<ldate)]
 
-                # print("BMinute Candles:",bminute_candles)
-
                 datediff += 1
                 bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                 bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
@@ -592,37 +564,16 @@ def findgap():
                     bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
-
-                # print("BBMinute Candles:",bbminute_candles)
                 peaks,bottoms = gather_range(minute_candles)
-                # print("Peaks:",peaks)
-                # print("Bottoms:",bottoms)
-
-                if green_candle(minute_candles.iloc[0]):
-                    prop_data = append_hash_set(prop_data,'first_green',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'First Green')
-                if green_candle(minute_candles.iloc[1]) or (len(minute_candles)>2 and green_candle(minute_candles.iloc[2])):
-                    prop_data = append_hash_set(prop_data,'second_green',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'Second Green')
-                y_avg = bminute_candles['range'].mean()
-                yy_avg = bbminute_candles['range'].mean()
-                avg_multiple = 3
-                if minute_candles.iloc[0]['range'] > y_avg*avg_multiple:
-                    prop_data = append_hash_set(prop_data,'range_above_avg',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'Range Above Average')
-                    if minute_candles.iloc[0]['range'] > yy_avg*avg_multiple:
-                        prop_data = append_hash_set(prop_data,'range_above_2_day_avg',ticker)
-                        tickers_data = append_hash_set(tickers_data,ticker,'Range Above 2 Day Average')
-                if minute_candles.iloc[0]['low']<minute_candles.iloc[1]['low']:
-                    prop_data = append_hash_set(prop_data,'higher_low',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'Higher Low')
-                    if minute_candles.iloc[1]['low']<minute_candles.iloc[2]['low']:
-                        prop_data = append_hash_set(prop_data,'cont_higher_low',ticker)
-                        tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher Low')
-
+                mtest = minute_test(peaks,bottoms)
+                pattern = pattern_test(minute_candles)
+                prevtest = prev_avg_test(minute_candles,bminute_candles,2.5)
+                prev2test = prev_avg_test(minute_candles,bbminute_candles)
+                levels = find_levels(candles)
+                if mtest and pattern and prevtest: # and prev2test:
+                    foundgap.append({'ticker':ticker,'price':minutelastcandle['close'],'levels':levels})
+    
     print("End date:",end_date)
-    common_tckr = set(prop_data['first_green']).intersection(prop_data['range_above_avg']).intersection(prop_data['cont_higher_low'])
-    print("Green Above Avg:",common_tckr)
     return foundgap
 
 starttest = datetime.now()
