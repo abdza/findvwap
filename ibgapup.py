@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from ib_insync import *
 import pandas as pd 
 import os
 import sys
@@ -193,7 +194,8 @@ def find_levels(candles):
         response += "\n" + str(clstr['level']) + " : " + str(clstr['count'])
     
     response += "\n\n" + dresponse
-    return sortedreslevels, sortedsuplevels
+    # return sortedreslevels, sortedsuplevels
+    return sortedsuplevels
 
 def body_top(candle):
     if candle['open']>candle['close']:
@@ -206,6 +208,9 @@ def body_bottom(candle):
         return candle['open']
     else:
         return candle['close']
+
+def body_length(candle):
+    return body_top(candle) - body_bottom(candle)
 
 def is_peak_body(candles,c_pos,dlen=1):
     if c_pos>0 and c_pos<len(candles)-dlen:
@@ -422,9 +427,6 @@ script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
-def body_length(candle):
-    return body_top(candle) - body_bottom(candle)
-
 def minute_test(peaks,bottoms):
     if len(bottoms)>0 and len(peaks)>0:
         if bottoms[0]['date']<peaks[0]['date']:
@@ -505,15 +507,17 @@ def prev_avg_test(today,yesterday,target_multiple=4):
             return True
     return False
 
-def backtest():
+def findgap():
     end_date = datetime.now()
+    if instockdate:
+        if isinstance(instockdate,datetime):
+            end_date = instockdate
+        else:
+            end_date = datetime.strptime(instockdate + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
     print("Got end date:",end_date)
-    days = 100 
-    start_date = end_date - timedelta(days=days)
-    highrange = {}
-    profitable = {}
-    fullrange = {}
-    stats = {}
+    start_date = end_date - timedelta(days=365)
+    foundgap = []
+
 
     for i in range(len(stocks.index)):
     # for i in range(10):
@@ -521,143 +525,73 @@ def backtest():
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
             candles = dticker.history(start=start_date,end=end_date,interval='1d')
-            print("Processing ",ticker, " got ",len(candles))
             candles = candles.loc[(candles['volume']>0)]
+            print("Processing ",ticker, " got ",len(candles))
         else:
             continue
 
-        if len(candles.index):
+        if len(candles):
             candles = candles.reset_index(level=[0,1])
-            candles['range'] = candles['high'] - candles['low']
-            for i in range(len(candles)):
-                curcandle = candles.iloc[i]
-                curkey = str(curcandle['date'])
-                minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
-                minute_start_date = minute_end_date - timedelta(days=5)
-                # print("Minute start:",minute_start_date, " Minute end:",minute_end_date)
-                full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
-                full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
-                peaks = []
-                bottoms = []
-                minuteprofittickers = []
-                avgtest = []
-                passminute = 0
-                gotprofit = 0 
-                minuteprofit = 0
-                if len(full_minute_candles)>0:
-                    full_minute_candles = full_minute_candles.reset_index(level=[0,1])
-                    # print("full minute candles:",full_minute_candles)
-                    minutelastcandle = full_minute_candles.iloc[-2]
-                    ldate = str(datetime.date(minutelastcandle['date'])-timedelta(days=1))
-                    # print("ldate:",ldate)
-                    minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
-                    # print("minute candles:",minute_candles)
+            curcandle = candles.iloc[-2]
+            curkey = str(curcandle['date'])
+            minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
+            minute_start_date = minute_end_date - timedelta(days=5)
+            full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
+            full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
+            peaks = []
+            bottoms = []
+            if len(full_minute_candles)>0:
+                full_minute_candles = full_minute_candles.reset_index(level=[0,1])
+                minutelastcandle = full_minute_candles.iloc[-2]
+                ldate = str(minutelastcandle['date'].date())
+                minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
 
-                    datediff = 1
+                datediff = 1
+                bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
+                bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
+                bminute_candles = bminute_candles.loc[(full_minute_candles['date']<ldate)]
+                while len(bminute_candles)==0 and datediff<=5:
+                    datediff += 1
                     bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                     bminute_candles = bminute_candles.loc[(full_minute_candles['date']<ldate)]
-                    while len(bminute_candles)==0 and datediff<=5:
-                        datediff += 1
-                        bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
-                        bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
-                        bminute_candles = bminute_candles.loc[(full_minute_candles['date']<ldate)]
 
+                datediff += 1
+                bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
+                bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
+                bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
+                while len(bbminute_candles)==0 and datediff<=5:
                     datediff += 1
                     bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
-                    while len(bbminute_candles)==0 and datediff<=5:
-                        datediff += 1
-                        bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
-                        bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
-                        bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
-                    peaks,bottoms = gather_range(minute_candles)
-                    # print("Peaks:",peaks)
-                    if minute_test(peaks,bottoms):
-                        if curkey in highrange:
-                            if curcandle['range']>highrange[curkey]['range']:
-                                    highrange[curkey] = {'range':curcandle['range'],'ticker':ticker}
-                                    profitable[curkey] = {'range':maxp['high'] - minute_candles.iloc[2]['high'],'ticker':ticker}
-                        else:
-                            highrange[curkey] = {'range':curcandle['range'],'ticker':ticker}
-                            profitable[curkey] = {'range':maxp['high'] - minute_candles.iloc[2]['high'],'ticker':ticker}
-                    if len(peaks):
-                        maxp = max_peak(peaks)
-                        profitamt = 0
-                        if minute_test(peaks,bottoms) and green_candle(minute_candles.iloc[0]):
-                            profitamt = maxp['high'] - minute_candles.iloc[2]['high']
-                        if profitamt>0:
-                            if curkey in profitable:
-                                if profitamt > profitable[curkey]['range']:
-                                    profitable[curkey] = {'range':profitamt,'ticker':ticker}
-                            else:
-                                profitable[curkey] = {'range':profitamt,'ticker':ticker}
-                    if curkey in fullrange:
-                        if curcandle['range']>fullrange[curkey]['range']:
-                            fullrange[curkey] = {'range':curcandle['range'],'ticker':ticker}
-                    else:
-                        fullrange[curkey] = {'range':curcandle['range'],'ticker':ticker}
-                    if curkey in stats:
-                        passminute = stats[curkey]['passminute']
-                        gotprofit = stats[curkey]['gotprofit']
-                        minuteprofit = stats[curkey]['minuteprofit']
-                        minuteprofittickers = stats[curkey]['minuteprofittickers']
-                        avgtest = stats[curkey]['avgtest']
-                    mtest = minute_test(peaks,bottoms)
-                    gotprofit = profit_test(peaks,bottoms)
-                    minute_profit = minute_profit_test(peaks,bottoms)
-                    pattern = pattern_test(minute_candles)
-                    prevtest = prev_avg_test(minute_candles,bminute_candles,2.5)
-                    if mtest:
-                        passminute += 1
-                    if gotprofit:
-                        gotprofit += 1
-                    if minute_profit:
-                        minuteprofit += 1
-                        minuteprofittickers.append(ticker)
-                    if mtest and pattern and prevtest:
-                        avgtest.append(ticker)
-                stats[curkey] = {'passminute':passminute,'gotprofit':gotprofit,'minuteprofit':minuteprofit,'minuteprofittickers':minuteprofittickers,'avgtest':avgtest}
+                peaks,bottoms = gather_range(minute_candles)
+                mtest = minute_test(peaks,bottoms)
+                pattern = pattern_test(minute_candles)
+                prevtest = prev_avg_test(minute_candles,bminute_candles,2.5)
+                prev2test = prev_avg_test(minute_candles,bbminute_candles)
+                levels = find_levels(candles)
+                if mtest and pattern and prevtest: # and prev2test:
+                    foundgap.append({'ticker':ticker,'price':minutelastcandle['close'],'levels':levels})
+    
+    print("End date:",end_date)
+    return foundgap
 
-    print("High Openers:")
-    return highrange,fullrange,stats,profitable
+def get_potential():
+    sub = ScannerSubscription(
+        instrument='STK',
+        locationCode='STK.US',
+        scanCode='TOP_PERC_GAIN'
+    )
 
+    scanData = ib.reqScannerData(sub)
+    print(f'{len(scanData)} results, first one:')
+    print(scanData[0])
+
+ib = IB()
+ib.connect('127.0.0.1',7497, clientId=7)
 starttest = datetime.now()
-
-if 'cal' not in st.session_state:
-    print("No session. Setting it")
-    caldata = []
-    highrange,fullrange,stats,profitable = backtest()
-    for kdate,kval in profitable.items():
-        prepend = '$'
-        caldata.append({'title':prepend + kval['ticker'] + ' ' + str(kval['range']),'start':kdate,'end':kdate})
-
-    for kdate,kval in highrange.items():
-        prepend = '^'
-        if kdate in fullrange and fullrange[kdate]['ticker']==kval['ticker']:
-            prepend += '['
-        caldata.append({'title':prepend + kval['ticker'] + ' ' + str(kval['range']),'start':kdate,'end':kdate})
-
-    for kdate,kval in fullrange.items():
-        if kdate in highrange and highrange[kdate]['ticker']==kval['ticker']:
-            pass
-        else:
-            caldata.append({'title':'[' + kval['ticker'] + ' ' + str(kval['range']),'start':kdate,'end':kdate})
-    for kdate,kval in stats.items():
-        caldata.append({'title':'Minute:' + str(kval['passminute']) + '; Profit:' + str(kval['gotprofit']) + '; MinuteProfit:' + str(kval['minuteprofit']),'start':kdate,'end':kdate})
-        caldata.append({'title':'MinuteProfit Tickers:' + str(','.join(kval['minuteprofittickers'])),'start':kdate,'end':kdate})
-        caldata.append({'title':'Test Tickers:' + str(','.join(kval['avgtest'])),'start':kdate,'end':kdate})
-    st.session_state['cal'] = caldata
-else:
-    print("No session need to set")
-
-
-calendar_options = {
-    "initialView":"listWeek"
-}
-calendar = calendar(events=st.session_state['cal'],options=calendar_options)
-st.write(calendar)
+get_potential()
 endtest = datetime.now()
 print("Start:",starttest)
 print("End:",endtest)

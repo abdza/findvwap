@@ -193,7 +193,8 @@ def find_levels(candles):
         response += "\n" + str(clstr['level']) + " : " + str(clstr['count'])
     
     response += "\n\n" + dresponse
-    return sortedreslevels, sortedsuplevels
+    # return sortedreslevels, sortedsuplevels
+    return sortedsuplevels
 
 def body_top(candle):
     if candle['open']>candle['close']:
@@ -206,6 +207,9 @@ def body_bottom(candle):
         return candle['open']
     else:
         return candle['close']
+
+def body_length(candle):
+    return body_top(candle) - body_bottom(candle)
 
 def is_peak_body(candles,c_pos,dlen=1):
     if c_pos>0 and c_pos<len(candles)-dlen:
@@ -446,25 +450,52 @@ def minute_profit_test(peaks,bottoms):
             return maxp['high'] - minb['low']
     return False
 
-def prev_avg_test(today,yesterday,target_multiple=4):
-    y_avg = range_avg(yesterday)
+def hammer_pattern(candle):
+    return body_length(candle) < candle['range']/2 and body_bottom(candle) > candle['low'] + candle['range']/2
+
+def reverse_hammer_pattern(candle):
+    return body_length(candle) < candle['range']/2 and body_top(candle) < candle['low'] + candle['range']/1.5
+
+def pattern_test(today):
     minrange = 0.15
-    if len(today)>3 and green_candle(today.iloc[0]) and (green_candle(today.iloc[1]) or green_candle(today.iloc[2])):
-        if today.iloc[0]['range']<minrange and today.iloc[1]['range']<minrange and today.iloc[2]['range']<minrange:
+    candle1 = today.iloc[0]
+    if red_candle(candle1):
+        return False
+    either_green = True
+    if len(today)>2:
+        either_green = green_candle(today.iloc[1]) or green_candle(today.iloc[2])
+    first_hammer = hammer_pattern(candle1)
+    if not (either_green or first_hammer):
+        return False
+    if len(today)>1:
+        if reverse_hammer_pattern(today.iloc[1]):
             return False
-        if len(today)>4:
+        if today.iloc[1]['range'] < body_length(today.iloc[0])/3:
+            return False
+    if len(today)>2:
+        if candle1['range']<minrange and today.iloc[1]['range']<minrange and today.iloc[2]['range']<minrange:
+            return False
+        for i in range(2):
+            if body_length(today.iloc[i+1]) > body_length(today.iloc[i]) * 0.7 and red_candle(today.iloc[i+1]):
+                return False
+        if len(today)>3:
+            if body_top(today.iloc[3]) < body_bottom(today.iloc[2]):
+                return False
             for i in range(3):
                 if today.iloc[i+1]['high']<today.iloc[i]['low']:
                     return False
                 if today.iloc[i+1]['range']>today.iloc[i]['range']*0.75 and red_candle(today.iloc[i+1]):
                     return False
-            if len(today)>5:
+            if len(today)>4:
                 for i in range(4):
                     if red_candle(today.iloc[i]) and red_candle(today.iloc[i+1]):
                         return False
-        # if body_bottom(today.iloc[2])<body_top(today.iloc[0]):
-        #     return False
-        for i in range(3):
+    return True
+
+def prev_avg_test(today,yesterday,target_multiple=4):
+    y_avg = range_avg(yesterday)
+    if len(today)>2:
+        for i in range(2):
             if today.iloc[i]['range']>y_avg*target_multiple:
                 return True
         early_range = today.iloc[1]['high'] - today.iloc[0]['low']
@@ -483,9 +514,9 @@ def findgap():
         else:
             end_date = datetime.strptime(instockdate + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
     print("Got end date:",end_date)
-    days =  5
-    start_date = end_date - timedelta(days=days)
+    start_date = end_date - timedelta(days=365)
     foundgap = []
+
 
     for i in range(len(stocks.index)):
     # for i in range(10):
@@ -500,7 +531,7 @@ def findgap():
 
         if len(candles):
             candles = candles.reset_index(level=[0,1])
-            curcandle = candles.iloc[-1]
+            curcandle = candles.iloc[-2]
             curkey = str(curcandle['date'])
             minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
             minute_start_date = minute_end_date - timedelta(days=5)
@@ -510,7 +541,7 @@ def findgap():
             bottoms = []
             if len(full_minute_candles)>0:
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
-                minutelastcandle = full_minute_candles.iloc[-1]
+                minutelastcandle = full_minute_candles.iloc[-2]
                 ldate = str(minutelastcandle['date'].date())
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
 
@@ -535,16 +566,21 @@ def findgap():
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
                 peaks,bottoms = gather_range(minute_candles)
                 mtest = minute_test(peaks,bottoms)
-                prevtest = prev_avg_test(minute_candles,bminute_candles,5)
+                pattern = pattern_test(minute_candles)
+                prevtest = prev_avg_test(minute_candles,bminute_candles,2.5)
                 prev2test = prev_avg_test(minute_candles,bbminute_candles)
-                if mtest and prevtest and prev2test:
-                    foundgap.append(ticker)
+                levels = find_levels(candles)
+                if mtest and pattern and prevtest: # and prev2test:
+                    foundgap.append({'ticker':ticker,'price':minutelastcandle['close'],'levels':levels})
     
     print("End date:",end_date)
     return foundgap
 
 starttest = datetime.now()
-print("Found gap:",findgap())
+result=sorted(findgap(),key=lambda x:x['price'])
+for result in result:
+    print("Ticker:",result['ticker']," Price:",result['price'])
+    # print(tabulate(result['levels'],headers="keys"))
 endtest = datetime.now()
 print("Start:",starttest)
 print("End:",endtest)
