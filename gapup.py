@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from logging import lastResort
 import pandas as pd 
 import os
 import sys
@@ -530,6 +531,8 @@ def findgap():
     foundgap = []
     tickers_data = {}
     prop_data = {}
+    latest_price = {}
+    levels = {}
 
 
     for i in range(len(stocks.index)):
@@ -549,12 +552,10 @@ def findgap():
             candles['body_length'] = candles['close'] - candles['open']
             # print("Candles:",candles)
             curcandle = candles.iloc[-1]
-            print("Type:",type(curcandle['date']))
             if isinstance(curcandle['date'],datetime):
                 curkey = str(curcandle['date'].date())
             else:
                 curkey = str(curcandle['date'])
-            print("Curkey:",curkey)
             minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
             minute_start_date = minute_end_date - timedelta(days=5)
             full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
@@ -607,6 +608,7 @@ def findgap():
                 y_avg = bminute_candles['range'].mean()
                 yy_avg = bbminute_candles['range'].mean()
                 avg_multiple = 3
+                latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
                 if minute_candles.iloc[0]['range'] > y_avg*avg_multiple:
                     prop_data = append_hash_set(prop_data,'range_above_avg',ticker)
                     tickers_data = append_hash_set(tickers_data,ticker,'Range Above Average')
@@ -619,17 +621,30 @@ def findgap():
                     if minute_candles.iloc[1]['low']<minute_candles.iloc[2]['low']:
                         prop_data = append_hash_set(prop_data,'cont_higher_low',ticker)
                         tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher Low')
+                if minute_candles.iloc[0]['high']<minute_candles.iloc[1]['high']:
+                    prop_data = append_hash_set(prop_data,'higher_high',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'Higher High')
+                    if minute_candles.iloc[1]['high']<minute_candles.iloc[2]['high']:
+                        prop_data = append_hash_set(prop_data,'cont_higher_high',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher High')
+                if minute_candles.iloc[0]['body_length']*0.4<minute_candles.iloc[1]['body_length']:
+                    prop_data = append_hash_set(prop_data,'second_long',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'Second Long')
+                if len(candles)>100:
+                    levels[ticker] = find_levels(candles)
+                else:
+                    levels[ticker] = []
 
     print("End date:",end_date)
-    common_tckr = set(prop_data['first_green']).intersection(prop_data['range_above_avg']).intersection(prop_data['cont_higher_low'])
-    print("Green Above Avg:",common_tckr)
-    return foundgap
+    common_tckr = set(prop_data['first_green']).intersection(prop_data['range_above_avg']).intersection(prop_data['cont_higher_low']).intersection(prop_data['cont_higher_high']).intersection(prop_data['second_long'])
+    with_price = [ {'ticker':tckr,'price':latest_price[tckr][0],'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
+    return with_price
 
 starttest = datetime.now()
 result=sorted(findgap(),key=lambda x:x['price'])
-for result in result:
-    print("Ticker:",result['ticker']," Price:",result['price'])
-    # print(tabulate(result['levels'],headers="keys"))
+# for result in result:
+    # print("Ticker:",result['ticker']," Price:",result['price'])
+print(tabulate(result,headers="keys",tablefmt="grid"))
 endtest = datetime.now()
 print("Start:",starttest)
 print("End:",endtest)
