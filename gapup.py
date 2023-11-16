@@ -531,13 +531,14 @@ def findgap():
             end_date = datetime.strptime(instockdate + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
     print("Got end date:",end_date)
     start_date = end_date - timedelta(days=365)
-    foundgap = []
+    tickers = []
     tickers_data = {}
     prop_data = {}
     latest_price = {}
     first_price = {}
     max_price = {}
     levels = {}
+    all_props = []
 
 
     for i in range(len(stocks.index)):
@@ -569,6 +570,7 @@ def findgap():
             peaks = []
             bottoms = []
             if len(full_minute_candles)>0:
+                tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
                 ldate = str(minutelastcandle['date'].date())
@@ -607,9 +609,11 @@ def findgap():
                 if green_candle(minute_candles.iloc[0]):
                     prop_data = append_hash_set(prop_data,'first_green',ticker)
                     tickers_data = append_hash_set(tickers_data,ticker,'First Green')
+                    all_props.append('First Green')
                 if green_candle(minute_candles.iloc[1]) or (len(minute_candles)>2 and green_candle(minute_candles.iloc[2])):
                     prop_data = append_hash_set(prop_data,'second_green',ticker)
                     tickers_data = append_hash_set(tickers_data,ticker,'Second Green')
+                    all_props.append('Second Green')
                 y_avg = bminute_candles['range'].mean()
                 yy_avg = bbminute_candles['range'].mean()
                 avg_multiple = 3
@@ -626,55 +630,125 @@ def findgap():
                             if red_candle(minute_candles.iloc[i]) and green_candle(minute_candles.iloc[i-1]) and minute_candles.iloc[i]['range'] > minute_candles.iloc[i-1]['range']*0.6:
                                 prop_data = append_hash_set(prop_data,'big_reverse',ticker)
                                 tickers_data = append_hash_set(tickers_data,ticker,'Big Reverse')
+                                all_props.append('Big Reverse')
                             if red_candle(minute_candles.iloc[i]) and red_candle(minute_candles.iloc[i-1]) and green_candle(minute_candles.iloc[i-2]) and minute_candles.iloc[i]['range'] + minute_candles.iloc[i-1]['range'] > minute_candles.iloc[i-2]['range']*0.6:
                                 prop_data = append_hash_set(prop_data,'two_small_reverse',ticker)
                                 tickers_data = append_hash_set(tickers_data,ticker,'Two Small Reverse')
+                                all_props.append('Two Small Reverse')
 
                 else:
                     max_price = append_hash_set(max_price,ticker,minute_candles.iloc[-1]['close'])
                 if minute_candles.iloc[0]['range'] > y_avg*avg_multiple:
                     prop_data = append_hash_set(prop_data,'range_above_avg',ticker)
                     tickers_data = append_hash_set(tickers_data,ticker,'Range Above Average')
+                    all_props.append('Range Above Average')
                     if minute_candles.iloc[0]['range'] > yy_avg*avg_multiple:
                         prop_data = append_hash_set(prop_data,'range_above_2_day_avg',ticker)
                         tickers_data = append_hash_set(tickers_data,ticker,'Range Above 2 Day Average')
-                if minute_candles.iloc[0]['low']<minute_candles.iloc[1]['low']:
-                    prop_data = append_hash_set(prop_data,'higher_low',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'Higher Low')
-                    if minute_candles.iloc[1]['low']<minute_candles.iloc[2]['low']:
-                        prop_data = append_hash_set(prop_data,'cont_higher_low',ticker)
-                        tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher Low')
-                if minute_candles.iloc[0]['high']<minute_candles.iloc[1]['high']:
-                    prop_data = append_hash_set(prop_data,'higher_high',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'Higher High')
-                    if minute_candles.iloc[1]['high']<minute_candles.iloc[2]['high']:
-                        prop_data = append_hash_set(prop_data,'cont_higher_high',ticker)
-                        tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher High')
-                if minute_candles.iloc[0]['body_length']*0.4<minute_candles.iloc[1]['body_length']:
-                    prop_data = append_hash_set(prop_data,'second_long',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'Second Long')
+                        all_props.append('Range Above 2 Day Average')
+                if len(minute_candles)>1:
+                    if minute_candles.iloc[0]['low']<minute_candles.iloc[1]['low']:
+                        prop_data = append_hash_set(prop_data,'higher_low',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Higher Low')
+                        all_props.append('Higher Low')
+                        if len(minute_candles)>2:
+                            if minute_candles.iloc[1]['low']<minute_candles.iloc[2]['low']:
+                                prop_data = append_hash_set(prop_data,'cont_higher_low',ticker)
+                                tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher Low')
+                                all_props.append('Continue Higher Low')
+                    if minute_candles.iloc[0]['high']<minute_candles.iloc[1]['high']:
+                        prop_data = append_hash_set(prop_data,'higher_high',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Higher High')
+                        all_props.append('Higher High')
+                        if len(minute_candles)>2:
+                            if minute_candles.iloc[1]['high']<minute_candles.iloc[2]['high']:
+                                prop_data = append_hash_set(prop_data,'cont_higher_high',ticker)
+                                tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher High')
+                                all_props.append('Continue Higher High')
+                    if minute_candles.iloc[0]['body_length']*0.4<minute_candles.iloc[1]['body_length']:
+                        prop_data = append_hash_set(prop_data,'second_long',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Second Long')
+                        all_props.append('Second Long')
+                    if minute_candles.iloc[0]['body_length']*0.4>minute_candles.iloc[1]['body_length']:
+                        prop_data = append_hash_set(prop_data,'second_short',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Second short')
+                        all_props.append('Second short')
+                    if len(minute_candles)>2:
+                        if minute_candles.iloc[1]['body_length']*0.4<minute_candles.iloc[2]['body_length']:
+                            prop_data = append_hash_set(prop_data,'third_long',ticker)
+                            tickers_data = append_hash_set(tickers_data,ticker,'Third Long')
+                            all_props.append('Third Long')
+                        if minute_candles.iloc[1]['body_length']*0.4>minute_candles.iloc[2]['body_length']:
+                            prop_data = append_hash_set(prop_data,'third_short',ticker)
+                            tickers_data = append_hash_set(tickers_data,ticker,'Third short')
+                            all_props.append('Third short')
+                if len(bminute_candles)>1:
+                    if minute_candles.iloc[0]['volume']>bminute_candles.iloc[-1]['volume']:
+                        prop_data = append_hash_set(prop_data,'volume_open_higher',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Volume Open Higher')
+                        all_props.append('Volume Open Higher')
+                    if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*1.5:
+                        prop_data = append_hash_set(prop_data,'volume_higher_avg',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Volume Higher Than Average')
+                        all_props.append('Volume Higher Than Average')
+                if hammer_pattern(minute_candles.iloc[0]):
+                    prop_data = append_hash_set(prop_data,'first_hammer',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'First Hammer')
+                    all_props.append('First Hammer')
+                if hammer_pattern(minute_candles.iloc[1]):
+                    prop_data = append_hash_set(prop_data,'second_hammer',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'Second Hammer')
+                    all_props.append('Second Hammer')
+                if len(minute_candles)>2:
+                    if hammer_pattern(minute_candles.iloc[2]):
+                        prop_data = append_hash_set(prop_data,'third_hammer',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Third Hammer')
+                        all_props.append('Third Hammer')
+                if reverse_hammer_pattern(minute_candles.iloc[0]):
+                    prop_data = append_hash_set(prop_data,'first_hammer',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'First Reverse Hammer')
+                    all_props.append('First Reverse Hammer')
+                if reverse_hammer_pattern(minute_candles.iloc[1]):
+                    prop_data = append_hash_set(prop_data,'second_hammer',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'Second Reverse Hammer')
+                    all_props.append('Second Reverse Hammer')
+                if len(minute_candles)>2:
+                    if reverse_hammer_pattern(minute_candles.iloc[2]):
+                        prop_data = append_hash_set(prop_data,'third_hammer',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Third Reverse Hammer')
+                        all_props.append('Third Reverse Hammer')
                 if len(candles)>100:
                     levels[ticker] = find_levels(candles)
                 else:
                     levels[ticker] = []
                 if manualstocks:
                     print("Prop:",tickers_data[ticker])
+                tickers_data = append_hash_set(tickers_data,ticker,'------------')
 
     print("End date:",end_date)
-    test_props = ['first_green','range_above_avg','higher_low','cont_higher_low','second_long','cont_higher_high']
-    common_tckr = []
-    if all(value in prop_data for value in test_props):
+    # test_props = ['first_green','range_above_avg','higher_low','cont_higher_low','second_long','cont_higher_high']
+    # test_props = ['Big Reverse', 'Higher Low', 'Two Small Reverse', 'Second short', 'Second Green', 'Third Long', 'Continue Higher Low']
+    test_props = ['higher_low', 'second_short', 'second_green', 'third_long', 'continue_higher_low','volume_higher_avg']
+    # test_props = ['higher_low', 'second_short','volume_higher_avg']
+    # test_props = []
+    common_tckr = tickers
+    if len(test_props)>0 and all(value in prop_data for value in test_props):
         common_tckr = set(prop_data[test_props[0]])
         for test in test_props:
             if test!=test_props[0]:
                 common_tckr = common_tckr.intersection(prop_data[test])
     with_price = [ {'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'max':max_price[tckr][0],'diff':max_price[tckr][0]-first_price[tckr][0],'prop':"\n".join(tickers_data[tckr]), 'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
+
+    common_props = set(all_props)
+    for pinfo in with_price:
+        if pinfo['diff']>0.8:
+            common_props = common_props.intersection(tickers_data[pinfo['ticker']])
+
+    print("Common props:",common_props)
     return with_price
 
 starttest = datetime.now()
-result=sorted(findgap(),key=lambda x:x['price'])
-# for result in result:
-    # print("Ticker:",result['ticker']," Price:",result['price'])
+result=sorted(findgap(),key=lambda x:x['diff'])
 print(tabulate(result,headers="keys",tablefmt="grid"))
 endtest = datetime.now()
 print("Start:",starttest)
