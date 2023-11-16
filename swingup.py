@@ -532,8 +532,8 @@ def findgap():
     tickers_data = {}
     prop_data = {}
     latest_price = {}
-    first_price = {}
     levels = {}
+    tkr_max = {}
 
 
     for i in range(len(stocks.index)):
@@ -600,38 +600,44 @@ def findgap():
                 # print("Peaks:",peaks)
                 # print("Bottoms:",bottoms)
 
-                if green_candle(minute_candles.iloc[0]):
-                    prop_data = append_hash_set(prop_data,'first_green',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'First Green')
-                if green_candle(minute_candles.iloc[1]) or (len(minute_candles)>2 and green_candle(minute_candles.iloc[2])):
-                    prop_data = append_hash_set(prop_data,'second_green',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'Second Green')
+                if red_candle(minute_candles.iloc[0]):
+                    prop_data = append_hash_set(prop_data,'first_red',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'First Red')
+                if red_candle(minute_candles.iloc[1]) or (len(minute_candles)>2 and red_candle(minute_candles.iloc[2])):
+                    prop_data = append_hash_set(prop_data,'second_red',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'Second Red')
+
                 y_avg = bminute_candles['range'].mean()
                 yy_avg = bbminute_candles['range'].mean()
-                avg_multiple = 3
+                avg_multiple = 2
                 latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
-                if len(minute_candles)>2:
-                    first_price = append_hash_set(first_price,ticker,minute_candles.iloc[2]['open'])
-                else:
-                    first_price = append_hash_set(first_price,ticker,minute_candles.iloc[0]['open'])
+
+                if len(peaks)>0 and len(bottoms)>0:
+                    maxpeak = max_peak(peaks)
+                    minbottom = min_bottom(bottoms)
+                    tkr_max[ticker] = {'max':maxpeak['date'],'min':minbottom['date']}
+                    if peaks[-1]['date']==minute_candles.iloc[-1]['date'] and minbottom['date']>minute_candles.iloc[0]['date']:
+                        prop_data = append_hash_set(prop_data,'moving_up',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Moving Up')
+
                 if minute_candles.iloc[0]['range'] > y_avg*avg_multiple:
                     prop_data = append_hash_set(prop_data,'range_above_avg',ticker)
                     tickers_data = append_hash_set(tickers_data,ticker,'Range Above Average')
                     if minute_candles.iloc[0]['range'] > yy_avg*avg_multiple:
                         prop_data = append_hash_set(prop_data,'range_above_2_day_avg',ticker)
                         tickers_data = append_hash_set(tickers_data,ticker,'Range Above 2 Day Average')
-                if minute_candles.iloc[0]['low']<minute_candles.iloc[1]['low']:
-                    prop_data = append_hash_set(prop_data,'higher_low',ticker)
-                    tickers_data = append_hash_set(tickers_data,ticker,'Higher Low')
-                    if minute_candles.iloc[1]['low']<minute_candles.iloc[2]['low']:
-                        prop_data = append_hash_set(prop_data,'cont_higher_low',ticker)
-                        tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher Low')
-                if minute_candles.iloc[0]['high']<minute_candles.iloc[1]['high']:
-                    prop_data = append_hash_set(prop_data,'higher_high',ticker)
+                if minute_candles.iloc[0]['low']>minute_candles.iloc[1]['low']:
+                    prop_data = append_hash_set(prop_data,'lower_low',ticker)
+                    tickers_data = append_hash_set(tickers_data,ticker,'Lower Low')
+                    if minute_candles.iloc[1]['low']>minute_candles.iloc[2]['low']:
+                        prop_data = append_hash_set(prop_data,'cont_lower_low',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Continue Lower Low')
+                if minute_candles.iloc[0]['high']>minute_candles.iloc[1]['high']:
+                    prop_data = append_hash_set(prop_data,'lower_high',ticker)
                     tickers_data = append_hash_set(tickers_data,ticker,'Higher High')
-                    if minute_candles.iloc[1]['high']<minute_candles.iloc[2]['high']:
-                        prop_data = append_hash_set(prop_data,'cont_higher_high',ticker)
-                        tickers_data = append_hash_set(tickers_data,ticker,'Continue Higher High')
+                    if minute_candles.iloc[1]['high']>minute_candles.iloc[2]['high']:
+                        prop_data = append_hash_set(prop_data,'cont_lower_high',ticker)
+                        tickers_data = append_hash_set(tickers_data,ticker,'Continue Lower High')
                 if minute_candles.iloc[0]['body_length']*0.4<minute_candles.iloc[1]['body_length']:
                     prop_data = append_hash_set(prop_data,'second_long',ticker)
                     tickers_data = append_hash_set(tickers_data,ticker,'Second Long')
@@ -639,18 +645,13 @@ def findgap():
                     levels[ticker] = find_levels(candles)
                 else:
                     levels[ticker] = []
-                if manualstocks:
-                    print("Prop:",tickers_data[ticker])
 
     print("End date:",end_date)
-    test_props = ['first_green','range_above_avg','higher_low','cont_higher_low','second_long','cont_higher_high']
     common_tckr = []
-    if all(value in prop_data for value in test_props):
-        common_tckr = set(prop_data[test_props[0]])
-        for test in test_props:
-            if test!=test_props[0]:
-                common_tckr = common_tckr.intersection(prop_data[test])
-    with_price = [ {'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'diff':latest_price[tckr][0]-first_price[tckr][0],'prop':"\n".join(tickers_data[tckr]), 'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
+    # common_tckr = set(prop_data['first_red']).intersection(prop_data['range_above_avg']).intersection(prop_data['cont_lower_low']).intersection(prop_data['cont_lower_high']).intersection(prop_data['second_long']).intersection(prop_data['moving_up'])
+    if 'moving_up' in prop_data:
+        common_tckr = set(prop_data['first_red'])
+    with_price = [ {'ticker':tckr,'price':latest_price[tckr][0],'Min':tkr_max[tckr]['min'],'Max':tkr_max[tckr]['max'],'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
     return with_price
 
 starttest = datetime.now()
