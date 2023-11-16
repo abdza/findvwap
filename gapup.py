@@ -516,7 +516,10 @@ def prev_avg_test(today,yesterday,target_multiple=4):
 def append_hash_set(hashdata,key,value):
     if not key in hashdata:
         hashdata[key] = []
-    hashdata[key].append(value)
+        hashdata[key].append(value)
+    else:
+        if not value in hashdata[key]:
+            hashdata[key].append(value)
     return hashdata
 
 def findgap():
@@ -533,6 +536,7 @@ def findgap():
     prop_data = {}
     latest_price = {}
     first_price = {}
+    max_price = {}
     levels = {}
 
 
@@ -614,6 +618,20 @@ def findgap():
                     first_price = append_hash_set(first_price,ticker,minute_candles.iloc[2]['open'])
                 else:
                     first_price = append_hash_set(first_price,ticker,minute_candles.iloc[0]['open'])
+                if len(peaks)>0:
+                    maxp = max_peak(peaks)
+                    max_price = append_hash_set(max_price,ticker,maxp['open'])
+                    if len(minute_candles)>2:
+                        for i in range(len(minute_candles)):
+                            if red_candle(minute_candles.iloc[i]) and green_candle(minute_candles.iloc[i-1]) and minute_candles.iloc[i]['range'] > minute_candles.iloc[i-1]['range']*0.6:
+                                prop_data = append_hash_set(prop_data,'big_reverse',ticker)
+                                tickers_data = append_hash_set(tickers_data,ticker,'Big Reverse')
+                            if red_candle(minute_candles.iloc[i]) and red_candle(minute_candles.iloc[i-1]) and green_candle(minute_candles.iloc[i-2]) and minute_candles.iloc[i]['range'] + minute_candles.iloc[i-1]['range'] > minute_candles.iloc[i-2]['range']*0.6:
+                                prop_data = append_hash_set(prop_data,'two_small_reverse',ticker)
+                                tickers_data = append_hash_set(tickers_data,ticker,'Two Small Reverse')
+
+                else:
+                    max_price = append_hash_set(max_price,ticker,minute_candles.iloc[-1]['close'])
                 if minute_candles.iloc[0]['range'] > y_avg*avg_multiple:
                     prop_data = append_hash_set(prop_data,'range_above_avg',ticker)
                     tickers_data = append_hash_set(tickers_data,ticker,'Range Above Average')
@@ -650,7 +668,7 @@ def findgap():
         for test in test_props:
             if test!=test_props[0]:
                 common_tckr = common_tckr.intersection(prop_data[test])
-    with_price = [ {'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'diff':latest_price[tckr][0]-first_price[tckr][0],'prop':"\n".join(tickers_data[tckr]), 'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
+    with_price = [ {'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'max':max_price[tckr][0],'diff':max_price[tckr][0]-first_price[tckr][0],'prop':"\n".join(tickers_data[tckr]), 'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
     return with_price
 
 starttest = datetime.now()
