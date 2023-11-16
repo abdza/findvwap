@@ -126,30 +126,30 @@ def find_levels(candles):
     datalen = len(candles)
 
     highlevels = np.array(candles['high'])
-    kmeans = KMeans(n_clusters=kint,n_init=10).fit(highlevels.reshape(-1,1))
-    highclusters = kmeans.predict(highlevels.reshape(-1,1))
-
     resistancelevels = {}
-
-    for cidx in range(datalen):
-        curcluster = highclusters[cidx]
-        if curcluster not in resistancelevels:
-            resistancelevels[curcluster] = 1
-        else:
-            resistancelevels[curcluster] += 1
-
     donecluster = []
     finalreslevels = {}
     dresponse = ""
-    for cidx in range(datalen):
-        candle = candles.iloc[cidx]
-        curcluster = highclusters[cidx]
-        if resistancelevels[curcluster] > 2:
-            if curcluster not in donecluster:
-                donecluster.append(curcluster)
-                finalreslevels[curcluster] = {'level':candle['high'],'count':1}
+    try:
+        kmeans = KMeans(n_clusters=kint,n_init=10).fit(highlevels.reshape(-1,1))
+        highclusters = kmeans.predict(highlevels.reshape(-1,1))
+        for cidx in range(datalen):
+            curcluster = highclusters[cidx]
+            if curcluster not in resistancelevels:
+                resistancelevels[curcluster] = 1
             else:
-                finalreslevels[curcluster] = {'level':(finalreslevels[curcluster]['level'] + candle['high'])/2,'count':finalreslevels[curcluster]['count']+1}
+                resistancelevels[curcluster] += 1
+        for cidx in range(datalen):
+            candle = candles.iloc[cidx]
+            curcluster = highclusters[cidx]
+            if resistancelevels[curcluster] > 2:
+                if curcluster not in donecluster:
+                    donecluster.append(curcluster)
+                    finalreslevels[curcluster] = {'level':candle['high'],'count':1}
+                else:
+                    finalreslevels[curcluster] = {'level':(finalreslevels[curcluster]['level'] + candle['high'])/2,'count':finalreslevels[curcluster]['count']+1}
+    except:
+        print("Got error for levels")
 
     response += "\n\nResistance levels:"
     sortedreslevels = []
@@ -162,30 +162,30 @@ def find_levels(candles):
     else:
         kint = int(datarange % 20)
     lowlevels = np.array(candles['low'])
-    kmeans = KMeans(n_clusters=kint,n_init=10).fit(lowlevels.reshape(-1,1))
-    lowclusters = kmeans.predict(lowlevels.reshape(-1,1))
-
     supportlevels = {}
-
-    for cidx in range(datalen):
-        curcluster = lowclusters[cidx]
-        if curcluster not in supportlevels:
-            supportlevels[curcluster] = 1
-        else:
-            supportlevels[curcluster] += 1
-
     donecluster = []
     finalsuplevels = {}
     dresponse = ""
-    for cidx in range(datalen):
-        candle = candles.iloc[cidx]
-        curcluster = lowclusters[cidx]
-        if supportlevels[curcluster] > 2:
-            if curcluster not in donecluster:
-                donecluster.append(curcluster)
-                finalsuplevels[curcluster] = {'level':candle['low'],'count':1}
+    try:
+        kmeans = KMeans(n_clusters=kint,n_init=10).fit(lowlevels.reshape(-1,1))
+        lowclusters = kmeans.predict(lowlevels.reshape(-1,1))
+        for cidx in range(datalen):
+            curcluster = lowclusters[cidx]
+            if curcluster not in supportlevels:
+                supportlevels[curcluster] = 1
             else:
-                finalsuplevels[curcluster] = {'level':(finalsuplevels[curcluster]['level'] + candle['low'])/2,'count':finalsuplevels[curcluster]['count']+1}
+                supportlevels[curcluster] += 1
+        for cidx in range(datalen):
+            candle = candles.iloc[cidx]
+            curcluster = lowclusters[cidx]
+            if supportlevels[curcluster] > 2:
+                if curcluster not in donecluster:
+                    donecluster.append(curcluster)
+                    finalsuplevels[curcluster] = {'level':candle['low'],'count':1}
+                else:
+                    finalsuplevels[curcluster] = {'level':(finalsuplevels[curcluster]['level'] + candle['low'])/2,'count':finalsuplevels[curcluster]['count']+1}
+    except:
+        print("Got error for levels")
 
     response += "\n\nSupport levels:"
     sortedsuplevels = []
@@ -381,18 +381,34 @@ def gather_range(candles):
 
     return peaks,bottoms
 
-def min_bottom(bottoms):
-    curbottom = bottoms[0]
+def min_bottom(bottoms,exclude=None):
+    curbottom = None
     for candle in bottoms:
-        if candle['low'] < curbottom['low']:
+        goon = True
+        if exclude is not None:
+            for intest in exclude:
+                if intest['date']==candle['date']:
+                    goon = False
+        if curbottom is None and goon:
             curbottom = candle
+        else:
+            if candle['low'] < curbottom['low']:
+                curbottom = candle
     return curbottom
 
-def max_peak(peaks):
-    curpeak = peaks[0]
+def max_peak(peaks,exclude=None):
+    curpeak = None
     for candle in peaks:
-        if candle['high'] > curpeak['high']:
+        goon = True
+        if exclude is not None:
+            for intest in exclude:
+                if intest['date']==candle['date']:
+                    goon = False
+        if curpeak is None and goon:
             curpeak = candle
+        else:
+            if goon and candle['high'] > curpeak['high']:
+                curpeak = candle
     return curpeak
 
 inputfile = 'stocks.csv'
@@ -458,10 +474,12 @@ def minute_profit_test(peaks,bottoms):
     return False
 
 def hammer_pattern(candle):
-    return body_length(candle) < candle['range']/2 and body_bottom(candle) > candle['low'] + candle['range']/2
+    max_range = candle['range']/2.5
+    return body_length(candle) < max_range and body_bottom(candle) > candle['low'] + max_range
 
 def reverse_hammer_pattern(candle):
-    return body_length(candle) < candle['range']/2 and body_top(candle) < candle['low'] + candle['range']/1.5
+    max_range = candle['range']/2.5
+    return body_length(candle) < max_range and body_top(candle) < candle['low'] + max_range
 
 def pattern_test(today):
     minrange = 0.15
@@ -569,7 +587,7 @@ def findgap():
             full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
             peaks = []
             bottoms = []
-            if len(full_minute_candles)>0:
+            if len(full_minute_candles)>1:
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
@@ -623,8 +641,11 @@ def findgap():
                 else:
                     first_price = append_hash_set(first_price,ticker,minute_candles.iloc[0]['open'])
                 if len(peaks)>0:
-                    maxp = max_peak(peaks)
-                    max_price = append_hash_set(max_price,ticker,maxp['open'])
+                    maxp = max_peak(peaks,[minute_candles.iloc[0]])
+                    if maxp is not None:
+                        max_price = append_hash_set(max_price,ticker,maxp['open'])
+                    else:
+                        max_price = append_hash_set(max_price,ticker,minute_candles.iloc[-1]['close'])
                     if len(minute_candles)>2:
                         for i in range(len(minute_candles)):
                             if red_candle(minute_candles.iloc[i]) and green_candle(minute_candles.iloc[i-1]) and minute_candles.iloc[i]['range'] > minute_candles.iloc[i-1]['range']*0.6:
@@ -728,15 +749,20 @@ def findgap():
     print("End date:",end_date)
     # test_props = ['first_green','range_above_avg','higher_low','cont_higher_low','second_long','cont_higher_high']
     # test_props = ['Big Reverse', 'Higher Low', 'Two Small Reverse', 'Second short', 'Second Green', 'Third Long', 'Continue Higher Low']
-    test_props = ['higher_low', 'second_short', 'second_green', 'third_long', 'continue_higher_low','volume_higher_avg']
     # test_props = ['higher_low', 'second_short','volume_higher_avg']
-    # test_props = []
-    common_tckr = tickers
-    if len(test_props)>0 and all(value in prop_data for value in test_props):
+    # test_props = ['first_green','cont_higher_low', 'third_long','volume_higher_avg']
+    test_props = ['first_green']
+    if len(test_props)>0: # and all(value in prop_data for value in test_props):
+        print("Got tests")
         common_tckr = set(prop_data[test_props[0]])
         for test in test_props:
+            print("Testing ",test)
             if test!=test_props[0]:
                 common_tckr = common_tckr.intersection(prop_data[test])
+                print("Common tckr:",common_tckr)
+    else:
+        print("Taking all")
+        common_tckr = tickers
     with_price = [ {'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'max':max_price[tckr][0],'diff':max_price[tckr][0]-first_price[tckr][0],'prop':"\n".join(tickers_data[tckr]), 'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
 
     common_props = set(all_props)
