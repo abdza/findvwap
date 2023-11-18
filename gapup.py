@@ -559,10 +559,12 @@ def findgap():
     tickers_data = {}
     prop_data = {}
     latest_price = {}
+    latest_date = {}
     first_price = {}
     max_price = {}
     levels = {}
     all_props = []
+    end_of_trading = False
 
 
     for i in range(len(stocks.index)):
@@ -597,6 +599,10 @@ def findgap():
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
+                # print("Last candle date:",minutelastcandle['date'].time())
+                if str(minutelastcandle['date'].time())=='15:45:00':
+                    end_of_trading = True
+                # print("End of trading:",end_of_trading)
                 ldate = str(minutelastcandle['date'].date())
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
@@ -745,6 +751,7 @@ def findgap():
                     levels[ticker] = find_levels(candles)
                 else:
                     levels[ticker] = []
+                latest_date[ticker] = minute_candles.iloc[-1]['date']
                 if manualstocks:
                     print("Prop:",tickers_data[ticker])
                 tickers_data = append_hash_set(tickers_data,ticker,'------------')
@@ -758,24 +765,33 @@ def findgap():
         common_tckr = set(prop_data[test_props[0]])
         for test in test_props:
             print("Testing ",test)
-            if test!=test_props[0]:
+            if test!=test_props[0] and test in prop_data:
                 common_tckr = common_tckr.intersection(prop_data[test])
     else:
         print("Taking all")
         common_tckr = tickers
     negate_test_props = ['First Red','Lower Low','First Reverse Hammer','Second Reverse Hammer','Third Reverse Hammer','Big Reverse','Two Small Reverse']
+    print("Before remove:",common_tckr)
     toremove = []
+    negated_props = {}
     if len(negate_test_props)>0: # and all(value in prop_data for value in test_props):
-        print("Got negate tests")
         for ctckr in common_tckr:
             for test in negate_test_props:
                 if test in tickers_data[ctckr]:
+                    if end_of_trading:
+                        negated_props = append_hash_set(negated_props,ctckr,test)
+                    else:
+                        negated_props[ctckr] = negate_test_props
                     toremove.append(ctckr)
-    for tr in toremove:
-        if tr in common_tckr:
-            common_tckr.remove(tr)
+    if not end_of_trading:
+        for tr in toremove:
+            if tr in common_tckr:
+                common_tckr.remove(tr)
+    print("After remove:",common_tckr)
                     
-    with_price = [ {'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'max':max_price[tckr][0],'diff':max_price[tckr][0]-first_price[tckr][0],'prop':"\n".join(tickers_data[tckr]), 'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
+    with_price = [ {'date':latest_date[tckr],'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'max':max_price[tckr][0],'diff':max_price[tckr][0]-first_price[tckr][0],'prop':"\n".join(tickers_data[tckr]), 'negate':"\n".join(negated_props[tckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
+
+    print("With price:",with_price)
 
     common_props = set(all_props)
     fail_common_props = set(all_props)
@@ -802,13 +818,20 @@ def findgap():
     print("Fail Common props:",fail_common_props)
     print(tabulate(dict(sorted(fail_prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
     result=sorted(with_price,key=lambda x:x['diff'])
-    print("Props of top ticker ",result[-1]['ticker'])
-    print("\n".join(tickers_data[result[-1]['ticker']]))
-    return with_price
+    if len(result)>0:
+        print("Props of top ticker ",result[-1]['ticker'])
+        print("\n".join(tickers_data[result[-1]['ticker']]))
+    else:
+        print("No results found")
+    return with_price,end_of_trading
 
 starttest = datetime.now()
 # result=sorted(findgap(),key=lambda x:x['diff'])
-result=sorted(findgap(),key=lambda x:x['price'])
+result,endtrading = findgap()
+if endtrading:
+    result=sorted(result,key=lambda x:x['diff'])
+else:
+    result=sorted(result,key=lambda x:x['price'])
 print(tabulate(result,headers="keys",tablefmt="grid"))
 endtest = datetime.now()
 print("Start:",starttest)
