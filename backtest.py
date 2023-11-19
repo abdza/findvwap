@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+from logging import lastResort
 import pandas as pd 
 import os
+import json
 import sys
 import getopt
 from datetime import datetime,timedelta
@@ -125,30 +127,30 @@ def find_levels(candles):
     datalen = len(candles)
 
     highlevels = np.array(candles['high'])
-    kmeans = KMeans(n_clusters=kint,n_init=10).fit(highlevels.reshape(-1,1))
-    highclusters = kmeans.predict(highlevels.reshape(-1,1))
-
     resistancelevels = {}
-
-    for cidx in range(datalen):
-        curcluster = highclusters[cidx]
-        if curcluster not in resistancelevels:
-            resistancelevels[curcluster] = 1
-        else:
-            resistancelevels[curcluster] += 1
-
     donecluster = []
     finalreslevels = {}
     dresponse = ""
-    for cidx in range(datalen):
-        candle = candles.iloc[cidx]
-        curcluster = highclusters[cidx]
-        if resistancelevels[curcluster] > 2:
-            if curcluster not in donecluster:
-                donecluster.append(curcluster)
-                finalreslevels[curcluster] = {'level':candle['high'],'count':1}
+    try:
+        kmeans = KMeans(n_clusters=kint,n_init=10).fit(highlevels.reshape(-1,1))
+        highclusters = kmeans.predict(highlevels.reshape(-1,1))
+        for cidx in range(datalen):
+            curcluster = highclusters[cidx]
+            if curcluster not in resistancelevels:
+                resistancelevels[curcluster] = 1
             else:
-                finalreslevels[curcluster] = {'level':(finalreslevels[curcluster]['level'] + candle['high'])/2,'count':finalreslevels[curcluster]['count']+1}
+                resistancelevels[curcluster] += 1
+        for cidx in range(datalen):
+            candle = candles.iloc[cidx]
+            curcluster = highclusters[cidx]
+            if resistancelevels[curcluster] > 2:
+                if curcluster not in donecluster:
+                    donecluster.append(curcluster)
+                    finalreslevels[curcluster] = {'level':candle['high'],'count':1}
+                else:
+                    finalreslevels[curcluster] = {'level':(finalreslevels[curcluster]['level'] + candle['high'])/2,'count':finalreslevels[curcluster]['count']+1}
+    except:
+        print("Got error for levels")
 
     response += "\n\nResistance levels:"
     sortedreslevels = []
@@ -161,30 +163,30 @@ def find_levels(candles):
     else:
         kint = int(datarange % 20)
     lowlevels = np.array(candles['low'])
-    kmeans = KMeans(n_clusters=kint,n_init=10).fit(lowlevels.reshape(-1,1))
-    lowclusters = kmeans.predict(lowlevels.reshape(-1,1))
-
     supportlevels = {}
-
-    for cidx in range(datalen):
-        curcluster = lowclusters[cidx]
-        if curcluster not in supportlevels:
-            supportlevels[curcluster] = 1
-        else:
-            supportlevels[curcluster] += 1
-
     donecluster = []
     finalsuplevels = {}
     dresponse = ""
-    for cidx in range(datalen):
-        candle = candles.iloc[cidx]
-        curcluster = lowclusters[cidx]
-        if supportlevels[curcluster] > 2:
-            if curcluster not in donecluster:
-                donecluster.append(curcluster)
-                finalsuplevels[curcluster] = {'level':candle['low'],'count':1}
+    try:
+        kmeans = KMeans(n_clusters=kint,n_init=10).fit(lowlevels.reshape(-1,1))
+        lowclusters = kmeans.predict(lowlevels.reshape(-1,1))
+        for cidx in range(datalen):
+            curcluster = lowclusters[cidx]
+            if curcluster not in supportlevels:
+                supportlevels[curcluster] = 1
             else:
-                finalsuplevels[curcluster] = {'level':(finalsuplevels[curcluster]['level'] + candle['low'])/2,'count':finalsuplevels[curcluster]['count']+1}
+                supportlevels[curcluster] += 1
+        for cidx in range(datalen):
+            candle = candles.iloc[cidx]
+            curcluster = lowclusters[cidx]
+            if supportlevels[curcluster] > 2:
+                if curcluster not in donecluster:
+                    donecluster.append(curcluster)
+                    finalsuplevels[curcluster] = {'level':candle['low'],'count':1}
+                else:
+                    finalsuplevels[curcluster] = {'level':(finalsuplevels[curcluster]['level'] + candle['low'])/2,'count':finalsuplevels[curcluster]['count']+1}
+    except:
+        print("Got error for levels")
 
     response += "\n\nSupport levels:"
     sortedsuplevels = []
@@ -193,7 +195,8 @@ def find_levels(candles):
         response += "\n" + str(clstr['level']) + " : " + str(clstr['count'])
     
     response += "\n\n" + dresponse
-    return sortedreslevels, sortedsuplevels
+    # return sortedreslevels, sortedsuplevels
+    return sortedsuplevels
 
 def body_top(candle):
     if candle['open']>candle['close']:
@@ -206,6 +209,9 @@ def body_bottom(candle):
         return candle['open']
     else:
         return candle['close']
+
+def body_length(candle):
+    return body_top(candle) - body_bottom(candle)
 
 def is_peak_body(candles,c_pos,dlen=1):
     if c_pos>0 and c_pos<len(candles)-dlen:
@@ -376,29 +382,46 @@ def gather_range(candles):
 
     return peaks,bottoms
 
-def min_bottom(bottoms):
-    curbottom = bottoms[0]
+def min_bottom(bottoms,exclude=None):
+    curbottom = None
     for candle in bottoms:
-        if candle['low'] < curbottom['low']:
+        goon = True
+        if exclude is not None:
+            for intest in exclude:
+                if intest['date']==candle['date']:
+                    goon = False
+        if curbottom is None and goon:
             curbottom = candle
+        else:
+            if goon and candle['low'] < curbottom['low']:
+                curbottom = candle
     return curbottom
 
-def max_peak(peaks):
-    curpeak = peaks[0]
+def max_peak(peaks,exclude=None):
+    curpeak = None
     for candle in peaks:
-        if candle['high'] > curpeak['high']:
+        goon = True
+        if exclude is not None:
+            for intest in exclude:
+                if intest['date']==candle['date']:
+                    goon = False
+        if curpeak is None and goon:
             curpeak = candle
+        else:
+            if goon and candle['high'] > curpeak['high']:
+                curpeak = candle
     return curpeak
 
 inputfile = 'stocks.csv'
-outfile = 'shorts.csv'
+outfile = 'backtest.json'
 instockdate = None
 openrangelimit = 1
 purchaselimit = 300
 completelist = False
 trackunit = None
+manualstocks = None
 perctarget = 10
-opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:u:x:",["input=","out=","date=","range=","purchaselimit=","complete=","unit=","perctarget="])
+opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:u:x:s:",["input=","out=","date=","range=","purchaselimit=","complete=","unit=","perctarget=","stocks="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
@@ -417,13 +440,15 @@ for opt, arg in opts:
     if opt in ("-u", "--unit"):
         if arg in ['close','high','low','open']:
             trackunit = arg
+    if opt in ("-s", "--stocks"):
+        manualstocks = arg.split(',')
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
-stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
-
-def body_length(candle):
-    return body_top(candle) - body_bottom(candle)
+if manualstocks:
+    stocks = pd.DataFrame({'Ticker':manualstocks})
+else:
+    stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
 def minute_test(peaks,bottoms):
     if len(bottoms)>0 and len(peaks)>0:
@@ -450,10 +475,12 @@ def minute_profit_test(peaks,bottoms):
     return False
 
 def hammer_pattern(candle):
-    return body_length(candle) < candle['range']/2 and body_bottom(candle) > candle['low'] + candle['range']/2
+    max_range = candle['range']/2.5
+    return body_length(candle) < max_range and body_bottom(candle) > candle['low'] + max_range
 
 def reverse_hammer_pattern(candle):
-    return body_length(candle) < candle['range']/2 and body_top(candle) < candle['low'] + candle['range']/1.5
+    max_range = candle['range']/2.5
+    return body_length(candle) < max_range and body_top(candle) < candle['low'] + max_range
 
 def pattern_test(today):
     minrange = 0.15
@@ -505,159 +532,415 @@ def prev_avg_test(today,yesterday,target_multiple=4):
             return True
     return False
 
-def backtest():
+def append_hash_set(hashdata,key,value):
+    if not key in hashdata:
+        hashdata[key] = []
+        hashdata[key].append(value)
+    else:
+        if not value in hashdata[key]:
+            hashdata[key].append(value)
+    return hashdata
+
+def set_params(ticker,proptext,prop_data,tickers_data,all_props):
+    prop_data = append_hash_set(prop_data,proptext,ticker)
+    tickers_data = append_hash_set(tickers_data,ticker,proptext)
+    all_props.append(proptext)
+    return prop_data, tickers_data, all_props
+
+def findgap():
     end_date = datetime.now()
+    if instockdate:
+        if isinstance(instockdate,datetime):
+            end_date = instockdate
+        else:
+            end_date = datetime.strptime(instockdate + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
     print("Got end date:",end_date)
-    days = 100 
-    start_date = end_date - timedelta(days=days)
-    highrange = {}
-    profitable = {}
-    fullrange = {}
-    stats = {}
+    start_date = end_date - timedelta(days=365)
+    tickers = []
+    tickers_data = {}
+    prop_data = {}
+    latest_price = {}
+    latest_date = {}
+    first_price = {}
+    max_price = {}
+    levels = {}
+    all_props = []
+    end_of_trading = False
+
 
     for i in range(len(stocks.index)):
-    # for i in range(10):
+    # for i in range(1):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
             candles = dticker.history(start=start_date,end=end_date,interval='1d')
-            print("Processing ",ticker, " got ",len(candles))
             candles = candles.loc[(candles['volume']>0)]
+            print("Processing ",ticker, " got ",len(candles))
         else:
             continue
 
-        if len(candles.index):
+        if len(candles):
             candles = candles.reset_index(level=[0,1])
             candles['range'] = candles['high'] - candles['low']
-            for i in range(len(candles)):
-                curcandle = candles.iloc[i]
+            candles['body_length'] = candles['close'] - candles['open']
+            # print("Candles:",candles)
+            curcandle = candles.iloc[-1]
+            if isinstance(curcandle['date'],datetime):
+                curkey = str(curcandle['date'].date())
+            else:
                 curkey = str(curcandle['date'])
-                minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
-                minute_start_date = minute_end_date - timedelta(days=5)
-                # print("Minute start:",minute_start_date, " Minute end:",minute_end_date)
-                full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
-                full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
-                peaks = []
-                bottoms = []
-                minuteprofittickers = []
-                avgtest = []
-                passminute = 0
-                gotprofit = 0 
-                minuteprofit = 0
-                if len(full_minute_candles)>0:
-                    full_minute_candles = full_minute_candles.reset_index(level=[0,1])
-                    # print("full minute candles:",full_minute_candles)
-                    minutelastcandle = full_minute_candles.iloc[-2]
-                    ldate = str(datetime.date(minutelastcandle['date'])-timedelta(days=1))
-                    # print("ldate:",ldate)
-                    minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
-                    # print("minute candles:",minute_candles)
+            minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
+            minute_start_date = minute_end_date - timedelta(days=5)
+            full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
+            full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
+            full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
+            peaks = []
+            bottoms = []
+            if len(full_minute_candles)>1:
+                tickers.append(ticker)
+                full_minute_candles = full_minute_candles.reset_index(level=[0,1])
+                minutelastcandle = full_minute_candles.iloc[-2]
+                # print("Last candle date:",minutelastcandle['date'].time())
+                # print("End of trading:",end_of_trading)
+                ldate = str(minutelastcandle['date'].date())
+                fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
+                minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
+                minute_candles = minute_candles.loc[(minute_candles['date']<fdate)]
+                if len(minute_candles)<20:
+                    continue
+                if str(minute_candles.iloc[-1]['date'].time())=='15:45:00':
+                    end_of_trading = True
 
-                    datediff = 1
+                if manualstocks:
+                    print("Minute Candles:",minute_candles)
+
+                datediff = 1
+                bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
+                bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
+                bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
+                while len(bminute_candles)==0 and datediff<=5:
+                    datediff += 1
                     bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
-                    bminute_candles = bminute_candles.loc[(full_minute_candles['date']<ldate)]
-                    while len(bminute_candles)==0 and datediff<=5:
-                        datediff += 1
-                        bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
-                        bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
-                        bminute_candles = bminute_candles.loc[(full_minute_candles['date']<ldate)]
+                    bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
 
+                # print("BMinute Candles:",bminute_candles)
+
+                datediff += 1
+                bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
+                bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
+                bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<bdate)]
+                while len(bbminute_candles)==0 and datediff<=5:
                     datediff += 1
                     bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
-                    while len(bbminute_candles)==0 and datediff<=5:
-                        datediff += 1
-                        bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
-                        bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
-                        bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
-                    peaks,bottoms = gather_range(minute_candles)
-                    # print("Peaks:",peaks)
-                    if minute_test(peaks,bottoms):
-                        if curkey in highrange:
-                            if curcandle['range']>highrange[curkey]['range']:
-                                    highrange[curkey] = {'range':curcandle['range'],'ticker':ticker}
-                                    profitable[curkey] = {'range':maxp['high'] - minute_candles.iloc[2]['high'],'ticker':ticker}
-                        else:
-                            highrange[curkey] = {'range':curcandle['range'],'ticker':ticker}
-                            profitable[curkey] = {'range':maxp['high'] - minute_candles.iloc[2]['high'],'ticker':ticker}
-                    if len(peaks):
-                        maxp = max_peak(peaks)
-                        profitamt = 0
-                        if minute_test(peaks,bottoms) and green_candle(minute_candles.iloc[0]):
-                            profitamt = maxp['high'] - minute_candles.iloc[2]['high']
-                        if profitamt>0:
-                            if curkey in profitable:
-                                if profitamt > profitable[curkey]['range']:
-                                    profitable[curkey] = {'range':profitamt,'ticker':ticker}
-                            else:
-                                profitable[curkey] = {'range':profitamt,'ticker':ticker}
-                    if curkey in fullrange:
-                        if curcandle['range']>fullrange[curkey]['range']:
-                            fullrange[curkey] = {'range':curcandle['range'],'ticker':ticker}
-                    else:
-                        fullrange[curkey] = {'range':curcandle['range'],'ticker':ticker}
-                    if curkey in stats:
-                        passminute = stats[curkey]['passminute']
-                        gotprofit = stats[curkey]['gotprofit']
-                        minuteprofit = stats[curkey]['minuteprofit']
-                        minuteprofittickers = stats[curkey]['minuteprofittickers']
-                        avgtest = stats[curkey]['avgtest']
-                    mtest = minute_test(peaks,bottoms)
-                    gotprofit = profit_test(peaks,bottoms)
-                    minute_profit = minute_profit_test(peaks,bottoms)
-                    pattern = pattern_test(minute_candles)
-                    prevtest = prev_avg_test(minute_candles,bminute_candles,2.5)
-                    if mtest:
-                        passminute += 1
-                    if gotprofit:
-                        gotprofit += 1
-                    if minute_profit:
-                        minuteprofit += 1
-                        minuteprofittickers.append(ticker)
-                    if mtest and pattern and prevtest:
-                        avgtest.append(ticker)
-                stats[curkey] = {'passminute':passminute,'gotprofit':gotprofit,'minuteprofit':minuteprofit,'minuteprofittickers':minuteprofittickers,'avgtest':avgtest}
 
-    print("High Openers:")
-    return highrange,fullrange,stats,profitable
+                # print("BBMinute Candles:",bbminute_candles)
+                peaks,bottoms = gather_range(minute_candles)
+                # print("Peaks:",peaks)
+                # print("Bottoms:",bottoms)
+
+                if green_candle(minute_candles.iloc[0]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'First Green',prop_data,tickers_data,all_props)
+                if len(minute_candles)>1 and green_candle(minute_candles.iloc[1]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Second Green',prop_data,tickers_data,all_props)
+                    if 'First Green' in prop_data:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Early Green',prop_data,tickers_data,all_props)
+                if len(minute_candles)>2 and green_candle(minute_candles.iloc[2]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Third Green',prop_data,tickers_data,all_props)
+                    if 'Consecutive Early Green' in prop_data:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Green',prop_data,tickers_data,all_props)
+                    elif 'Second Green' in prop_data:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Late Green',prop_data,tickers_data,all_props)
+                if red_candle(minute_candles.iloc[0]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'First Red',prop_data,tickers_data,all_props)
+                if len(minute_candles)>1 and red_candle(minute_candles.iloc[1]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Second Red',prop_data,tickers_data,all_props)
+                    if 'First Red' in prop_data:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Early Red',prop_data,tickers_data,all_props)
+                if len(minute_candles)>2 and red_candle(minute_candles.iloc[2]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Third Red',prop_data,tickers_data,all_props)
+                    if 'Consecutive Early Red' in prop_data:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Red',prop_data,tickers_data,all_props)
+                    elif 'Second Red' in prop_data:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Late Red',prop_data,tickers_data,all_props)
+                y_avg = bminute_candles['range'].mean()
+                yy_avg = bbminute_candles['range'].mean()
+                avg_multiple = 3
+                latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
+                if len(minute_candles)>2:
+                    first_price = append_hash_set(first_price,ticker,minute_candles.iloc[2]['open'])
+                else:
+                    first_price = append_hash_set(first_price,ticker,minute_candles.iloc[0]['open'])
+                if len(bottoms)>0:
+                    minb = min_bottom(bottoms,[minute_candles.iloc[0]])
+                    if minb is not None:
+                        if str(minb['date'].time())<'12:00:00':
+                            prop_data, tickers_data, all_props = set_params(ticker,'Bottom Before Noon',prop_data,tickers_data,all_props)
+                        elif str(minb['date'].time())>'13:00:00':
+                            prop_data, tickers_data, all_props = set_params(ticker,'Bottom After Noon',prop_data,tickers_data,all_props)
+                        else:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Bottom Lunch',prop_data,tickers_data,all_props)
+
+                if len(peaks)>0:
+                    maxp = max_peak(peaks,[minute_candles.iloc[0]])
+                    if maxp is not None:
+                        max_price = append_hash_set(max_price,ticker,maxp['high'])
+                        if str(maxp['date'].time())<'12:00:00':
+                            prop_data, tickers_data, all_props = set_params(ticker,'Peak Before Noon',prop_data,tickers_data,all_props)
+                        elif str(maxp['date'].time())>'13:00:00':
+                            prop_data, tickers_data, all_props = set_params(ticker,'Peak After Noon',prop_data,tickers_data,all_props)
+                        else:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Peak Lunch',prop_data,tickers_data,all_props)
+                    else:
+                        max_price = append_hash_set(max_price,ticker,minute_candles.iloc[-1]['high'])
+                    if len(minute_candles)>2:
+                        for i in range(len(minute_candles)):
+                            if red_candle(minute_candles.iloc[i]) and green_candle(minute_candles.iloc[i-1]) and minute_candles.iloc[i]['range'] > minute_candles.iloc[i-1]['range']*0.6:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Big Reverse',prop_data,tickers_data,all_props)
+                            if red_candle(minute_candles.iloc[i]) and red_candle(minute_candles.iloc[i-1]) and green_candle(minute_candles.iloc[i-2]) and minute_candles.iloc[i]['range'] + minute_candles.iloc[i-1]['range'] > minute_candles.iloc[i-2]['range']*0.6:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Two Small Reverse',prop_data,tickers_data,all_props)
+
+                else:
+                    max_price = append_hash_set(max_price,ticker,minute_candles.iloc[-1]['high'])
+                if minute_candles.iloc[0]['range'] > y_avg*avg_multiple:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Range Above Average',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['range'] > yy_avg*avg_multiple:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Range Above 2 Day Average',prop_data,tickers_data,all_props)
+                if minute_candles.iloc[0]['range'] < y_avg*avg_multiple:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Range Lower Average',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['range'] < yy_avg*avg_multiple:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Range Lower 2 Day Average',prop_data,tickers_data,all_props)
+                if len(minute_candles)>1:
+                    if minute_candles.iloc[0]['low']<minute_candles.iloc[1]['low']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Higher Low',prop_data,tickers_data,all_props)
+                        if len(minute_candles)>2:
+                            if minute_candles.iloc[1]['low']<minute_candles.iloc[2]['low']:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Continue Higher Low',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['low']>minute_candles.iloc[1]['low']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Lower Low',prop_data,tickers_data,all_props)
+                        if len(minute_candles)>2:
+                            if minute_candles.iloc[1]['low']>minute_candles.iloc[2]['low']:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Continue Lower Low',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['high']<minute_candles.iloc[1]['high']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Higher High',prop_data,tickers_data,all_props)
+                        if len(minute_candles)>2:
+                            if minute_candles.iloc[1]['high']<minute_candles.iloc[2]['high']:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Continue Higher High',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['high']>minute_candles.iloc[1]['high']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Lower High',prop_data,tickers_data,all_props)
+                        if len(minute_candles)>2:
+                            if minute_candles.iloc[1]['high']>minute_candles.iloc[2]['high']:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Continue Lower High',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['body_length']*0.4<minute_candles.iloc[1]['body_length']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Second Long',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['body_length']*0.2>minute_candles.iloc[1]['body_length']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Second Short',prop_data,tickers_data,all_props)
+                    if len(minute_candles)>2:
+                        if minute_candles.iloc[1]['body_length']*0.4<minute_candles.iloc[2]['body_length']:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Third Long',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[1]['body_length']*0.2>minute_candles.iloc[2]['body_length']:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Third Short',prop_data,tickers_data,all_props)
+                if len(bbminute_candles)>1:
+                    if minute_candles.iloc[0]['low']>bbminute_candles['high'].max():
+                        prop_data, tickers_data, all_props = set_params(ticker,'Open Higher Than 2 Prev Max',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['low']<bbminute_candles['high'].max():
+                        prop_data, tickers_data, all_props = set_params(ticker,'Open Lower Than 2 Prev Max',prop_data,tickers_data,all_props)
+                if len(bminute_candles)>1:
+                    if minute_candles.iloc[0]['open']<bminute_candles.iloc[-1]['low']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Gap Down',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['open'] + y_avg < bminute_candles.iloc[-1]['low']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Gap Down Above Average',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['open']>bminute_candles.iloc[-1]['high']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Gap Up',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['open']>bminute_candles.iloc[-1]['high'] + y_avg:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Gap Up Above Average',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['open']>bminute_candles['high'].max():
+                        prop_data, tickers_data, all_props = set_params(ticker,'Open Higher Than Prev Max',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['open']>bminute_candles['high'].max() + y_avg:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Open Higher Than Prev Max Plus Average',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['open']<bminute_candles['low'].min() :
+                        prop_data, tickers_data, all_props = set_params(ticker,'Open Lower Than Prev Min',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['open']<bminute_candles['low'].min() - y_avg :
+                        prop_data, tickers_data, all_props = set_params(ticker,'Open Lower Than Prev Min Minus Average',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['volume']>bminute_candles.iloc[-1]['volume']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Higher',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['volume']<bminute_candles.iloc[-1]['volume']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Lower',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*1.5:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Volume Higher Than Average',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['volume']<bminute_candles['volume'].mean()*0.5:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Volume Lower Than Average',prop_data,tickers_data,all_props)
+                if hammer_pattern(minute_candles.iloc[0]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'First Hammer',prop_data,tickers_data,all_props)
+                if reverse_hammer_pattern(minute_candles.iloc[0]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'First Reverse Hammer',prop_data,tickers_data,all_props)
+                if len(minute_candles)>1:
+                    if hammer_pattern(minute_candles.iloc[1]):
+                        prop_data, tickers_data, all_props = set_params(ticker,'Second Hammer',prop_data,tickers_data,all_props)
+                    if reverse_hammer_pattern(minute_candles.iloc[1]):
+                        prop_data, tickers_data, all_props = set_params(ticker,'Second Reverse Hammer',prop_data,tickers_data,all_props)
+                    if body_bottom(minute_candles.iloc[1])-body_top(minute_candles.iloc[0])>0.1:
+                        prop_data, tickers_data, all_props = set_params(ticker,'FVG First',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[1]['low']-minute_candles.iloc[0]['high']>0.1:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Volume Gap First',prop_data,tickers_data,all_props)
+                    if body_bottom(minute_candles.iloc[0])-body_top(minute_candles.iloc[1])>0.1:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Negative FVG First',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[0]['low']-minute_candles.iloc[1]['high']>0.1:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Negative Volume Gap First',prop_data,tickers_data,all_props)
+                if len(minute_candles)>2:
+                    if hammer_pattern(minute_candles.iloc[2]):
+                        prop_data, tickers_data, all_props = set_params(ticker,'Third Hammer',prop_data,tickers_data,all_props)
+                    if reverse_hammer_pattern(minute_candles.iloc[2]):
+                        prop_data, tickers_data, all_props = set_params(ticker,'Third Reverse Hammer',prop_data,tickers_data,all_props)
+                    if body_bottom(minute_candles.iloc[2])-body_top(minute_candles.iloc[1])>0.1:
+                        prop_data, tickers_data, all_props = set_params(ticker,'FVG Second',prop_data,tickers_data,all_props)
+                        if 'FVG First' in prop_data:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Consecutive FVG',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[2]['low']- minute_candles.iloc[1]['high']>0.1:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Volume Gap Second',prop_data,tickers_data,all_props)
+                        if 'Volume Gap First' in prop_data:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Volume Gap',prop_data,tickers_data,all_props)
+                    if body_bottom(minute_candles.iloc[1])-body_top(minute_candles.iloc[2])>0.1:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Negative FVG Second',prop_data,tickers_data,all_props)
+                        if 'Negative FVG First' in prop_data:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Negative FVG',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[1]['low']- minute_candles.iloc[2]['high']>0.1:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Negative Volume Gap Second',prop_data,tickers_data,all_props)
+                        if 'Negative Volume Gap First' in prop_data:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Negative Volume Gap',prop_data,tickers_data,all_props)
+                if len(candles)>100:
+                    levels[ticker] = find_levels(candles)
+                else:
+                    levels[ticker] = []
+                latest_date[ticker] = minute_candles.iloc[-1]['date']
+                if manualstocks:
+                    print("Prop:",tickers_data[ticker])
+                tickers_data = append_hash_set(tickers_data,ticker,'------------')
+
+    print("End date:",end_date)
+    test_props = []
+    # test_props = ['Second Green','Higher Low','Third Long','Second Short','First Green']
+    # test_props = ['Second Green','Higher Low','Volume Open Lower']
+    if len(test_props)>0: # and all(value in prop_data for value in test_props):
+        common_tckr = set(prop_data[test_props[0]])
+        for test in test_props:
+            if test!=test_props[0] and test in prop_data:
+                common_tckr = common_tckr.intersection(prop_data[test])
+    else:
+        common_tckr = tickers
+    negate_test_props = ['First Red','Lower Low','First Reverse Hammer','Second Reverse Hammer','Third Reverse Hammer','Big Reverse','Two Small Reverse']
+    toremove = []
+    negated_props = {}
+    if len(negate_test_props)>0: # and all(value in prop_data for value in test_props):
+        for ctckr in common_tckr:
+            if ctckr in tickers_data:
+                negated_props[ctckr] = []
+                for test in negate_test_props:
+                    if test in tickers_data[ctckr]:
+                        if end_of_trading:
+                            negated_props = append_hash_set(negated_props,ctckr,test)
+                        else:
+                            negated_props[ctckr] = negate_test_props
+                        toremove.append(ctckr)
+    if not end_of_trading and len(test_props)>0:
+        for tr in toremove:
+            if tr in common_tckr:
+                common_tckr.remove(tr)
+
+    tckr_diff = {}
+    with_price = []
+    for ctckr in common_tckr:
+        if ctckr in tickers_data:
+            tckr_diff[ctckr] = max_price[ctckr][0] - first_price[ctckr][0]
+            with_price.append({'date':latest_date[ctckr],'ticker':ctckr,'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]), 'negate':"\n".join(negated_props[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
+                    
+    # with_price = [ {'date':latest_date[tckr],'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'max':max_price[tckr][0],'diff':tckr_diff[tckr],'prop':"\n".join(tickers_data[tckr]), 'negate':"\n".join(negated_props[tckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
+
+    common_props = set(all_props)
+    fail_common_props = set(all_props)
+    prop_count = {}
+    fail_prop_count = {}
+    price_levels = {}
+    diff_levels = {}
+    outstanding = {}
+    top_prop = {}
+    for pinfo in with_price:
+        if not math.isnan(pinfo['price']):
+            plvl = str(round(pinfo['price'],0))
+            if not plvl in price_levels:
+                price_levels[plvl] = 1
+            else:
+                price_levels[plvl] += 1
+        if not math.isnan(pinfo['diff']):
+            dlvl = str(round(pinfo['diff'],1))
+            if pinfo['diff']>1:
+                outstanding[pinfo['ticker']] = dlvl
+                for td in tickers_data[pinfo['ticker']]:
+                    if not td in top_prop:
+                        top_prop[td] = 1
+                    else:
+                        top_prop[td] += 1
+            if not dlvl in diff_levels:
+                diff_levels[dlvl] = 1
+            else:
+                diff_levels[dlvl] += 1
+        if not math.isnan(pinfo['diff']) and pinfo['diff']>0.3:
+            common_props = common_props.intersection(tickers_data[pinfo['ticker']])
+            for td in tickers_data[pinfo['ticker']]:
+                if not td in prop_count:
+                    prop_count[td] = 1
+                else:
+                    prop_count[td] += 1
+        else:
+            fail_common_props = fail_common_props.intersection(tickers_data[pinfo['ticker']])
+            for td in tickers_data[pinfo['ticker']]:
+                if not td in fail_prop_count:
+                    fail_prop_count[td] = 1
+                else:
+                    fail_prop_count[td] += 1
+
+    print("Common props:",common_props)
+    print(tabulate(dict(sorted(prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
+    print("Fail Common props:",fail_common_props)
+    print(tabulate(dict(sorted(fail_prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
+    result=sorted(with_price,key=lambda x:x['diff'])
+    if len(result)>0:
+        print("Props of top ticker ",result[-1]['ticker'])
+        print("\n".join(tickers_data[result[-1]['ticker']]))
+    else:
+        print("No results found")
+    return with_price,end_of_trading,prop_count,fail_prop_count,price_levels,diff_levels,outstanding,top_prop
 
 starttest = datetime.now()
-
-if 'cal' not in st.session_state:
-    print("No session. Setting it")
-    caldata = []
-    highrange,fullrange,stats,profitable = backtest()
-    for kdate,kval in profitable.items():
-        prepend = '$'
-        caldata.append({'title':prepend + kval['ticker'] + ' ' + str(kval['range']),'start':kdate,'end':kdate})
-
-    for kdate,kval in highrange.items():
-        prepend = '^'
-        if kdate in fullrange and fullrange[kdate]['ticker']==kval['ticker']:
-            prepend += '['
-        caldata.append({'title':prepend + kval['ticker'] + ' ' + str(kval['range']),'start':kdate,'end':kdate})
-
-    for kdate,kval in fullrange.items():
-        if kdate in highrange and highrange[kdate]['ticker']==kval['ticker']:
-            pass
+data = []
+for day in range(60):
+    instockdate = starttest - timedelta(days=day)
+    print("Processing ",instockdate)
+# result=sorted(findgap(),key=lambda x:x['diff'])
+    result,endtrading,prop_count,fail_prop_count,price_levels,diff_levels,outstanding,top_prop = findgap()
+    if len(result)>1:
+        if endtrading:
+            result=sorted(result,key=lambda x:x['diff'])
         else:
-            caldata.append({'title':'[' + kval['ticker'] + ' ' + str(kval['range']),'start':kdate,'end':kdate})
-    for kdate,kval in stats.items():
-        caldata.append({'title':'Minute:' + str(kval['passminute']) + '; Profit:' + str(kval['gotprofit']) + '; MinuteProfit:' + str(kval['minuteprofit']),'start':kdate,'end':kdate})
-        caldata.append({'title':'MinuteProfit Tickers:' + str(','.join(kval['minuteprofittickers'])),'start':kdate,'end':kdate})
-        caldata.append({'title':'Test Tickers:' + str(','.join(kval['avgtest'])),'start':kdate,'end':kdate})
-    st.session_state['cal'] = caldata
-else:
-    print("No session need to set")
+            result=sorted(result,key=lambda x:x['price'])
 
-
-calendar_options = {
-    "initialView":"listWeek"
-}
-calendar = calendar(events=st.session_state['cal'],options=calendar_options)
-st.write(calendar)
+        data.append({
+            'date':str(instockdate.date()),
+            'top_ticker':result[-1]['ticker'],
+            'top_price':result[-1]['price'],
+            'top_diff':result[-1]['diff'],
+            'outstanding':outstanding,
+            'top_prop':top_prop,
+            'prop':prop_count,
+            'fail_prop':fail_prop_count,
+            # 'price_levels':price_levels,
+            'diff_levels':diff_levels
+        })
+    # print(tabulate(result,headers="keys",tablefmt="grid"))
+with open(outfile, "w") as write_file:
+    json.dump(data, write_file)
 endtest = datetime.now()
 print("Start:",starttest)
 print("End:",endtest)
