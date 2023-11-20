@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import json
 import sys
+import csv
 import getopt
 from datetime import datetime,timedelta
 from pandas.core.frame import AnyAll
@@ -450,6 +451,82 @@ if manualstocks:
 else:
     stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
+prop_list = [
+'Big Reverse',
+'Bottom After Noon',
+'Bottom Before Noon',
+'Bottom Lunch',
+'Consecutive Early Green',
+'Consecutive Early Red',
+'Consecutive FVG',
+'Consecutive Green',
+'Consecutive Late Green',
+'Consecutive Late Red',
+'Consecutive Negative FVG',
+'Consecutive Negative Volume Gap',
+'Consecutive Red',
+'Consecutive Volume Gap',
+'Continue Higher High',
+'Continue Higher Low',
+'Continue Lower High',
+'Continue Lower Low',
+'First Green',
+'First Hammer',
+'First Red',
+'First Reverse Hammer',
+'FVG First',
+'FVG Second',
+'Gap Down Above Average',
+'Gap Down',
+'Gap Up Above Average',
+'Gap Up',
+'Higher High',
+'Higher Low',
+'Lower High',
+'Lower Low',
+'Negative FVG First',
+'Negative FVG Second',
+'Negative Volume Gap First',
+'Negative Volume Gap Second',
+'Open Higher Than 2 Prev Max',
+'Open Higher Than Prev Max Plus Average',
+'Open Higher Than Prev Max',
+'Open Lower Than 2 Prev Max',
+'Open Lower Than Prev Min Minus Average',
+'Open Lower Than Prev Min',
+'Peak After Noon',
+'Peak Before Noon',
+'Peak Lunch',
+'Range Above 2 Day Average',
+'Range Above Average',
+'Range Lower 2 Day Average',
+'Range Lower Average',
+'Range More Than Gap Down',
+'Range More Than Gap Up',
+'Second Green',
+'Second Hammer',
+'Second Long',
+'Second Red',
+'Second Reverse Hammer',
+'Second Short',
+'Third Green',
+'Third Hammer',
+'Third Long',
+'Third Red',
+'Third Reverse Hammer',
+'Third Short',
+'Two Small Reverse',
+'Volume Gap First',
+'Volume Gap Second',
+'Volume Higher Than Average',
+'Volume Lower Than Average',
+'Volume Open Higher',
+'Volume Open Lower',
+'Early Top Level',
+'Late Top Level',
+'Top Level'
+    ]
+
 def minute_test(peaks,bottoms):
     if len(bottoms)>0 and len(peaks)>0:
         if bottoms[0]['date']<peaks[0]['date']:
@@ -567,7 +644,6 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-
     for i in range(len(stocks.index)):
     # for i in range(1):
         if isinstance(stocks.iloc[i]['Ticker'], str):
@@ -645,25 +721,25 @@ def findgap():
                     prop_data, tickers_data, all_props = set_params(ticker,'First Green',prop_data,tickers_data,all_props)
                 if len(minute_candles)>1 and green_candle(minute_candles.iloc[1]):
                     prop_data, tickers_data, all_props = set_params(ticker,'Second Green',prop_data,tickers_data,all_props)
-                    if 'First Green' in prop_data:
+                    if 'First Green' in tickers_data[ticker]:
                         prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Early Green',prop_data,tickers_data,all_props)
                 if len(minute_candles)>2 and green_candle(minute_candles.iloc[2]):
                     prop_data, tickers_data, all_props = set_params(ticker,'Third Green',prop_data,tickers_data,all_props)
-                    if 'Consecutive Early Green' in prop_data:
+                    if 'Consecutive Early Green' in tickers_data[ticker]:
                         prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Green',prop_data,tickers_data,all_props)
-                    elif 'Second Green' in prop_data:
+                    elif 'Second Green' in tickers_data[ticker]:
                         prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Late Green',prop_data,tickers_data,all_props)
                 if red_candle(minute_candles.iloc[0]):
                     prop_data, tickers_data, all_props = set_params(ticker,'First Red',prop_data,tickers_data,all_props)
                 if len(minute_candles)>1 and red_candle(minute_candles.iloc[1]):
                     prop_data, tickers_data, all_props = set_params(ticker,'Second Red',prop_data,tickers_data,all_props)
-                    if 'First Red' in prop_data:
+                    if 'First Red' in tickers_data[ticker]:
                         prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Early Red',prop_data,tickers_data,all_props)
                 if len(minute_candles)>2 and red_candle(minute_candles.iloc[2]):
                     prop_data, tickers_data, all_props = set_params(ticker,'Third Red',prop_data,tickers_data,all_props)
-                    if 'Consecutive Early Red' in prop_data:
+                    if 'Consecutive Early Red' in tickers_data[ticker]:
                         prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Red',prop_data,tickers_data,all_props)
-                    elif 'Second Red' in prop_data:
+                    elif 'Second Red' in tickers_data[ticker]:
                         prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Late Red',prop_data,tickers_data,all_props)
                 y_avg = bminute_candles['range'].mean()
                 yy_avg = bbminute_candles['range'].mean()
@@ -748,13 +824,17 @@ def findgap():
                     if minute_candles.iloc[0]['low']<bbminute_candles['high'].max():
                         prop_data, tickers_data, all_props = set_params(ticker,'Open Lower Than 2 Prev Max',prop_data,tickers_data,all_props)
                 if len(bminute_candles)>1:
-                    if minute_candles.iloc[0]['open']<bminute_candles.iloc[-1]['low']:
+                    if body_top(minute_candles.iloc[0]) < body_bottom(bminute_candles.iloc[-1]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Down',prop_data,tickers_data,all_props)
-                    if minute_candles.iloc[0]['open'] + y_avg < bminute_candles.iloc[-1]['low']:
+                        if minute_candles.iloc[0]['range'] > body_bottom(bminute_candles.iloc[-1]) - body_top(minute_candles.iloc[0]):
+                            prop_data, tickers_data, all_props = set_params(ticker,'Range More Than Gap Down',prop_data,tickers_data,all_props)
+                    if body_top(minute_candles.iloc[0]) + y_avg < body_bottom(bminute_candles.iloc[-1]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Down Above Average',prop_data,tickers_data,all_props)
-                    if minute_candles.iloc[0]['open']>bminute_candles.iloc[-1]['high']:
+                    if body_bottom(minute_candles.iloc[0]) > body_top(bminute_candles.iloc[-1]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Up',prop_data,tickers_data,all_props)
-                    if minute_candles.iloc[0]['open']>bminute_candles.iloc[-1]['high'] + y_avg:
+                        if minute_candles.iloc[0]['range'] > body_bottom(minute_candles.iloc[0]) - body_top(bminute_candles.iloc[-1]):
+                            prop_data, tickers_data, all_props = set_params(ticker,'Range More Than Gap Up',prop_data,tickers_data,all_props)
+                    if body_bottom(minute_candles.iloc[0]) > body_top(bminute_candles.iloc[-1]) + y_avg:
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Up Above Average',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['open']>bminute_candles['high'].max():
                         prop_data, tickers_data, all_props = set_params(ticker,'Open Higher Than Prev Max',prop_data,tickers_data,all_props)
@@ -785,6 +865,8 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'FVG First',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[1]['low']-minute_candles.iloc[0]['high']>0.1:
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Gap First',prop_data,tickers_data,all_props)
+                    if abs(minute_candles.iloc[1]['high'] - minute_candles.iloc[0]['high']) < 0.05:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Early Top Level',prop_data,tickers_data,all_props)
                     if body_bottom(minute_candles.iloc[0])-body_top(minute_candles.iloc[1])>0.1:
                         prop_data, tickers_data, all_props = set_params(ticker,'Negative FVG First',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['low']-minute_candles.iloc[1]['high']>0.1:
@@ -794,21 +876,25 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Third Hammer',prop_data,tickers_data,all_props)
                     if reverse_hammer_pattern(minute_candles.iloc[2]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Third Reverse Hammer',prop_data,tickers_data,all_props)
+                    if abs(minute_candles.iloc[2]['high'] - minute_candles.iloc[1]['high']) < 0.05:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Late Top Level',prop_data,tickers_data,all_props)
+                        if 'Early Top Level' in tickers_data[ticker]:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Top Level',prop_data,tickers_data,all_props)
                     if body_bottom(minute_candles.iloc[2])-body_top(minute_candles.iloc[1])>0.1:
                         prop_data, tickers_data, all_props = set_params(ticker,'FVG Second',prop_data,tickers_data,all_props)
-                        if 'FVG First' in prop_data:
+                        if 'FVG First' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Consecutive FVG',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[2]['low']- minute_candles.iloc[1]['high']>0.1:
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Gap Second',prop_data,tickers_data,all_props)
-                        if 'Volume Gap First' in prop_data:
+                        if 'Volume Gap First' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Volume Gap',prop_data,tickers_data,all_props)
                     if body_bottom(minute_candles.iloc[1])-body_top(minute_candles.iloc[2])>0.1:
                         prop_data, tickers_data, all_props = set_params(ticker,'Negative FVG Second',prop_data,tickers_data,all_props)
-                        if 'Negative FVG First' in prop_data:
+                        if 'Negative FVG First' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Negative FVG',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[1]['low']- minute_candles.iloc[2]['high']>0.1:
                         prop_data, tickers_data, all_props = set_params(ticker,'Negative Volume Gap Second',prop_data,tickers_data,all_props)
-                        if 'Negative Volume Gap First' in prop_data:
+                        if 'Negative Volume Gap First' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Negative Volume Gap',prop_data,tickers_data,all_props)
                 if len(candles)>100:
                     levels[ticker] = find_levels(candles)
@@ -818,6 +904,31 @@ def findgap():
                 if manualstocks:
                     print("Prop:",tickers_data[ticker])
                 tickers_data = append_hash_set(tickers_data,ticker,'------------')
+                with open('raw_data.csv', 'a') as f:
+                    curdiff = max_price[ticker][0] - first_price[ticker][0]
+                    if curdiff < 0:
+                        tcat = 'Fail'
+                    elif curdiff < 1:
+                        tcat = 'Fair'
+                    elif curdiff < 5:
+                        tcat = 'Good'
+                    else:
+                        tcat = 'Great'
+                    if curdiff > 0.5:
+                        profitable = True
+                    else:
+                        profitable = False
+                    dlvl = str(round(curdiff,1))
+                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable']
+                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable}
+                    for pp in prop_list:
+                        fieldnames.append(pp)
+                        if pp in prop_data:
+                            row[pp] = 'True'
+                        else:
+                            row[pp] = 'False'
+                    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+                    writer.writerow(row)
 
     print("End date:",end_date)
     test_props = []
@@ -915,6 +1026,12 @@ def findgap():
 
 starttest = datetime.now()
 data = []
+with open('raw_data.csv', 'w') as f:
+    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable']
+    for pp in prop_list:
+        fieldnames.append(pp)
+    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+    writer.writeheader()
 for day in range(60):
     instockdate = starttest - timedelta(days=day)
     print("Processing ",instockdate)
