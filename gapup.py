@@ -525,6 +525,7 @@ prop_list = [
 prop_marks = [
     {'prop':'Second Long','marks':3},
     {'prop':'Second Green','marks':3},
+    {'prop':'Consecutive Early Green','marks':3},
     {'prop':'Higher Low','marks':2},
     {'prop':'Range Lower 2 Day Average','marks':2},
     {'prop':'Third Green','marks':2},
@@ -536,7 +537,11 @@ prop_marks = [
     {'prop':'Third Red','marks':-1},
     {'prop':'Third Short','marks':-1},
     {'prop':'Second Red','marks':-1},
-    {'prop':'Second Short','marks':-1}
+    {'prop':'Second Short','marks':-1},
+    {'prop':'Third Reverse Hammer','marks':-1},
+    {'prop':'Second Reverse Hammer','marks':-1},
+    {'prop':'First Reverse Hammer','marks':-1},
+    {'prop':'Top Level','marks':-1},
 ]
 
 script_path = os.path.abspath(__file__)
@@ -681,7 +686,6 @@ def findgap():
             candles = candles.reset_index(level=[0,1])
             candles['range'] = candles['high'] - candles['low']
             candles['body_length'] = candles['close'] - candles['open']
-            # print("Candles:",candles)
             curcandle = candles.iloc[-1]
             if isinstance(curcandle['date'],datetime):
                 curkey = str(curcandle['date'].date())
@@ -698,15 +702,10 @@ def findgap():
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
-                # print("Last candle date:",minutelastcandle['date'].time())
-                # print("End of trading:",end_of_trading)
                 ldate = str(minutelastcandle['date'].date())
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
                 minute_candles = minute_candles.loc[(minute_candles['date']<fdate)]
-                # if len(minute_candles)<20:
-                #     print("Minute candles too short ",len(minute_candles))
-                #     continue
                 nowdate = str(datetime.now().date())
                 if curkey!=nowdate:
                     end_of_trading = True
@@ -724,8 +723,6 @@ def findgap():
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                     bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
 
-                # print("BMinute Candles:",bminute_candles)
-
                 datediff += 1
                 bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                 bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
@@ -736,10 +733,7 @@ def findgap():
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
-                # print("BBMinute Candles:",bbminute_candles)
                 peaks,bottoms = gather_range(minute_candles)
-                # print("Peaks:",peaks)
-                # print("Bottoms:",bottoms)
 
                 if green_candle(minute_candles.iloc[0]):
                     prop_data, tickers_data, all_props = set_params(ticker,'First Green',prop_data,tickers_data,all_props)
@@ -804,6 +798,7 @@ def findgap():
 
                 else:
                     max_price = append_hash_set(max_price,ticker,minute_candles.iloc[-1]['high'])
+
                 if minute_candles.iloc[0]['range'] > y_avg*avg_multiple:
                     prop_data, tickers_data, all_props = set_params(ticker,'Range Above Average',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['range'] > yy_avg*avg_multiple:
@@ -944,80 +939,12 @@ def findgap():
                         ticker_marks[ticker] = tm['marks']
             if not ticker in ticker_marks:
                 ticker_marks[ticker] = 0
-                # with open('raw_data.csv', 'a') as f:
-                #     curdiff = max_price[ticker][0] - first_price[ticker][0]
-                #     if curdiff < 0:
-                #         tcat = 'Fail'
-                #     elif curdiff < 1:
-                #         tcat = 'Fair'
-                #     elif curdiff < 5:
-                #         tcat = 'Good'
-                #     else:
-                #         tcat = 'Great'
-                #     dlvl = str(round(curdiff,1))
-                #     fieldnames = ['ticker','date','day','diff','diff_level','performance']
-                #     row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat}
-                #     for pp in prop_list:
-                #         fieldnames.append(pp)
-                #         if pp in prop_data:
-                #             row[pp] = 'True'
-                #         else:
-                #             row[pp] = 'False'
-                #     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-                #     writer.writerow(row)
-
-    # print("Prop data:",prop_data)
-    # print("Tickers data:",tickers_data)
     print("End date:",end_date)
-    # test_props = ['Open Lower Than 2 Prev Max','Higher Low','Third Green','Third Long','Volume Open Lower','First Green','Range Lower Average','Volume Higher Than Average','Continue Higher Low','Second Long','Second Green']
-    # test_props = ['Open Lower Than 2 Prev Max','Higher Low','Third Green','Third Long'] #,'Volume Open Lower','First Green','Range Lower Average','Volume Higher Than Average','Continue Higher Low','Second Long','Second Green']
-    # test_props = ['First Green','Volume Higher Than Average','Third Green','Open Lower Than 2 Prev Max','Higher High','Higher Low','Range Above 2 Day Average','Second Short','Third Long','Volume Open Lower']
-    # test_props = ['First Green','Volume Higher Than Average','Open Lower Than 2 Prev Max','Range Above 2 Day Average','Volume Open Lower']
-    # test_props = []
-    # if len(test_props)>0: # and all(value in prop_data for value in test_props):
-    #     firstprop = 0
-    #     while not test_props[firstprop] in prop_data:
-    #         firstprop += 1
-    #     common_tckr = set(prop_data[test_props[firstprop]])
-    #     for test in test_props:
-    #         if test!=test_props[firstprop] and test in prop_data:
-    #             common_tckr = common_tckr.intersection(prop_data[test])
-    # else:
-    #     common_tckr = tickers
-    # negate_test_props = ['First Red','Lower Low','First Reverse Hammer','Second Reverse Hammer','Third Reverse Hammer','Big Reverse','Two Small Reverse']
-    # negate_test_props = []
-    # toremove = []
-    # negated_props = {}
-    # print("Commint tckr:",common_tckr)
-    # if len(negate_test_props)>0: # and all(value in prop_data for value in test_props):
-    #     for ctckr in common_tckr:
-    #         if ctckr in tickers_data:
-    #             negated_props[ctckr] = []
-    #             for test in negate_test_props:
-    #                 if test in tickers_data[ctckr]:
-    #                     if end_of_trading:
-    #                         negated_props = append_hash_set(negated_props,ctckr,test)
-    #                     else:
-    #                         negated_props[ctckr] = negate_test_props
-    #                     toremove.append(ctckr)
-    # else:
-    #     for ctckr in common_tckr:
-    #         negated_props[ctckr] = negate_test_props
-    # if not end_of_trading and len(test_props)>0:  # remove tickers only if currently trading and got test_properties
-    #     for tr in toremove:
-    #         if tr in common_tckr:
-    #             common_tckr.remove(tr)
-
-    # print("After tckr:",common_tckr)
     tckr_diff = {}
     with_price = []
-    # for ctckr in common_tckr:
     for ctckr in ticker_marks.keys():
         tckr_diff[ctckr] = max_price[ctckr][0] - first_price[ctckr][0]
-        # with_price.append({'date':latest_date[ctckr],'ticker':ctckr,'marks':ticker_marks[ctckr],'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]), 'negate':"\n".join(negated_props[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
         with_price.append({'date':latest_date[ctckr],'ticker':ctckr,'marks':ticker_marks[ctckr],'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
-                    
-    # with_price = [ {'date':latest_date[tckr],'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'max':max_price[tckr][0],'diff':tckr_diff[tckr],'prop':"\n".join(tickers_data[tckr]), 'negate':"\n".join(negated_props[tckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
 
     common_props = set(all_props)
     fail_common_props = set(all_props)

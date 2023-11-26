@@ -666,7 +666,6 @@ def findgap():
             candles = candles.reset_index(level=[0,1])
             candles['range'] = candles['high'] - candles['low']
             candles['body_length'] = candles['close'] - candles['open']
-            # print("Candles:",candles)
             curcandle = candles.iloc[-1]
             if isinstance(curcandle['date'],datetime):
                 curkey = str(curcandle['date'].date())
@@ -687,8 +686,6 @@ def findgap():
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
-                # print("Last candle date:",minutelastcandle['date'].time())
-                # print("End of trading:",end_of_trading)
                 ldate = str(minutelastcandle['date'].date())
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
@@ -711,8 +708,6 @@ def findgap():
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                     bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
 
-                # print("BMinute Candles:",bminute_candles)
-
                 datediff += 1
                 bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                 bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
@@ -723,10 +718,7 @@ def findgap():
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
-                # print("BBMinute Candles:",bbminute_candles)
                 peaks,bottoms = gather_range(minute_candles)
-                # print("Peaks:",peaks)
-                # print("Bottoms:",bottoms)
 
                 if green_candle(minute_candles.iloc[0]):
                     prop_data, tickers_data, all_props = set_params(ticker,'First Green',prop_data,tickers_data,all_props)
@@ -983,7 +975,7 @@ def findgap():
                     row[pp] = 0
             writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
             writer.writerow(row)
-    if len(test_props)>0: # and all(value in prop_data for value in test_props):
+    if len(test_props)>0:
         firstprop = 0
         while not test_props[firstprop] in prop_data:
             firstprop += 1
@@ -996,7 +988,7 @@ def findgap():
     negate_test_props = []
     toremove = []
     negated_props = {}
-    if len(negate_test_props)>0: # and all(value in prop_data for value in test_props):
+    if len(negate_test_props)>0:
         for ctckr in common_tckr:
             if ctckr in tickers_data:
                 negated_props[ctckr] = []
@@ -1023,8 +1015,6 @@ def findgap():
         if ctckr in tickers_data:
             tckr_diff[ctckr] = max_price[ctckr][0] - first_price[ctckr][0]
             with_price.append({'date':latest_date[ctckr],'ticker':ctckr,'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]), 'negate':"\n".join(negated_props[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
-                    
-    # with_price = [ {'date':latest_date[tckr],'ticker':tckr,'open':first_price[tckr][0],'price':latest_price[tckr][0],'max':max_price[tckr][0],'diff':tckr_diff[tckr],'prop':"\n".join(tickers_data[tckr]), 'negate':"\n".join(negated_props[tckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[tckr] ])} for tckr in common_tckr ]
 
     common_props = set(all_props)
     fail_common_props = set(all_props)
