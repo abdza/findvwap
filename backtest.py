@@ -477,8 +477,12 @@ prop_list = [
 'FVG First',
 'FVG Second',
 'Gap Down Above Average',
+'Gap Down Above 2 Day Average',
+'Gap Down Below Prev Min',
 'Gap Down',
 'Gap Up Above Average',
+'Gap Up Above 2 Day Average',
+'Gap Up Above Prev Max',
 'Gap Up',
 'Higher High',
 'Higher Low',
@@ -619,6 +623,8 @@ def append_hash_set(hashdata,key,value):
     return hashdata
 
 def set_params(ticker,proptext,prop_data,tickers_data,all_props):
+    if not proptext in prop_list:
+        raise Exception("Proptext '" + proptext + "' does not exists in prop_list")
     prop_data = append_hash_set(prop_data,proptext,ticker)
     tickers_data = append_hash_set(tickers_data,ticker,proptext)
     all_props.append(proptext)
@@ -643,9 +649,10 @@ def findgap():
     levels = {}
     all_props = []
     end_of_trading = False
+    ldate = None
 
     for i in range(len(stocks.index)):
-    # for i in range(1):
+    # for i in range(10):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -665,6 +672,10 @@ def findgap():
                 curkey = str(curcandle['date'].date())
             else:
                 curkey = str(curcandle['date'])
+            print("Curkey:",curkey," with ticker:",ticker)
+            if ticker in latest_date and latest_date[ticker]==curkey:
+                print("Latest date for ",ticker," is already ",curkey)
+                continue
             minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
             minute_start_date = minute_end_date - timedelta(days=5)
             full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
@@ -682,9 +693,9 @@ def findgap():
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
                 minute_candles = minute_candles.loc[(minute_candles['date']<fdate)]
-                if len(minute_candles)<20:
-                    continue
-                if str(minute_candles.iloc[-1]['date'].time())=='15:45:00':
+                nowdate = str(datetime.now().date())
+                latest_date[ticker] = minute_candles.iloc[-1]['date']
+                if curkey!=nowdate:
                     end_of_trading = True
 
                 if manualstocks:
@@ -745,8 +756,8 @@ def findgap():
                 yy_avg = bbminute_candles['range'].mean()
                 avg_multiple = 3
                 latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
-                if len(minute_candles)>2:
-                    first_price = append_hash_set(first_price,ticker,minute_candles.iloc[2]['open'])
+                if len(minute_candles)>1:
+                    first_price = append_hash_set(first_price,ticker,body_top(minute_candles.iloc[1]))
                 else:
                     first_price = append_hash_set(first_price,ticker,minute_candles.iloc[0]['open'])
                 if len(bottoms)>0:
@@ -828,14 +839,22 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Down',prop_data,tickers_data,all_props)
                         if minute_candles.iloc[0]['range'] > body_bottom(bminute_candles.iloc[-1]) - body_top(minute_candles.iloc[0]):
                             prop_data, tickers_data, all_props = set_params(ticker,'Range More Than Gap Down',prop_data,tickers_data,all_props)
+                        if body_bottom(minute_candles.iloc[0]) < bminute_candles['low'].min():
+                            prop_data, tickers_data, all_props = set_params(ticker,'Gap Down Below Prev Min',prop_data,tickers_data,all_props)
                     if body_top(minute_candles.iloc[0]) + y_avg < body_bottom(bminute_candles.iloc[-1]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Down Above Average',prop_data,tickers_data,all_props)
+                    if body_top(minute_candles.iloc[0]) + yy_avg < body_bottom(bminute_candles.iloc[-1]):
+                        prop_data, tickers_data, all_props = set_params(ticker,'Gap Down Above 2 Day Average',prop_data,tickers_data,all_props)
                     if body_bottom(minute_candles.iloc[0]) > body_top(bminute_candles.iloc[-1]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Up',prop_data,tickers_data,all_props)
                         if minute_candles.iloc[0]['range'] > body_bottom(minute_candles.iloc[0]) - body_top(bminute_candles.iloc[-1]):
                             prop_data, tickers_data, all_props = set_params(ticker,'Range More Than Gap Up',prop_data,tickers_data,all_props)
+                        if body_bottom(minute_candles.iloc[0]) > bminute_candles['high'].max():
+                            prop_data, tickers_data, all_props = set_params(ticker,'Gap Up Above Prev Max',prop_data,tickers_data,all_props)
                     if body_bottom(minute_candles.iloc[0]) > body_top(bminute_candles.iloc[-1]) + y_avg:
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Up Above Average',prop_data,tickers_data,all_props)
+                    if body_bottom(minute_candles.iloc[0]) > body_top(bminute_candles.iloc[-1]) + yy_avg:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Gap Up Above 2 Day Average',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['open']>bminute_candles['high'].max():
                         prop_data, tickers_data, all_props = set_params(ticker,'Open Higher Than Prev Max',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['open']>bminute_candles['high'].max() + y_avg:
@@ -900,7 +919,6 @@ def findgap():
                     levels[ticker] = find_levels(candles)
                 else:
                     levels[ticker] = []
-                latest_date[ticker] = minute_candles.iloc[-1]['date']
                 if manualstocks:
                     print("Prop:",tickers_data[ticker])
                 tickers_data = append_hash_set(tickers_data,ticker,'------------')
@@ -915,33 +933,67 @@ def findgap():
                     else:
                         tcat = 'Great'
                     if curdiff > 0.5:
-                        profitable = True
+                        profitable = 1
                     else:
-                        profitable = False
+                        profitable = 0
                     dlvl = str(round(curdiff,1))
-                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable']
-                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable}
+                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','winner']
+                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'winner':0}
                     for pp in prop_list:
                         fieldnames.append(pp)
-                        if pp in prop_data:
-                            row[pp] = 'True'
+                        if pp in tickers_data[ticker]:
+                            row[pp] = 1
                         else:
-                            row[pp] = 'False'
+                            row[pp] = 0
                     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
                     writer.writerow(row)
 
     print("End date:",end_date)
     test_props = []
-    # test_props = ['Second Green','Higher Low','Third Long','Second Short','First Green']
-    # test_props = ['Second Green','Higher Low','Volume Open Lower']
+    if ldate:
+        with open('day_data.csv', 'a') as f:
+            fieldnames = ['date','day']
+            row = {'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A')}
+            for pp in prop_list:
+                fieldnames.append(pp)
+                if pp in prop_data:
+                    profitable = []
+                    for cp in prop_data[pp]:
+                        curdiff = max_price[cp][0] - first_price[cp][0]
+                        if curdiff > 1:
+                            profitable.append(cp)
+                    row[pp] = profitable
+                else:
+                    row[pp] = 0
+            writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+            writer.writerow(row)
+        with open('day_count.csv', 'a') as f:
+            fieldnames = ['date','day']
+            row = {'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A')}
+            for pp in prop_list:
+                fieldnames.append(pp)
+                if pp in prop_data:
+                    profitable = []
+                    for cp in prop_data[pp]:
+                        curdiff = max_price[cp][0] - first_price[cp][0]
+                        if curdiff > 1:
+                            profitable.append(cp)
+                    row[pp] = len(profitable)
+                else:
+                    row[pp] = 0
+            writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+            writer.writerow(row)
     if len(test_props)>0: # and all(value in prop_data for value in test_props):
-        common_tckr = set(prop_data[test_props[0]])
+        firstprop = 0
+        while not test_props[firstprop] in prop_data:
+            firstprop += 1
+        common_tckr = set(prop_data[test_props[firstprop]])
         for test in test_props:
-            if test!=test_props[0] and test in prop_data:
+            if test!=test_props[firstprop] and test in prop_data:
                 common_tckr = common_tckr.intersection(prop_data[test])
     else:
         common_tckr = tickers
-    negate_test_props = ['First Red','Lower Low','First Reverse Hammer','Second Reverse Hammer','Third Reverse Hammer','Big Reverse','Two Small Reverse']
+    negate_test_props = []
     toremove = []
     negated_props = {}
     if len(negate_test_props)>0: # and all(value in prop_data for value in test_props):
@@ -955,6 +1007,11 @@ def findgap():
                         else:
                             negated_props[ctckr] = negate_test_props
                         toremove.append(ctckr)
+            else:
+                negated_props[ctckr] = negate_test_props
+    else:
+        for ctckr in common_tckr:
+            negated_props[ctckr] = negate_test_props
     if not end_of_trading and len(test_props)>0:
         for tr in toremove:
             if tr in common_tckr:
@@ -1027,14 +1084,29 @@ def findgap():
 starttest = datetime.now()
 data = []
 with open('raw_data.csv', 'w') as f:
-    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable']
+    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','winner']
+    for pp in prop_list:
+        fieldnames.append(pp)
+    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+    writer.writeheader()
+with open('day_data.csv', 'w') as f:
+    fieldnames = ['date','day']
+    for pp in prop_list:
+        fieldnames.append(pp)
+    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+    writer.writeheader()
+with open('day_count.csv', 'w') as f:
+    fieldnames = ['date','day']
     for pp in prop_list:
         fieldnames.append(pp)
     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
     writer.writeheader()
 for day in range(60):
+# for day in range(5):
     instockdate = starttest - timedelta(days=day)
     print("Processing ",instockdate)
+    tmpkey = str(instockdate.date())
+    print("Tmpkey :",tmpkey)
 # result=sorted(findgap(),key=lambda x:x['diff'])
     result,endtrading,prop_count,fail_prop_count,price_levels,diff_levels,outstanding,top_prop = findgap()
     if len(result)>1:
@@ -1062,3 +1134,13 @@ endtest = datetime.now()
 print("Start:",starttest)
 print("End:",endtest)
 print("Time:",endtest-starttest)
+alldata = pd.read_csv('raw_data.csv')
+winners = alldata.groupby('date')['diff'].max().reset_index()
+# for win in winners:
+#     print("Win:",win)
+#     alldata.loc[alldata['diff']==win,'winner'] = 1
+# winners = winners.reindex(alldata['date'])
+# winners = alldata['diff'].max()
+# alldata_with_winners = alldata.merge(winners.to_frame('daywinner'), on='date')
+# alldata['gotwin'] = (alldata['diff']==winners)
+winners.to_csv('winners.csv',index=False)

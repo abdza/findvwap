@@ -163,3 +163,5 @@ stocks.csv
 shorts.csv
 *.csv
 *.json
+*.ods
+*.ods#
