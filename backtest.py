@@ -526,9 +526,25 @@ prop_list = [
 'Volume Lower Than Average',
 'Volume Open Higher',
 'Volume Open Lower',
+'Volume Open Excedingly High',
+'Volume Open Excedingly Low',
+'Volume Open After High',
+'Volume Open After Low',
 'Early Top Level',
 'Late Top Level',
-'Top Level'
+'Top Level',
+'Second Range Shorter',
+'Second Range Longer',
+'Third Range Longer',
+'Third Range Shorter',
+'Consecutive Shorter Range',
+'Consecutive Longer Range',
+'Second Range Very Shorter',
+'Second Range Very Longer',
+'Third Range Very Longer',
+'Third Range Very Shorter',
+'Consecutive Very Shorter Range',
+'Consecutive Very Longer Range',
     ]
 
 def minute_test(peaks,bottoms):
@@ -861,13 +877,29 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Lower',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*1.5:
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Higher Than Average',prop_data,tickers_data,all_props)
+                        if 'Volume Open Higher' in tickers_data[ticker]:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Excedingly High',prop_data,tickers_data,all_props)
+                        else:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Open After High',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['volume']<bminute_candles['volume'].mean()*0.5:
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Lower Than Average',prop_data,tickers_data,all_props)
+                        if 'Volume Open Lower' in tickers_data[ticker]:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Excedingly Low',prop_data,tickers_data,all_props)
+                        else:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Open After Low',prop_data,tickers_data,all_props)
                 if hammer_pattern(minute_candles.iloc[0]):
                     prop_data, tickers_data, all_props = set_params(ticker,'First Hammer',prop_data,tickers_data,all_props)
                 if reverse_hammer_pattern(minute_candles.iloc[0]):
                     prop_data, tickers_data, all_props = set_params(ticker,'First Reverse Hammer',prop_data,tickers_data,all_props)
                 if len(minute_candles)>1:
+                    if minute_candles.iloc[0]['range']<minute_candles.iloc[1]['range']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Second Range Longer',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['range']*2<minute_candles.iloc[1]['range']:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Second Range Very Longer',prop_data,tickers_data,all_props)
+                    else:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Second Range Shorter',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['range']>minute_candles.iloc[1]['range']*2:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Second Range Very Shorter',prop_data,tickers_data,all_props)
                     if hammer_pattern(minute_candles.iloc[1]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Second Hammer',prop_data,tickers_data,all_props)
                     if reverse_hammer_pattern(minute_candles.iloc[1]):
@@ -883,6 +915,14 @@ def findgap():
                     if minute_candles.iloc[0]['low']-minute_candles.iloc[1]['high']>0.1:
                         prop_data, tickers_data, all_props = set_params(ticker,'Negative Volume Gap First',prop_data,tickers_data,all_props)
                 if len(minute_candles)>2:
+                    if minute_candles.iloc[1]['range']<minute_candles.iloc[2]['range']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Third Range Longer',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[1]['range']*2<minute_candles.iloc[2]['range']:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Third Range Very Longer',prop_data,tickers_data,all_props)
+                    else:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Third Range Shorter',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[1]['range']>minute_candles.iloc[2]['range']*2:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Third Range Very Shorter',prop_data,tickers_data,all_props)
                     if hammer_pattern(minute_candles.iloc[2]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Third Hammer',prop_data,tickers_data,all_props)
                     if reverse_hammer_pattern(minute_candles.iloc[2]):
@@ -907,6 +947,14 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Negative Volume Gap Second',prop_data,tickers_data,all_props)
                         if 'Negative Volume Gap First' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Negative Volume Gap',prop_data,tickers_data,all_props)
+                    if 'Second Range Shorter' in tickers_data[ticker] and 'Third Range Shorter' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Shorter Range',prop_data,tickers_data,all_props)
+                    if 'Second Range Longer' in tickers_data[ticker] and 'Third Range Longer' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Longer Range',prop_data,tickers_data,all_props)
+                    if 'Second Range Very Shorter' in tickers_data[ticker] and 'Third Range Very Shorter' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Very Shorter Range',prop_data,tickers_data,all_props)
+                    if 'Second Range Very Longer' in tickers_data[ticker] and 'Third Range Very Longer' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Very Longer Range',prop_data,tickers_data,all_props)
                 if len(candles)>100:
                     levels[ticker] = find_levels(candles)
                 else:
