@@ -1118,34 +1118,35 @@ def findgap():
                     print("Prop:",tickers_data[ticker])
                 tickers_data = append_hash_set(tickers_data,ticker,'------------')
                 maxmovement[ticker] = minute_candles['high'].max() - minute_candles['low'].min()
-            for tm in prop_marks:
-                if isinstance(tm['prop'],str):
-                    if tm['prop'] in tickers_data[ticker]:
-                        # print("Updating marks for ",tm['prop']," with ",tm['marks'])
-                        if ticker in ticker_marks:
-                            ticker_marks[ticker] += tm['marks']
-                        else:
-                            ticker_marks[ticker] = tm['marks']
-                        # print("Updated marks:",ticker_marks[ticker])
-                else:
-                    rulecount = 0
-                    for pitem in tm['prop']:
-                        if pitem in tickers_data[ticker]:
-                            rulecount += 1
-                    if rulecount==len(tm['prop']):
-                        # print("Updating marks for ",tm['prop']," with ",tm['marks'])
-                        if ticker in ticker_marks:
-                            ticker_marks[ticker] += tm['marks']
-                        else:
-                            ticker_marks[ticker] = tm['marks']
-                        # print("Updated marks:",ticker_marks[ticker])
-            if not ticker in ticker_marks:
-                ticker_marks[ticker] = 0
-            if maxmovement[ticker] > 0.3:
-                adjust = round(maxmovement[ticker],1) * 5
-                # print("Max movement:",maxmovement[ticker]," Adjusting final mark with:",str(adjust))
-                ticker_marks[ticker] += adjust
-            # print("Final marks:",ticker_marks[ticker])
+            if ticker in tickers_data:
+                for tm in prop_marks:
+                    if isinstance(tm['prop'],str):
+                        if tm['prop'] in tickers_data[ticker]:
+                            # print("Updating marks for ",tm['prop']," with ",tm['marks'])
+                            if ticker in ticker_marks:
+                                ticker_marks[ticker] += tm['marks']
+                            else:
+                                ticker_marks[ticker] = tm['marks']
+                            # print("Updated marks:",ticker_marks[ticker])
+                    else:
+                        rulecount = 0
+                        for pitem in tm['prop']:
+                            if pitem in tickers_data[ticker]:
+                                rulecount += 1
+                        if rulecount==len(tm['prop']):
+                            # print("Updating marks for ",tm['prop']," with ",tm['marks'])
+                            if ticker in ticker_marks:
+                                ticker_marks[ticker] += tm['marks']
+                            else:
+                                ticker_marks[ticker] = tm['marks']
+                            # print("Updated marks:",ticker_marks[ticker])
+                if not ticker in ticker_marks:
+                    ticker_marks[ticker] = 0
+                if maxmovement[ticker] > 0.3:
+                    adjust = round(maxmovement[ticker],1) * 5
+                    # print("Max movement:",maxmovement[ticker]," Adjusting final mark with:",str(adjust))
+                    ticker_marks[ticker] += adjust
+                # print("Final marks:",ticker_marks[ticker])
 
     print("End date:",end_date)
     tckr_diff = {}
