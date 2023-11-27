@@ -165,3 +165,5 @@ shorts.csv
 *.json
 *.ods
 *.ods#
+*.ori
+*.jasp
