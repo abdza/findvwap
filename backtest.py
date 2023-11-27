@@ -811,6 +811,7 @@ def findgap():
 
                 if len(peaks)>0:
                     maxp = max_peak(peaks,[minute_candles.iloc[0]])
+                    minp = min_bottom(bottoms,[minute_candles.iloc[0]])
                     if maxp is not None:
                         if minp is not None:
                             if maxp['date']>minp['date']:
