@@ -566,6 +566,16 @@ prop_list = [
 'Consecutive Early Huge Range',
 'Consecutive Late Huge Range',
 'Consecutive Huge Range',
+'Huge Negative Range',
+'Second Huge Negative Range',
+'Third Huge Negative Range',
+'Consecutive Early Huge Negative Range',
+'Consecutive Late Huge Negative Range',
+'Consecutive Huge Negative Range',
+'Max After Min',
+'Min After Max',
+'Yesterday End In Red',
+'Yesterday End Volume Above Average',
     ]
 
 def minute_test(peaks,bottoms):
@@ -802,6 +812,11 @@ def findgap():
                 if len(peaks)>0:
                     maxp = max_peak(peaks,[minute_candles.iloc[0]])
                     if maxp is not None:
+                        if minp is not None:
+                            if maxp['date']>minp['date']:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Max After Min',prop_data,tickers_data,all_props)
+                            else:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Min After Max',prop_data,tickers_data,all_props)
                         max_price = append_hash_set(max_price,ticker,maxp['high'])
                         if str(maxp['date'].time())<'12:00:00':
                             prop_data, tickers_data, all_props = set_params(ticker,'Peak Before Noon',prop_data,tickers_data,all_props)
@@ -864,6 +879,10 @@ def findgap():
                     if minute_candles.iloc[0]['low']<bbminute_candles['high'].max():
                         prop_data, tickers_data, all_props = set_params(ticker,'Open Lower Than 2 Prev Max',prop_data,tickers_data,all_props)
                 if len(bminute_candles)>1:
+                    if red_candle(bminute_candles.iloc[-1]):
+                        prop_data, tickers_data, all_props = set_params(ticker,'Yesterday End In Red',prop_data,tickers_data,all_props)
+                    if bminute_candles.iloc[-1]['range'] > y_avg:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Yesterday End Volume Above Average',prop_data,tickers_data,all_props)
                     if body_top(minute_candles.iloc[0]) < body_bottom(bminute_candles.iloc[-1]):
                         prop_data, tickers_data, all_props = set_params(ticker,'Gap Down',prop_data,tickers_data,all_props)
                         if minute_candles.iloc[0]['range'] > body_bottom(bminute_candles.iloc[-1]) - body_top(minute_candles.iloc[0]):
@@ -916,6 +935,8 @@ def findgap():
                     prop_data, tickers_data, all_props = set_params(ticker,'Tiny Range',prop_data,tickers_data,all_props)
                 if minute_candles.iloc[0]['range']>0.3 and green_candle(minute_candles.iloc[0]):
                     prop_data, tickers_data, all_props = set_params(ticker,'Huge Range',prop_data,tickers_data,all_props)
+                if minute_candles.iloc[0]['range']>0.3 and red_candle(minute_candles.iloc[0]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Huge Negative Range',prop_data,tickers_data,all_props)
                 if len(minute_candles)>1:
                     if minute_candles.iloc[1]['range']<0.05:
                         prop_data, tickers_data, all_props = set_params(ticker,'Second Tiny Range',prop_data,tickers_data,all_props)
@@ -925,6 +946,10 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Second Huge Range',prop_data,tickers_data,all_props)
                         if 'Huge Range' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Early Huge Range',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[1]['range']>0.3 and red_candle(minute_candles.iloc[1]):
+                        prop_data, tickers_data, all_props = set_params(ticker,'Second Huge Negative Range',prop_data,tickers_data,all_props)
+                        if 'Huge Negative Range' in tickers_data[ticker]:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Early Huge Negative Range',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['range']<minute_candles.iloc[1]['range']:
                         prop_data, tickers_data, all_props = set_params(ticker,'Second Range Longer',prop_data,tickers_data,all_props)
                         if minute_candles.iloc[0]['range']*2<minute_candles.iloc[1]['range']:
@@ -966,6 +991,12 @@ def findgap():
                             prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Late Huge Range',prop_data,tickers_data,all_props)
                         if 'Consecutive Early Huge Range' in tickers_data[ticker] and 'Consecutive Late Huge Range' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Huge Range',prop_data,tickers_data,all_props)
+                    if minute_candles.iloc[2]['range']>0.3 and red_candle(minute_candles.iloc[2]):
+                        prop_data, tickers_data, all_props = set_params(ticker,'Third Huge Negative Range',prop_data,tickers_data,all_props)
+                        if 'Second Huge Negative Range' in tickers_data[ticker]:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Late Huge Negative Range',prop_data,tickers_data,all_props)
+                        if 'Consecutive Early Huge Negative Range' in tickers_data[ticker] and 'Consecutive Late Huge Negative Range' in tickers_data[ticker]:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Huge Negative Range',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[1]['range']<minute_candles.iloc[2]['range']:
                         prop_data, tickers_data, all_props = set_params(ticker,'Third Range Longer',prop_data,tickers_data,all_props)
                         if minute_candles.iloc[1]['range']*2<minute_candles.iloc[2]['range']:
