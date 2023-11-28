@@ -759,7 +759,7 @@ def findgap():
     end_of_trading = False
 
     for i in range(len(stocks.index)):
-    # for i in range(2):
+    # for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -1214,6 +1214,8 @@ starttest = datetime.now()
 # result=sorted(findgap(),key=lambda x:x['diff'])
 result,endtrading = findgap()
 result=sorted(result,key=lambda x:x['marks'])
+tocsv = pd.DataFrame.from_dict(result)
+tocsv.to_csv('results.csv',index=False)
 # if endtrading:
 #     result=sorted(result,key=lambda x:x['diff'])
 # else:
