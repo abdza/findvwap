@@ -984,7 +984,6 @@ def findgap():
                             prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Excedingly High',prop_data,tickers_data,all_props)
                         else:
                             prop_data, tickers_data, all_props = set_params(ticker,'Volume Open After High',prop_data,tickers_data,all_props)
-
                     if minute_candles.iloc[0]['volume']<bminute_candles['volume'].mean()*0.5:
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Lower Than Average',prop_data,tickers_data,all_props)
                         if 'Volume Open Lower' in tickers_data[ticker]:
