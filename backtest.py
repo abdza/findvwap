@@ -576,6 +576,7 @@ prop_list = [
 'Min After Max',
 'Yesterday End In Red',
 'Yesterday End Volume Above Average',
+'Volume Above 5 Time Average',
     ]
 
 def minute_test(peaks,bottoms):
@@ -918,6 +919,8 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Lower',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*1.5:
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Higher Than Average',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*5:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 5 Time Average',prop_data,tickers_data,all_props)
                         if 'Volume Open Higher' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Excedingly High',prop_data,tickers_data,all_props)
                         else:

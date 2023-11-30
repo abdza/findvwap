@@ -567,9 +567,11 @@ prop_list = [
 'Min After Max',
 'Yesterday End In Red',
 'Yesterday End Volume Above Average',
+'Volume Above 5 Time Average',
     ]
 
 prop_marks = [
+    {'prop':'Volume Above 5 Time Average','marks':10},
     {'prop':'Huge Range','marks':3},
     {'prop':'Second Huge Range','marks':3},
     {'prop':'Third Huge Range','marks':3},
@@ -976,6 +978,8 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Lower',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*1.5:
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Higher Than Average',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*5:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 5 Time Average',prop_data,tickers_data,all_props)
                         if 'Volume Open Higher' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Excedingly High',prop_data,tickers_data,all_props)
                         else:
@@ -1153,7 +1157,7 @@ def findgap():
     with_price = []
     for ctckr in ticker_marks.keys():
         tckr_diff[ctckr] = max_price[ctckr][0] - first_price[ctckr][0]
-        with_price.append({'date':latest_date[ctckr],'ticker':ctckr,'marks':ticker_marks[ctckr],'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
+        with_price.append({'date':latest_date[ctckr].strftime("%d/%m %H:%M"),'ticker':ctckr,'marks':ticker_marks[ctckr],'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
 
     common_props = set(all_props)
     fail_common_props = set(all_props)
