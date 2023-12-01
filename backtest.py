@@ -706,8 +706,8 @@ def findgap():
     end_of_trading = False
     ldate = None
 
-    # for i in range(len(stocks.index)):
-    for i in range(10):
+    for i in range(len(stocks.index)):
+    # for i in range(10):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -1255,8 +1255,8 @@ with open('day_count.csv', 'w') as f:
         fieldnames.append(pp)
     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
     writer.writeheader()
-# for day in range(60):
-for day in range(5):
+for day in range(60):
+# for day in range(5):
     instockdate = starttest - timedelta(days=day)
     print("Processing ",instockdate)
     tmpkey = str(instockdate.date())
