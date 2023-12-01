@@ -577,6 +577,13 @@ prop_list = [
 'Yesterday End In Red',
 'Yesterday End Volume Above Average',
 'Volume Above 5 Time Average',
+'Volume Above 10 Time Average',
+'Volume Above 5 Time Before Average',
+'Volume Above 10 Time Before Average',
+'Volume Consecutive Above 5 Time Average',
+'Volume Consecutive Above 10 Time Average',
+'New IPO',
+'Fairly New IPO',
     ]
 
 def minute_test(peaks,bottoms):
@@ -699,8 +706,8 @@ def findgap():
     end_of_trading = False
     ldate = None
 
-    for i in range(len(stocks.index)):
-    # for i in range(10):
+    # for i in range(len(stocks.index)):
+    for i in range(10):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -767,6 +774,11 @@ def findgap():
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
                 peaks,bottoms = gather_range(minute_candles)
+
+                if len(bminute_candles)==0:
+                    prop_data, tickers_data, all_props = set_params(ticker,'New IPO',prop_data,tickers_data,all_props)
+                if len(bbminute_candles)==0:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Fairly New IPO',prop_data,tickers_data,all_props)
 
                 if green_candle(minute_candles.iloc[0]):
                     prop_data, tickers_data, all_props = set_params(ticker,'First Green',prop_data,tickers_data,all_props)
@@ -921,10 +933,16 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Higher Than Average',prop_data,tickers_data,all_props)
                         if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*5:
                             prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 5 Time Average',prop_data,tickers_data,all_props)
-                        if 'Volume Open Higher' in tickers_data[ticker]:
-                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Excedingly High',prop_data,tickers_data,all_props)
-                        else:
-                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Open After High',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['volume']>bbminute_candles['volume'].mean()*5:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 5 Time Before Average',prop_data,tickers_data,all_props)
+                            if 'Volume Above 5 Time Average' in tickers_data[ticker]:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Volume Consecutive Above 5 Time Average',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*10:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 10 Time Average',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['volume']>bbminute_candles['volume'].mean()*10:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 10 Time Before Average',prop_data,tickers_data,all_props)
+                            if 'Volume Above 10 Time Average' in tickers_data[ticker]:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Volume Consecutive Above 10 Time Average',prop_data,tickers_data,all_props)
                     if minute_candles.iloc[0]['volume']<bminute_candles['volume'].mean()*0.5:
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Lower Than Average',prop_data,tickers_data,all_props)
                         if 'Volume Open Lower' in tickers_data[ticker]:
@@ -1237,8 +1255,8 @@ with open('day_count.csv', 'w') as f:
         fieldnames.append(pp)
     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
     writer.writeheader()
-for day in range(60):
-# for day in range(5):
+# for day in range(60):
+for day in range(5):
     instockdate = starttest - timedelta(days=day)
     print("Processing ",instockdate)
     tmpkey = str(instockdate.date())

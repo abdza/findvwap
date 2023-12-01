@@ -568,10 +568,20 @@ prop_list = [
 'Yesterday End In Red',
 'Yesterday End Volume Above Average',
 'Volume Above 5 Time Average',
+'Volume Above 10 Time Average',
+'Volume Above 5 Time Before Average',
+'Volume Above 10 Time Before Average',
+'Volume Consecutive Above 5 Time Average',
+'Volume Consecutive Above 10 Time Average',
+'New IPO',
+'Fairly New IPO',
     ]
 
 prop_marks = [
     {'prop':'Volume Above 5 Time Average','marks':10},
+    {'prop':'Volume Above 10 Time Average','marks':10},
+    {'prop':'Volume Consecutive Above 5 Time Average','marks':10},
+    {'prop':'Volume Consecutive Above 10 Time Average','marks':10},
     {'prop':'Huge Range','marks':3},
     {'prop':'Second Huge Range','marks':3},
     {'prop':'Third Huge Range','marks':3},
@@ -824,6 +834,10 @@ def findgap():
 
                 peaks,bottoms = gather_range(minute_candles)
 
+                if len(bminute_candles)==0:
+                    prop_data, tickers_data, all_props = set_params(ticker,'New IPO',prop_data,tickers_data,all_props)
+                if len(bbminute_candles)==0:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Fairly New IPO',prop_data,tickers_data,all_props)
                 if green_candle(minute_candles.iloc[0]):
                     prop_data, tickers_data, all_props = set_params(ticker,'First Green',prop_data,tickers_data,all_props)
                 if len(minute_candles)>1 and green_candle(minute_candles.iloc[1]):
@@ -980,6 +994,16 @@ def findgap():
                         prop_data, tickers_data, all_props = set_params(ticker,'Volume Higher Than Average',prop_data,tickers_data,all_props)
                         if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*5:
                             prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 5 Time Average',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['volume']>bbminute_candles['volume'].mean()*5:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 5 Time Before Average',prop_data,tickers_data,all_props)
+                            if 'Volume Above 5 Time Average' in tickers_data[ticker]:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Volume Consecutive Above 5 Time Average',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*10:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 10 Time Average',prop_data,tickers_data,all_props)
+                        if minute_candles.iloc[0]['volume']>bbminute_candles['volume'].mean()*10:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 10 Time Before Average',prop_data,tickers_data,all_props)
+                            if 'Volume Above 10 Time Average' in tickers_data[ticker]:
+                                prop_data, tickers_data, all_props = set_params(ticker,'Volume Consecutive Above 10 Time Average',prop_data,tickers_data,all_props)
                         if 'Volume Open Higher' in tickers_data[ticker]:
                             prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Excedingly High',prop_data,tickers_data,all_props)
                         else:
