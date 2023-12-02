@@ -775,7 +775,7 @@ def findgap():
 
                 peaks,bottoms = gather_range(minute_candles)
 
-                if len(bminute_candles)==0:
+                if len(bminute_candles)==0 and len(bbminute_candles)==0:
                     prop_data, tickers_data, all_props = set_params(ticker,'New IPO',prop_data,tickers_data,all_props)
                 if len(bbminute_candles)==0:
                     prop_data, tickers_data, all_props = set_params(ticker,'Fairly New IPO',prop_data,tickers_data,all_props)

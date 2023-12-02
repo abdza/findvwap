@@ -9,3 +9,4 @@ tabulate
 streamlit
 streamlit-calendar
 ib_insync
+autokeras
