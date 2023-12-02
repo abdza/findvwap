@@ -6,7 +6,7 @@ import tensorflow as tf
 
 import autokeras as ak
 
-raw_data = pd.read_csv('raw_data_20231102.csv')
+raw_data = pd.read_csv('raw_data_20231202.csv')
 # topop = ['Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','performance','winner']
 topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','winner']
 for tp in topop:
@@ -18,9 +18,9 @@ train_file_path = "train.csv"
 test_file_path = "eval.csv"
 
 # Initialize the structured data regressor.
-# reg = ak.StructuredDataRegressor(
-reg = ak.StructuredDataClassifier(
-    overwrite=True, max_trials=5
+reg = ak.StructuredDataRegressor(
+# reg = ak.StructuredDataClassifier(
+    overwrite=True, max_trials=10
 )  # It tries 3 different models.
 # Feed the structured data regressor with training data.
 reg.fit(

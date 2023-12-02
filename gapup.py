@@ -774,8 +774,8 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-    # for i in range(len(stocks.index)):
-    for i in range(5):
+    for i in range(len(stocks.index)):
+    # for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -1290,6 +1290,7 @@ tocsvfloat = np.asarray(cleantocsv).astype(np.float32)
 # tocsv['predicted'] = loaded_model.predict(tf.expand_dims(tocsv, -1))
 # tocsv['predicted'] = loaded_model.predict('gapup_raw_data.csv')
 tocsv['predicted'] = loaded_model.predict(tocsvfloat)
+tocsv.sort_values(by=['predicted'],ascending=False,inplace=True)
 tocsv.to_csv('gapup_raw_data.csv',index=False)
 result = pd.DataFrame.from_dict(result)
 result.to_csv('results.csv',index=False)
@@ -1297,7 +1298,7 @@ result.to_csv('results.csv',index=False)
 #     result=sorted(result,key=lambda x:x['diff'])
 # else:
 #     result=sorted(result,key=lambda x:x['price'])
-print(tabulate(result,headers="keys",tablefmt="grid"))
+# print(tabulate(result,headers="keys",tablefmt="grid"))
 print("End trading:",endtrading)
 endtest = datetime.now()
 print("Start:",starttest)
