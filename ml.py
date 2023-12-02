@@ -6,9 +6,9 @@ import tensorflow as tf
 
 import autokeras as ak
 
-raw_data = pd.read_csv('raw_data_20231202.csv')
-# topop = ['Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','performance','winner']
-topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','winner']
+raw_data = pd.read_csv('raw_data_20231203.csv')
+# topop = ['Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','performance','marks']
+topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','marks']
 for tp in topop:
     raw_data.pop(tp)
 train_size = int(raw_data.shape[0] * 0.9)

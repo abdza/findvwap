@@ -1194,8 +1194,8 @@ def findgap():
                     else:
                         profitable = 0
                     dlvl = str(round(curdiff,1))
-                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','winner']
-                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'winner':0}
+                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks']
+                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'marks':ticker_marks[ticker]}
                     for pp in prop_list:
                         fieldnames.append(pp)
                         if pp in tickers_data[ticker]:
@@ -1269,7 +1269,7 @@ def findgap():
 
 starttest = datetime.now()
 with open('gapup_raw_data.csv', 'w') as f:
-    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','winner']
+    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks']
     for pp in prop_list:
         fieldnames.append(pp)
     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
@@ -1280,7 +1280,7 @@ result=sorted(result,key=lambda x:x['marks'])
 loaded_model = load_model("model_autokeras", custom_objects=ak.CUSTOM_OBJECTS)
 [print('Fd:',i,i.shape, i.dtype) for i in loaded_model.inputs]
 tocsv = pd.read_csv('gapup_raw_data.csv')
-topop = ['ticker','date','day','profitable','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','winner']
+topop = ['ticker','date','day','profitable','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','marks']
 cleantocsv = tocsv.copy()
 for tp in topop:
     cleantocsv.pop(tp)
@@ -1294,6 +1294,8 @@ tocsv.sort_values(by=['predicted'],ascending=False,inplace=True)
 tocsv.to_csv('gapup_raw_data.csv',index=False)
 result = pd.DataFrame.from_dict(result)
 result.to_csv('results.csv',index=False)
+todisp = tocsv[['ticker','date','profitable','predicted','diff','diff_level','performance']]
+print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
 # if endtrading:
 #     result=sorted(result,key=lambda x:x['diff'])
 # else:

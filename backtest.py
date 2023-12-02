@@ -585,6 +585,70 @@ prop_list = [
 'New IPO',
 'Fairly New IPO',
     ]
+prop_marks = [
+    {'prop':'Volume Above 5 Time Average','marks':10},
+    {'prop':'Volume Above 10 Time Average','marks':10},
+    {'prop':'Volume Consecutive Above 5 Time Average','marks':10},
+    {'prop':'Volume Consecutive Above 10 Time Average','marks':10},
+    {'prop':'Huge Range','marks':3},
+    {'prop':'Second Huge Range','marks':3},
+    {'prop':'Third Huge Range','marks':3},
+    {'prop':'Consecutive Early Huge Range','marks':3},
+    {'prop':'Consecutive Late Huge Range','marks':3},
+    {'prop':'Consecutive Huge Range','marks':3},
+    {'prop':'Third Green','marks':3},
+    {'prop':'Second Green','marks':3},
+    {'prop':'Third Long','marks':3},
+    {'prop':'Second Long','marks':3},
+    {'prop':'Lower High','marks':3},
+    {'prop':'Max After Min','marks':3},
+    {'prop':'Volume Open Lower','marks':2},
+    {'prop':'Second Range Shorter','marks':2},
+    {'prop':'Higher Low','marks':2},
+    {'prop':'Open Lower Than 2 Prev Max','marks':2},
+    {'prop':'Range Lower Average','marks':2},
+    {'prop':'Third Range Shorter','marks':2},
+    {'prop':'Continue Higher Low','marks':1},
+    {'prop':'Range Lower 2 Day Average','marks':1},
+    {'prop':'Continue Lower High','marks':-1},
+    {'prop':'Third Red','marks':-1},
+    {'prop':'First Red','marks':-1},
+    {'prop':'Third Short','marks':-1},
+    {'prop':'Third Range Shorter','marks':-1},
+    {'prop':'Third Range Very Shorter','marks':-1},
+    {'prop':'Second Red','marks':-1},
+    {'prop':'Second Short','marks':-1},
+    {'prop':'Lower Low','marks':-1},
+    {'prop':'Continue Lower Low','marks':-1},
+    {'prop':'Third Reverse Hammer','marks':-1},
+    {'prop':'Second Reverse Hammer','marks':-1},
+    {'prop':'First Reverse Hammer','marks':-1},
+    {'prop':'Early Top Level','marks':-1},
+    {'prop':'Second Volume Lower','marks':-2},
+    {'prop':'Third Volume Lower','marks':-2},
+    {'prop':'Consecutive Lower Volume','marks':-2},
+    {'prop':'Limp Second Diff','marks':-2},
+    {'prop':'Limp Third Diff','marks':-2},
+    {'prop':'Consecutive Limp Diff','marks':-2},
+    {'prop':'Top Level','marks':-3},
+    {'prop':'Tiny Range','marks':-3},
+    {'prop':'Second Tiny Range','marks':-3},
+    {'prop':'Third Tiny Range','marks':-3},
+    {'prop':'Consecutive Early Tiny Range','marks':-3},
+    {'prop':'Consecutive Late Tiny Range','marks':-3},
+    {'prop':'Consecutive Tiny Range','marks':-3},
+    {'prop':'Huge Negative Range','marks':-3},
+    {'prop':'Second Huge Negative Range','marks':-3},
+    {'prop':'Third Huge Negative Range','marks':-3},
+    {'prop':'Consecutive Early Huge Negative Range','marks':-3},
+    {'prop':'Consecutive Late Huge Negative Range','marks':-3},
+    {'prop':'Min After Max','marks':-3},
+    {'prop':'Yesterday End In Red','marks':-3},
+    {'prop':['Yesterday End In Red','Yesterday End Volume Above Average'],'marks':-3},
+    {'prop':['Third Range Longer','Third Red'],'marks':-3},
+    {'prop':['Second Range Longer','Second Red'],'marks':-3},
+    {'prop':['Second Green','Second Long','Second Huge Range','Third Red','Third Range Very Shorter','Late Top Level'],'marks':-5},
+]
 
 def minute_test(peaks,bottoms):
     if len(bottoms)>0 and len(peaks)>0:
@@ -697,6 +761,7 @@ def findgap():
     tickers = []
     tickers_data = {}
     prop_data = {}
+    ticker_marks = {}
     latest_price = {}
     latest_date = {}
     first_price = {}
@@ -1093,8 +1158,32 @@ def findgap():
                     else:
                         profitable = 0
                     dlvl = str(round(curdiff,1))
-                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','winner']
-                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'winner':0}
+                    if ticker in tickers_data:
+                        for tm in prop_marks:
+                            if isinstance(tm['prop'],str):
+                                if tm['prop'] in tickers_data[ticker]:
+                                    # print("Updating marks for ",tm['prop']," with ",tm['marks'])
+                                    if ticker in ticker_marks:
+                                        ticker_marks[ticker] += tm['marks']
+                                    else:
+                                        ticker_marks[ticker] = tm['marks']
+                                    # print("Updated marks:",ticker_marks[ticker])
+                            else:
+                                rulecount = 0
+                                for pitem in tm['prop']:
+                                    if pitem in tickers_data[ticker]:
+                                        rulecount += 1
+                                if rulecount==len(tm['prop']):
+                                    # print("Updating marks for ",tm['prop']," with ",tm['marks'])
+                                    if ticker in ticker_marks:
+                                        ticker_marks[ticker] += tm['marks']
+                                    else:
+                                        ticker_marks[ticker] = tm['marks']
+                                    # print("Updated marks:",ticker_marks[ticker])
+                        if not ticker in ticker_marks:
+                            ticker_marks[ticker] = 0
+                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks']
+                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'marks':ticker_marks[ticker]}
                     for pp in prop_list:
                         fieldnames.append(pp)
                         if pp in tickers_data[ticker]:
@@ -1238,7 +1327,7 @@ def findgap():
 starttest = datetime.now()
 data = []
 with open('raw_data.csv', 'w') as f:
-    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','winner']
+    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks']
     for pp in prop_list:
         fieldnames.append(pp)
     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
@@ -1288,8 +1377,8 @@ endtest = datetime.now()
 print("Start:",starttest)
 print("End:",endtest)
 print("Time:",endtest-starttest)
-alldata = pd.read_csv('raw_data.csv')
-winners = alldata.groupby('date')['diff'].max().reset_index()
+# alldata = pd.read_csv('raw_data.csv')
+# winners = alldata.groupby('date')['diff'].max().reset_index()
 # for win in winners:
 #     print("Win:",win)
 #     alldata.loc[alldata['diff']==win,'winner'] = 1
@@ -1297,4 +1386,4 @@ winners = alldata.groupby('date')['diff'].max().reset_index()
 # winners = alldata['diff'].max()
 # alldata_with_winners = alldata.merge(winners.to_frame('daywinner'), on='date')
 # alldata['gotwin'] = (alldata['diff']==winners)
-winners.to_csv('winners.csv',index=False)
+# winners.to_csv('winners.csv',index=False)
