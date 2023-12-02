@@ -1088,7 +1088,7 @@ def findgap():
                         tcat = 'Good'
                     else:
                         tcat = 'Great'
-                    if curdiff > 0.5:
+                    if curdiff > 1:
                         profitable = 1
                     else:
                         profitable = 0

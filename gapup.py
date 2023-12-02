@@ -4,6 +4,7 @@ from logging import lastResort
 import pandas as pd 
 import os
 import sys
+import csv
 import getopt
 from datetime import datetime,timedelta
 from pandas.core.frame import AnyAll
@@ -17,6 +18,9 @@ from sklearn.cluster import KMeans
 from ta.trend import EMAIndicator
 import streamlit as st
 from streamlit_calendar import calendar
+from tensorflow.keras.models import load_model
+import tensorflow as tf
+import autokeras as ak
 
 def green_candle(candle):
     if candle['open']<candle['close']:
@@ -770,8 +774,8 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-    for i in range(len(stocks.index)):
-    # for i in range(5):
+    # for i in range(len(stocks.index)):
+    for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -1175,6 +1179,32 @@ def findgap():
                     ticker_marks[ticker] += adjust
                 # print("Final marks:",ticker_marks[ticker])
 
+                with open('gapup_raw_data.csv', 'a') as f:
+                    curdiff = max_price[ticker][0] - first_price[ticker][0]
+                    if curdiff < 0:
+                        tcat = 'Fail'
+                    elif curdiff < 1:
+                        tcat = 'Fair'
+                    elif curdiff < 5:
+                        tcat = 'Good'
+                    else:
+                        tcat = 'Great'
+                    if curdiff > 0.5:
+                        profitable = 1
+                    else:
+                        profitable = 0
+                    dlvl = str(round(curdiff,1))
+                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','winner']
+                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'winner':0}
+                    for pp in prop_list:
+                        fieldnames.append(pp)
+                        if pp in tickers_data[ticker]:
+                            row[pp] = 1
+                        else:
+                            row[pp] = 0
+                    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+                    writer.writerow(row)
+
     print("End date:",end_date)
     tckr_diff = {}
     with_price = []
@@ -1238,11 +1268,31 @@ def findgap():
     return with_price,end_of_trading
 
 starttest = datetime.now()
+with open('gapup_raw_data.csv', 'w') as f:
+    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','winner']
+    for pp in prop_list:
+        fieldnames.append(pp)
+    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+    writer.writeheader()
 # result=sorted(findgap(),key=lambda x:x['diff'])
 result,endtrading = findgap()
 result=sorted(result,key=lambda x:x['marks'])
-tocsv = pd.DataFrame.from_dict(result)
-tocsv.to_csv('results.csv',index=False)
+loaded_model = load_model("model_autokeras", custom_objects=ak.CUSTOM_OBJECTS)
+[print('Fd:',i,i.shape, i.dtype) for i in loaded_model.inputs]
+tocsv = pd.read_csv('gapup_raw_data.csv')
+topop = ['ticker','date','day','profitable','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','winner']
+cleantocsv = tocsv.copy()
+for tp in topop:
+    cleantocsv.pop(tp)
+print("TO csv:",tocsv)
+print("clean TO csv:",cleantocsv)
+tocsvfloat = np.asarray(cleantocsv).astype(np.float32)
+# tocsv['predicted'] = loaded_model.predict(tf.expand_dims(tocsv, -1))
+# tocsv['predicted'] = loaded_model.predict('gapup_raw_data.csv')
+tocsv['predicted'] = loaded_model.predict(tocsvfloat)
+tocsv.to_csv('gapup_raw_data.csv',index=False)
+result = pd.DataFrame.from_dict(result)
+result.to_csv('results.csv',index=False)
 # if endtrading:
 #     result=sorted(result,key=lambda x:x['diff'])
 # else:

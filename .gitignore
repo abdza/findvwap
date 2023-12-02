@@ -169,3 +169,5 @@ shorts.csv
 *.jasp
 *.swp
 structured_data_regressor/
+model_autokeras/
+structured_data_classifier/
