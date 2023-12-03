@@ -1183,7 +1183,11 @@ def findgap():
                         if not ticker in ticker_marks:
                             ticker_marks[ticker] = 0
                     fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
-                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'marks':ticker_marks[ticker],'yavg':y_avg,'yyavg':yy_avg,'1range':minute_candles.iloc[0]['range'],'1body':minute_candles.iloc[0]['body_length'],'gap':minute_candles.iloc[0]['open']-bminute_candles.iloc[-1]['close']}
+                    try:
+                        gap = minute_candles.iloc[0]['open']-bminute_candles.iloc[-1]['close']
+                    except:
+                        gap = 0
+                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'marks':ticker_marks[ticker],'yavg':y_avg,'yyavg':yy_avg,'1range':minute_candles.iloc[0]['range'],'1body':minute_candles.iloc[0]['body_length'],'gap':gap}
                     for pp in prop_list:
                         fieldnames.append(pp)
                         if pp in tickers_data[ticker]:
