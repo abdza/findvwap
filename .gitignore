@@ -170,4 +170,5 @@ shorts.csv
 *.swp
 structured_data_regressor/
 model_autokeras/
+model_diff_level/
 structured_data_classifier/
