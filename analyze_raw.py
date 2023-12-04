@@ -8,6 +8,7 @@ from datetime import datetime,timedelta
 import numpy as np
 import math
 from tabulate import tabulate
+from sklearn.preprocessing import MinMaxScaler
 
 prop_list = [
 'Big Reverse',
@@ -177,10 +178,14 @@ def get_props(rows,props,level):
             if len(prevp)==level:
                 for pl in prop_list:
                     if pl not in ignore_prop and pl not in prevp:
-                        newkey = pk + ':' + pl
-                        rowfound = check_prop(rows[rows[pl]==1],newkey)
-                        if rowfound>halfnum:
-                            toret[newkey] = rowfound
+                        if pk<pl:
+                            newkey = pk + ':' + pl
+                        else:
+                            newkey = pl + ':' + pk
+                        if not newkey in toret:
+                            rowfound = check_prop(rows[rows[pl]==1],newkey)
+                            if rowfound>halfnum:
+                                toret[newkey] = rowfound
     else:
         for pl in prop_list:
             if rows[pl].sum()>0 and pl not in ignore_prop:
@@ -204,15 +209,17 @@ def analyze_performance(performance):
         curprops = get_props(rows,curprops,level)
 
     props = curprops | props
+    props['Dummy'] = 0
+    scaler = MinMaxScaler()
+    dfprops = pd.DataFrame(list(props.items()),columns=['Prop','Occurance'])
+    dfprops['Scale'] = scaler.fit_transform(dfprops['Occurance'].values.reshape(-1,1))
+    dfprops.to_csv('analyze_' + performance + '.csv',index=False)
 
-    with open('analyze_' + performance + '.csv', 'a') as f:
-        # create the csv writer
-        writer = csv.writer(f)
+# analyze_performance('Good')
+# analyze_performance('Fail')
+# analyze_performance('Great')
 
-        for srow,sval in props.items():
-        # write a row to the csv file
-            writer.writerow([srow,sval])
-
-analyze_performance('Great')
-analyze_performance('Good')
-analyze_performance('Fail')
+great_data = pd.read_csv('analyze_Great.csv')
+good_data = pd.read_csv('analyze_Good.csv')
+positif_data = pd.concat([great_data,good_data])
+positif_data.to_csv('analyze_positive.csv',index=False)
