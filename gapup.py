@@ -1281,31 +1281,33 @@ with open('gapup_raw_data.csv', 'w') as f:
 # result=sorted(findgap(),key=lambda x:x['diff'])
 result,endtrading = findgap()
 result=sorted(result,key=lambda x:x['marks'])
-# loaded_model = load_model("model_autokeras", custom_objects=ak.CUSTOM_OBJECTS)
-loaded_model = load_model("model_diff_level", custom_objects=ak.CUSTOM_OBJECTS)
-[print('Fd:',i,i.shape, i.dtype) for i in loaded_model.inputs]
-tocsv = pd.read_csv('gapup_raw_data.csv')
-topop = ['ticker','date','day','profitable','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','marks']
-cleantocsv = tocsv.copy()
-for tp in topop:
-    cleantocsv.pop(tp)
-print("TO csv:",tocsv)
-print("clean TO csv:",cleantocsv)
-tocsvfloat = np.asarray(cleantocsv).astype(np.float32)
-# tocsv['predicted'] = loaded_model.predict(tf.expand_dims(tocsv, -1))
-# tocsv['predicted'] = loaded_model.predict('gapup_raw_data.csv')
-tocsv['predicted'] = loaded_model.predict(tocsvfloat)
-tocsv.sort_values(by=['predicted'],ascending=False,inplace=True)
-tocsv.to_csv('gapup_raw_data.csv',index=False)
 result = pd.DataFrame.from_dict(result)
 result.to_csv('results.csv',index=False)
-todisp = tocsv[['ticker','date','profitable','predicted','diff','diff_level','performance']]
+# loaded_model = load_model("model_autokeras", custom_objects=ak.CUSTOM_OBJECTS)
+diff_model = load_model("model_diff_level", custom_objects=ak.CUSTOM_OBJECTS)
+profitable_model = load_model("model_profitable", custom_objects=ak.CUSTOM_OBJECTS)
+# [print('Fd:',i,i.shape, i.dtype) for i in loaded_model.inputs]
+tocsv = pd.read_csv('gapup_raw_data.csv')
+profitablecsv = tocsv.copy()
+diffcsv = tocsv.copy()
+
+
+topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','profitable']
+for tp in topop:
+    profitablecsv.pop(tp)
+profitablefloat = np.asarray(profitablecsv).astype(np.float32)
+tocsv['predicted_profitable'] = profitable_model.predict(profitablefloat)
+
+topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','profitable','performance','diff_level']
+for tp in topop:
+    diffcsv.pop(tp)
+difffloat = np.asarray(diffcsv).astype(np.float32)
+tocsv['predicted_diff'] = diff_model.predict(difffloat)
+
+tocsv.sort_values(by=['predicted_diff','predicted_profitable'],ascending=False,inplace=True)
+tocsv.to_csv('gapup_raw_data.csv',index=False)
+todisp = tocsv[['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance']]
 print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
-# if endtrading:
-#     result=sorted(result,key=lambda x:x['diff'])
-# else:
-#     result=sorted(result,key=lambda x:x['price'])
-# print(tabulate(result,headers="keys",tablefmt="grid"))
 print("End trading:",endtrading)
 endtest = datetime.now()
 print("Start:",starttest)
