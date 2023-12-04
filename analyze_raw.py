@@ -157,73 +157,62 @@ ignore_prop = [
 
 datas = pd.read_csv('raw_data.csv')
 
+def check_prop(rows,key):
+    tkns = key.split(':')
+    gotdat = rows[rows[tkns[0]]==1]
+    if len(tkns)>1 and len(gotdat):
+        return check_prop(gotdat,':'.join(tkns[1:]))
+    else:
+        return len(gotdat)
+
+def get_props(rows,props,level):
+    halfnum = math.floor(len(rows)/2)
+    newprops= {}
+    single_props = {}
+    toret = {}
+    if len(props)>0:
+        print("Got ",len(props)," props level ",level)
+        for pk,pval in props.items():
+            prevp = pk.split(':')
+            if len(prevp)==level:
+                for pl in prop_list:
+                    if pl not in ignore_prop and pl not in prevp:
+                        newkey = pk + ':' + pl
+                        rowfound = check_prop(rows[rows[pl]==1],newkey)
+                        if rowfound>halfnum:
+                            toret[newkey] = rowfound
+    else:
+        for pl in prop_list:
+            if rows[pl].sum()>0 and pl not in ignore_prop:
+                newprops[pl] = rows[pl].sum()
+        single_props = [ (x,newprops[x]) for x in newprops.keys() if newprops[x]>halfnum ]
+        for sp,sn in single_props:
+            if sp not in props:
+                toret[sp] = sn
+
+    return toret
+
+
 def analyze_performance(performance):
     rows = datas[datas['performance']==performance]
-    halfnum = math.floor(len(rows)/2)
     props = {}
-    for pl in prop_list:
-        if rows[pl].sum()>0 and pl not in ignore_prop:
-            props[pl] = rows[pl].sum()
-    single_props = [ (x,props[x]) for x in props.keys() if props[x]>halfnum ]
-    single_props = sorted(single_props,key=lambda x:x[1],reverse=True)
-    # print("Single Props:",single_props)
-    print(tabulate(single_props,headers="keys",tablefmt="grid"))
+    level = 0
+    curprops = get_props(rows,props,level)
+    while(len(curprops)>0 and level<3):
+        level += 1
+        props = curprops | props
+        curprops = get_props(rows,curprops,level)
+
+    props = curprops | props
+
     with open('analyze_' + performance + '.csv', 'a') as f:
         # create the csv writer
         writer = csv.writer(f)
 
-        for srow in single_props:
+        for srow,sval in props.items():
         # write a row to the csv file
-            writer.writerow(srow)
-
-    dprops = {}
-    for i in range(len(prop_list)):
-        for j in range(i,len(prop_list)):
-            if prop_list[i]!=prop_list[j] and prop_list[i] not in ignore_prop and prop_list[j] not in ignore_prop:
-                for rowi in range(len(rows)):
-                    curdata = rows.iloc[rowi]
-                    if curdata[prop_list[i]]==1 and curdata[prop_list[j]]==1:
-                        curkey = prop_list[i] + ':' + prop_list[j]
-                        if curkey in dprops:
-                            dprops[curkey] += 1
-                        else:
-                            dprops[curkey] = 1
-    # dprops = sorted(dprops.items(),key=lambda x:x[1],reverse=True)
-    fprops = [ (x,dprops[x]) for x in dprops.keys() if dprops[x]>halfnum ]
-    fprops = sorted(fprops,key=lambda x:x[1],reverse=True)
-    # print("Double Props:",dprops)
-    print(tabulate(fprops,headers="keys",tablefmt="grid"))
-    with open('analyze_' + performance + '.csv', 'a') as f:
-        # create the csv writer
-        writer = csv.writer(f)
-
-        for srow in fprops:
-        # write a row to the csv file
-            writer.writerow(srow)
-
-    tprops = {}
-    for i in range(len(prop_list)):
-        for j in range(i,len(prop_list)):
-            for k in range(j,len(prop_list)):
-                if prop_list[i]!=prop_list[j] and prop_list[j]!=prop_list[k] and prop_list[i]!=prop_list[k] and prop_list[i] not in ignore_prop and prop_list[j] not in ignore_prop and prop_list[k] not in ignore_prop:
-                    for rowi in range(len(rows)):
-                        curdata = rows.iloc[rowi]
-                        if curdata[prop_list[i]]==1 and curdata[prop_list[j]]==1 and curdata[prop_list[k]]==1:
-                            curkey = prop_list[i] + ':' + prop_list[j] + ':' + prop_list[k]
-                            if curkey in tprops:
-                                tprops[curkey] += 1
-                            else:
-                                tprops[curkey] = 1
-    ftprops = [ (x,tprops[x]) for x in tprops.keys() if tprops[x]>halfnum ]
-    ftprops = sorted(ftprops,key=lambda x:x[1],reverse=True)
-    with open('analyze_' + performance + '.csv', 'a') as f:
-        # create the csv writer
-        writer = csv.writer(f)
-
-        for srow in ftprops:
-        # write a row to the csv file
-            writer.writerow(srow)
-    # print("Double Props:",tprops)
-    print(tabulate(ftprops,headers="keys",tablefmt="grid"))
+            writer.writerow([srow,sval])
 
 analyze_performance('Great')
+analyze_performance('Good')
+analyze_performance('Fail')
