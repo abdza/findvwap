@@ -1194,6 +1194,20 @@ def findgap():
                                     ticker_marks[ticker] += curprop['Scale']
                                 else:
                                     ticker_marks[ticker] = curprop['Scale']
+                        negative_marks = pd.read_csv('analyze_Fail.csv')
+                        for i in range(len(negative_marks)):
+                            curprop = negative_marks.iloc[i]
+                            breakup = curprop['Prop'].split(':')
+                            target = len(breakup)
+                            curmark = 0
+                            for p in breakup:
+                                if p in tickers_data[ticker]:
+                                    curmark += 1
+                            if curmark==target:
+                                if ticker in ticker_marks:
+                                    ticker_marks[ticker] -= curprop['Scale']
+                                else:
+                                    ticker_marks[ticker] = 0 - curprop['Scale']
                         if not ticker in ticker_marks:
                             ticker_marks[ticker] = 0
                     fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
