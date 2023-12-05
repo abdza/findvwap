@@ -1334,10 +1334,12 @@ for tp in topop:
 difffloat = np.asarray(diffcsv).astype(np.float32)
 tocsv['predicted_diff'] = diff_model.predict(difffloat)
 
-tocsv.sort_values(by=['predicted_diff','predicted_profitable'],ascending=False,inplace=True)
+tocsv.sort_values(by=['predicted_profitable','predicted_diff'],ascending=False,inplace=True)
 tocsv.to_csv('gapup_raw_data.csv',index=False)
 todisp = tocsv[['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance']]
 print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
+toresult = tocsv.iloc[:10][['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance','marks']]
+toresult.to_csv('results_predicted.csv')
 print("End trading:",endtrading)
 endtest = datetime.now()
 print("Start:",starttest)
