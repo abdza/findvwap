@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import pandas as pd
 
 datas = pd.read_csv('raw_data.csv')
