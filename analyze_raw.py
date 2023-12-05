@@ -156,7 +156,7 @@ ignore_prop = [
 'Peak Lunch',
 ]
 
-datas = pd.read_csv('raw_data.csv')
+datas = pd.read_csv('raw_data_20231205.csv')
 
 def check_prop(rows,key):
     tkns = key.split(':')
@@ -203,10 +203,10 @@ def analyze_performance(performance):
     props = {}
     level = 0
     curprops = get_props(rows,props,level)
-    while(len(curprops)>0 and level<3):
-        level += 1
-        props = curprops | props
-        curprops = get_props(rows,curprops,level)
+    # while(len(curprops)>0 and level<3):
+    #     level += 1
+    #     props = curprops | props
+    #     curprops = get_props(rows,curprops,level)
 
     props = curprops | props
     props['Dummy'] = 0
@@ -215,9 +215,9 @@ def analyze_performance(performance):
     dfprops['Scale'] = scaler.fit_transform(dfprops['Occurance'].values.reshape(-1,1))
     dfprops.to_csv('analyze_' + performance + '.csv',index=False)
 
-# analyze_performance('Good')
-# analyze_performance('Fail')
-# analyze_performance('Great')
+analyze_performance('Good')
+analyze_performance('Fail')
+analyze_performance('Great')
 
 great_data = pd.read_csv('analyze_Great.csv')
 good_data = pd.read_csv('analyze_Good.csv')
