@@ -10,7 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 starttest = datetime.now()
-raw_data = pd.read_csv('raw_data_range_20231203.csv')
+raw_data = pd.read_csv('raw_data_20231205.csv')
 topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','profitable','performance']
 for tp in topop:
     raw_data.pop(tp)
