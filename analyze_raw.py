@@ -160,11 +160,14 @@ datas = pd.read_csv('raw_data_20231205.csv')
 
 def check_prop(rows,key):
     tkns = key.split(':')
-    gotdat = rows[rows[tkns[0]]==1]
-    if len(tkns)>1 and len(gotdat):
-        return check_prop(gotdat,':'.join(tkns[1:]))
+    if len(tkns)>1:
+        gotdat = rows[rows[tkns[1]]==1]
+        if len(gotdat)>0:
+            return check_prop(gotdat,':'.join(tkns[1:]))
+        else:
+            return 0
     else:
-        return len(gotdat)
+        return len(rows)
 
 def get_props(rows,props,level):
     halfnum = math.floor(len(rows)/2)
@@ -173,19 +176,50 @@ def get_props(rows,props,level):
     toret = {}
     if len(props)>0:
         print("Got ",len(props)," props level ",level)
-        for pk,pval in props.items():
-            prevp = pk.split(':')
-            if len(prevp)==level:
-                for pl in prop_list:
-                    if pl not in ignore_prop and pl not in prevp:
-                        if pk<pl:
-                            newkey = pk + ':' + pl
-                        else:
-                            newkey = pl + ':' + pk
-                        if not newkey in toret:
-                            rowfound = check_prop(rows[rows[pl]==1],newkey)
-                            if rowfound>halfnum:
-                                toret[newkey] = rowfound
+        curlvl = 0
+        testkeys = []
+        while curlvl<level:
+            for pl in prop_list:
+                filtered = rows[rows[pl]==1]
+                print("Prop ",pl," got ",len(filtered)," rows")
+                if len(filtered)>0 and pl not in ignore_prop and pl not in props:
+                    if len(testkeys)>0:
+                        inlist = testkeys.copy()
+                    else:
+                        inlist = prop_list.copy()
+                    for il in inlist:
+                        goon = True
+                        if len(testkeys)==0:
+                            filtered = rows[rows[il]==1]
+                            if il==pl or len(filtered)==0 or il in ignore_prop or il in props:
+                                goon = False
+                        if goon:
+                            print("Inlist ",il)
+                            if il<pl:
+                                newkey = il + ':' + pl
+                            else:
+                                newkey = pl + ':' + il
+                            if newkey not in props and newkey not in testkeys:
+                                testkeys.append(newkey)
+            curlvl += 1
+        print('Testkeys:',testkeys)
+
+        for newkey in testkeys:
+            tkns = newkey.split(':')
+            if len(tkns)>1:
+                rowfound = check_prop(rows[rows[tkns[0]]==1],':'.join(tkns[1:]))
+                if rowfound>halfnum:
+                    toret[newkey] = rowfound
+
+                    # for ik,iv in props.items():
+                    #     if ik<pl:
+                    #         newkey = ik + ':' + pl
+                    #     else:
+                    #         newkey = pl + ':' + ik
+                    #     if not newkey in toret and not newkey in props:
+                    #         rowfound = check_prop(rows[rows[pl]==1],newkey)
+                    #         if rowfound>halfnum:
+                    #             toret[newkey] = rowfound
     else:
         for pl in prop_list:
             if rows[pl].sum()>0 and pl not in ignore_prop:
@@ -203,10 +237,10 @@ def analyze_performance(performance):
     props = {}
     level = 0
     curprops = get_props(rows,props,level)
-    # while(len(curprops)>0 and level<3):
-    #     level += 1
-    #     props = curprops | props
-    #     curprops = get_props(rows,curprops,level)
+    while(len(curprops)>0 and level<3):
+        level += 1
+        props = curprops | props
+        curprops = get_props(rows,curprops,level)
 
     props = curprops | props
     props['Dummy'] = 0

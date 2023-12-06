@@ -1209,7 +1209,7 @@ def findgap():
                     ticker_marks[ticker] += adjust
                 # print("Final marks:",ticker_marks[ticker])
 
-                with open('gapup_raw_data.csv', 'a') as f:
+                with open(os.path.join(script_dir,'gapup_raw_data.csv'), 'a') as f:
                     curdiff = max_price[ticker][0] - first_price[ticker][0]
                     if curdiff < 0:
                         tcat = 'Fail'
@@ -1302,7 +1302,7 @@ def findgap():
     return with_price,end_of_trading
 
 starttest = datetime.now()
-with open('gapup_raw_data.csv', 'w') as f:
+with open(os.path.join(script_dir,'gapup_raw_data.csv'), 'w') as f:
     fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
     for pp in prop_list:
         fieldnames.append(pp)
@@ -1312,12 +1312,12 @@ with open('gapup_raw_data.csv', 'w') as f:
 result,endtrading = findgap()
 result=sorted(result,key=lambda x:x['marks'])
 result = pd.DataFrame.from_dict(result)
-result.to_csv('results.csv',index=False)
+result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
 # loaded_model = load_model("model_autokeras", custom_objects=ak.CUSTOM_OBJECTS)
-diff_model = load_model("model_diff_level", custom_objects=ak.CUSTOM_OBJECTS)
-profitable_model = load_model("model_profitable", custom_objects=ak.CUSTOM_OBJECTS)
+diff_model = load_model(os.path.join(script_dir,"model_diff_level"), custom_objects=ak.CUSTOM_OBJECTS)
+profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
 # [print('Fd:',i,i.shape, i.dtype) for i in loaded_model.inputs]
-tocsv = pd.read_csv('gapup_raw_data.csv')
+tocsv = pd.read_csv(os.path.join(script_dir,'gapup_raw_data.csv'))
 profitablecsv = tocsv.copy()
 diffcsv = tocsv.copy()
 
@@ -1335,11 +1335,11 @@ difffloat = np.asarray(diffcsv).astype(np.float32)
 tocsv['predicted_diff'] = diff_model.predict(difffloat)
 
 tocsv.sort_values(by=['predicted_profitable','predicted_diff'],ascending=False,inplace=True)
-tocsv.to_csv('gapup_raw_data.csv',index=False)
+tocsv.to_csv(os.path.join(script_dir,'gapup_raw_data.csv'),index=False)
 todisp = tocsv[['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance']]
 print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
 toresult = tocsv.iloc[:10][['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance','marks']]
-toresult.to_csv('results_predicted.csv')
+toresult.to_csv(os.path.join(script_dir,'results_predicted.csv'))
 print("End trading:",endtrading)
 endtest = datetime.now()
 print("Start:",starttest)
