@@ -580,6 +580,7 @@ prop_list = [
 'New IPO',
 'Fairly New IPO',
 'Sluggish Ticker',
+'Continue Sluggish Ticker',
     ]
 
 prop_marks = [
@@ -816,6 +817,8 @@ def findgap():
 
                 if manualstocks:
                     print("Minute Candles:",minute_candles)
+                    print("Minute Size:",len(minute_candles))
+                    print("NaN Check:",minute_candles['open'].isnull().sum())
 
                 datediff = 1
                 bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
@@ -839,16 +842,14 @@ def findgap():
 
                 peaks,bottoms = gather_range(minute_candles)
 
-                if len(bminute_candles)>0:
-                    nancount = 0
-                    for i in range(len(bminute_candles)):
-                        curbc = bminute_candles.iloc[i]
-                        if math.isnan(curbc['open']):
-                            nancount += 1
-                    if nancount > 0:
-                        nanperc = nancount / len(bminute_candles)
-                        if nanperc > 0.3:
-                            prop_data, tickers_data, all_props = set_params(ticker,'Sluggish Ticker',prop_data,tickers_data,all_props)
+                if manualstocks:
+                    print("Previous Minute Candles:",bminute_candles)
+                    print("Previous NaN Check:",bminute_candles['open'].isnull().sum())
+
+                if len(bminute_candles)>0 and len(bminute_candles)<20:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Sluggish Ticker',prop_data,tickers_data,all_props)
+                    if len(bbminute_candles)>0 and len(bbminute_candles)<20:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Continue Sluggish Ticker',prop_data,tickers_data,all_props)
 
                 if len(bminute_candles)==0 and len(bbminute_candles)==0:
                     prop_data, tickers_data, all_props = set_params(ticker,'New IPO',prop_data,tickers_data,all_props)

@@ -585,6 +585,7 @@ prop_list = [
 'New IPO',
 'Fairly New IPO',
 'Sluggish Ticker',
+'Continue Sluggish Ticker',
     ]
 prop_marks = [
     {'prop':'Volume Above 5 Time Average','marks':10},
@@ -841,16 +842,10 @@ def findgap():
 
                 peaks,bottoms = gather_range(minute_candles)
 
-                if len(bminute_candles)>0:
-                    nancount = 0
-                    for i in range(len(bminute_candles)):
-                        curbc = bminute_candles.iloc[i]
-                        if math.isnan(curbc['open']):
-                            nancount += 1
-                    if nancount > 0:
-                        nanperc = nancount / len(bminute_candles)
-                        if nanperc > 0.3:
-                            prop_data, tickers_data, all_props = set_params(ticker,'Sluggish Ticker',prop_data,tickers_data,all_props)
+                if len(bminute_candles)>0 and len(bminute_candles)<20:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Sluggish Ticker',prop_data,tickers_data,all_props)
+                    if len(bbminute_candles)>0 and len(bbminute_candles)<20:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Continue Sluggish Ticker',prop_data,tickers_data,all_props)
 
                 if len(bminute_candles)==0 and len(bbminute_candles)==0:
                     prop_data, tickers_data, all_props = set_params(ticker,'New IPO',prop_data,tickers_data,all_props)
