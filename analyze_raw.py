@@ -154,85 +154,110 @@ ignore_prop = [
 'Peak After Noon',
 'Peak Before Noon',
 'Peak Lunch',
+'Min After Max',
+'Max After Min',
 ]
+
 
 datas = pd.read_csv('raw_data_20231205.csv')
 
 global_prop = {}
+global_fail = {}
 
-def get_props(rows,props):
+def get_props(rows,profitablechk):
     halfnum = math.floor(len(rows)/2)
     newprops= {}
-    single_props = {}
-    toret = {}
+    # single_props = {}
+    # toret = {}
+    print("Checking profitable:",profitablechk)
     for pl in prop_list:
         if rows[pl].sum()>0 and pl not in ignore_prop:
-            newprops[pl] = rows[pl].sum()
-    single_props = [ (x,newprops[x]) for x in newprops.keys() if newprops[x]>halfnum ]
-    for sp,sn in single_props:
-        if sp not in props:
-            toret[sp] = sn
+            proprows = rows[rows[pl]==1]
+            profitable = proprows[proprows['profitable']==profitablechk]
+            print("For prop:",pl," Profitable rows:",len(profitable)," Total rows:",len(proprows))
+            newprops[pl] = round(len(profitable) / len(proprows),2)
+    # single_props = [ (x,newprops[x]) for x in newprops.keys() if newprops[x]>halfnum ]
+    # for sp,sn in single_props:
+    #     if sp not in props:
+    #         toret[sp] = sn
 
-    return toret
+    return newprops
 
 
-def analyze_performance(performance):
+def analyze_performance(performance,profitable=1):
     rows = datas[datas['performance']==performance]
-    props = {}
-    level = 0
-    curprops = get_props(rows,props)
-    props = curprops
-    props['Dummy'] = 0
-    scaler = MinMaxScaler()
-    dfprops = pd.DataFrame(list(props.items()),columns=['Prop','Occurance'])
-    dfprops['Scale'] = scaler.fit_transform(dfprops['Occurance'].values.reshape(-1,1))
+    # props = {}
+    # level = 0
+    curprops = get_props(rows,profitable)
+    # props = curprops
+    # props['Dummy'] = 0
+    # scaler = MinMaxScaler()
+    dfprops = pd.DataFrame(list(curprops.items()),columns=['Prop','Occurance'])
+    # dfprops['Scale'] = scaler.fit_transform(dfprops['Occurance'].values.reshape(-1,1))
     dfprops.to_csv('analyze_' + performance + '.csv',index=False)
 
-def add_props(props,mark):
+def add_props(props,mark,topup=0):
     for i in range(len(props)):
         curprop = props.iloc[i]
         if curprop['Prop'] in global_prop:
-            global_prop[curprop['Prop']] += mark
+            global_prop[curprop['Prop']] += (curprop['Occurance'] + topup) * mark
         else:
-            global_prop[curprop['Prop']] = mark
+            global_prop[curprop['Prop']] = (curprop['Occurance'] + topup) * mark
 
 
-analyze_performance('Great')
-analyze_performance('Good')
-analyze_performance('Fair')
-analyze_performance('Fail')
+# analyze_performance('Great')
+# analyze_performance('Fair')
+# analyze_performance('Fail',0)
+# analyze_performance('Good')
 
-great_data = pd.read_csv('analyze_Great.csv')
-good_data = pd.read_csv('analyze_Good.csv')
-fair_data = pd.read_csv('analyze_Fair.csv')
-fail_data = pd.read_csv('analyze_Fail.csv')
+# great_data = pd.read_csv('analyze_Great.csv')
+# good_data = pd.read_csv('analyze_Good.csv')
+# fair_data = pd.read_csv('analyze_Fair.csv')
+# fail_data = pd.read_csv('analyze_Fail.csv')
 # positif_data = pd.concat([great_data,good_data])
 # positif_data.to_csv('analyze_positive.csv',index=False)
 
-add_props(great_data,3)
-add_props(good_data,2)
-add_props(fair_data,1)
+# add_props(great_data,3)
+# add_props(good_data,2)
+# add_props(fair_data,1)
 
-for i in range(len(fail_data)):
-    curdat = fail_data.iloc[i]
-    marks = -6
-    got_great = great_data[great_data['Prop']==curdat['Prop']]
-    if len(got_great)>0:
-        marks += 3
-    print("Got great:",got_great)
-    got_good = good_data[good_data['Prop']==curdat['Prop']]
-    if len(got_good)>0:
-        marks += 2
-    print("Got good:",got_good)
-    got_fair = fair_data[fair_data['Prop']==curdat['Prop']]
-    if len(got_fair)>0:
-        marks += 1
-    print("Got fair:",got_fair)
-    if curdat['Prop'] in global_prop:
-        global_prop[curdat['Prop']] += marks
-    else:
-        global_prop[curdat['Prop']] = marks
+# res = pd.merge(fail_data,great_data[great_data['Occurance']>0],on='Prop',indicator=True,how='outer').query('_merge=="left_only"').drop(['_merge','Occurance_y'],axis=1).rename(columns={'Occurance_x':'Occurance'})
+# res = pd.merge(res,good_data[good_data['Occurance']>0],on='Prop',indicator=True,how='outer').query('_merge=="left_only"').drop(['_merge','Occurance_y'],axis=1).rename(columns={'Occurance_x':'Occurance'})
+# res = pd.merge(res,fair_data[fair_data['Occurance']>0],on='Prop',indicator=True,how='outer').query('_merge=="left_only"').drop(['_merge','Occurance_y'],axis=1).rename(columns={'Occurance_x':'Occurance'})
+# res.to_csv('analyze_unique_fail.csv',index=False)
+# add_props(fail_data,-3)
 
+# for i in range(len(fail_data)):
+#     curdat = fail_data.iloc[i]
+#     marks = -6
+#     got_great = great_data[great_data['Prop']==curdat['Prop']]
+#     if len(got_great)>0:
+#         marks += 3
+#     print("Got great:",got_great)
+#     got_good = good_data[good_data['Prop']==curdat['Prop']]
+#     if len(got_good)>0:
+#         marks += 2
+#     print("Got good:",got_good)
+#     got_fair = fair_data[fair_data['Prop']==curdat['Prop']]
+#     if len(got_fair)>0:
+#         marks += 1
+#     print("Got fair:",got_fair)
+#     if curdat['Prop'] in global_prop:
+#         global_prop[curdat['Prop']] += marks
+#     else:
+#         global_prop[curdat['Prop']] = marks
+
+datas = datas[datas['First Green']==1]
+for pl in prop_list:
+    proprows = datas[datas[pl]==1]
+    if len(proprows)>0 and pl not in ignore_prop:
+        profitable = proprows[proprows['profitable']==1]
+        failed = proprows[proprows['profitable']==0]
+        print("For prop:",pl," Profitable rows:",len(profitable)," Total rows:",len(proprows))
+        global_prop[pl] = round(len(profitable) / len(proprows),2)
+        global_fail[pl] = round(len(failed) / len(proprows),2)
 
 outdata = pd.DataFrame(list(global_prop.items()), columns=['Prop','Marks'])
 outdata.to_csv('analyze_global.csv',index=False)
+outdata = pd.DataFrame(list(global_fail.items()), columns=['Prop','Marks'])
+outdata.to_csv('analyze_global_fail.csv',index=False)

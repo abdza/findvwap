@@ -584,6 +584,7 @@ prop_list = [
 'Volume Consecutive Above 10 Time Average',
 'New IPO',
 'Fairly New IPO',
+'Sluggish Ticker',
     ]
 prop_marks = [
     {'prop':'Volume Above 5 Time Average','marks':10},
@@ -839,6 +840,17 @@ def findgap():
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
                 peaks,bottoms = gather_range(minute_candles)
+
+                if len(bminute_candles)>0:
+                    nancount = 0
+                    for i in range(len(bminute_candles)):
+                        curbc = bminute_candles.iloc[i]
+                        if math.isnan(curbc['open']):
+                            nancount += 1
+                    if nancount > 0:
+                        nanperc = nancount / len(bminute_candles)
+                        if nanperc > 0.3:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Sluggish Ticker',prop_data,tickers_data,all_props)
 
                 if len(bminute_candles)==0 and len(bbminute_candles)==0:
                     prop_data, tickers_data, all_props = set_params(ticker,'New IPO',prop_data,tickers_data,all_props)
@@ -1145,14 +1157,14 @@ def findgap():
                 tickers_data = append_hash_set(tickers_data,ticker,'------------')
                 with open('raw_data.csv', 'a') as f:
                     curdiff = max_price[ticker][0] - first_price[ticker][0]
-                    if curdiff < 0:
-                        tcat = 'Fail'
-                    elif curdiff < 1:
-                        tcat = 'Fair'
-                    elif curdiff < 5:
-                        tcat = 'Good'
-                    else:
+                    if curdiff > 5:
                         tcat = 'Great'
+                    elif curdiff > 1:
+                        tcat = 'Good'
+                    elif curdiff > 0:
+                        tcat = 'Fair'
+                    else:
+                        tcat = 'Fail'
                     if curdiff > 0.7:
                         profitable = 1
                     else:

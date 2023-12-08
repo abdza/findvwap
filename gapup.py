@@ -579,6 +579,7 @@ prop_list = [
 'Volume Consecutive Above 10 Time Average',
 'New IPO',
 'Fairly New IPO',
+'Sluggish Ticker',
     ]
 
 prop_marks = [
@@ -837,6 +838,17 @@ def findgap():
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
                 peaks,bottoms = gather_range(minute_candles)
+
+                if len(bminute_candles)>0:
+                    nancount = 0
+                    for i in range(len(bminute_candles)):
+                        curbc = bminute_candles.iloc[i]
+                        if math.isnan(curbc['open']):
+                            nancount += 1
+                    if nancount > 0:
+                        nanperc = nancount / len(bminute_candles)
+                        if nanperc > 0.3:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Sluggish Ticker',prop_data,tickers_data,all_props)
 
                 if len(bminute_candles)==0 and len(bbminute_candles)==0:
                     prop_data, tickers_data, all_props = set_params(ticker,'New IPO',prop_data,tickers_data,all_props)
@@ -1186,6 +1198,20 @@ def findgap():
                             ticker_marks[ticker] += curprop['Marks']
                         else:
                             ticker_marks[ticker] = curprop['Marks']
+                global_fail = pd.read_csv('analyze_global_fail.csv')
+                for i in range(len(global_fail)):
+                    curprop = global_fail.iloc[i]
+                    breakup = curprop['Prop'].split(':')
+                    target = len(breakup)
+                    curmark = 0
+                    for p in breakup:
+                        if p in tickers_data[ticker]:
+                            curmark += 1
+                    if curmark==target:
+                        if ticker in ticker_marks:
+                            ticker_marks[ticker] -= curprop['Marks']
+                        else:
+                            ticker_marks[ticker] = 0 - curprop['Marks']
 
                 # positive_marks = pd.read_csv('analyze_positive.csv')
                 # for i in range(len(positive_marks)):
@@ -1226,15 +1252,15 @@ def findgap():
 
                 with open(os.path.join(script_dir,'gapup_raw_data.csv'), 'a') as f:
                     curdiff = max_price[ticker][0] - first_price[ticker][0]
-                    if curdiff < 0:
-                        tcat = 'Fail'
-                    elif curdiff < 1:
-                        tcat = 'Fair'
-                    elif curdiff < 5:
-                        tcat = 'Good'
-                    else:
+                    if curdiff > 5:
                         tcat = 'Great'
-                    if curdiff > 0.5:
+                    elif curdiff > 1:
+                        tcat = 'Good'
+                    elif curdiff > 0:
+                        tcat = 'Fair'
+                    else:
+                        tcat = 'Fail'
+                    if curdiff > 0.7:
                         profitable = 1
                     else:
                         profitable = 0
