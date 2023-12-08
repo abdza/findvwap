@@ -158,76 +158,20 @@ ignore_prop = [
 
 datas = pd.read_csv('raw_data_20231205.csv')
 
-def check_prop(rows,key):
-    tkns = key.split(':')
-    if len(tkns)>1:
-        gotdat = rows[rows[tkns[1]]==1]
-        if len(gotdat)>0:
-            return check_prop(gotdat,':'.join(tkns[1:]))
-        else:
-            return 0
-    else:
-        return len(rows)
+global_prop = {}
 
-def get_props(rows,props,level):
+def get_props(rows,props):
     halfnum = math.floor(len(rows)/2)
     newprops= {}
     single_props = {}
     toret = {}
-    if len(props)>0:
-        print("Got ",len(props)," props level ",level)
-        curlvl = 0
-        testkeys = []
-        while curlvl<level:
-            for pl in prop_list:
-                filtered = rows[rows[pl]==1]
-                print("Prop ",pl," got ",len(filtered)," rows")
-                if len(filtered)>0 and pl not in ignore_prop and pl not in props:
-                    if len(testkeys)>0:
-                        inlist = testkeys.copy()
-                    else:
-                        inlist = prop_list.copy()
-                    for il in inlist:
-                        goon = True
-                        if len(testkeys)==0:
-                            filtered = rows[rows[il]==1]
-                            if il==pl or len(filtered)==0 or il in ignore_prop or il in props:
-                                goon = False
-                        if goon:
-                            print("Inlist ",il)
-                            if il<pl:
-                                newkey = il + ':' + pl
-                            else:
-                                newkey = pl + ':' + il
-                            if newkey not in props and newkey not in testkeys:
-                                testkeys.append(newkey)
-            curlvl += 1
-        print('Testkeys:',testkeys)
-
-        for newkey in testkeys:
-            tkns = newkey.split(':')
-            if len(tkns)>1:
-                rowfound = check_prop(rows[rows[tkns[0]]==1],':'.join(tkns[1:]))
-                if rowfound>halfnum:
-                    toret[newkey] = rowfound
-
-                    # for ik,iv in props.items():
-                    #     if ik<pl:
-                    #         newkey = ik + ':' + pl
-                    #     else:
-                    #         newkey = pl + ':' + ik
-                    #     if not newkey in toret and not newkey in props:
-                    #         rowfound = check_prop(rows[rows[pl]==1],newkey)
-                    #         if rowfound>halfnum:
-                    #             toret[newkey] = rowfound
-    else:
-        for pl in prop_list:
-            if rows[pl].sum()>0 and pl not in ignore_prop:
-                newprops[pl] = rows[pl].sum()
-        single_props = [ (x,newprops[x]) for x in newprops.keys() if newprops[x]>halfnum ]
-        for sp,sn in single_props:
-            if sp not in props:
-                toret[sp] = sn
+    for pl in prop_list:
+        if rows[pl].sum()>0 and pl not in ignore_prop:
+            newprops[pl] = rows[pl].sum()
+    single_props = [ (x,newprops[x]) for x in newprops.keys() if newprops[x]>halfnum ]
+    for sp,sn in single_props:
+        if sp not in props:
+            toret[sp] = sn
 
     return toret
 
@@ -236,24 +180,59 @@ def analyze_performance(performance):
     rows = datas[datas['performance']==performance]
     props = {}
     level = 0
-    curprops = get_props(rows,props,level)
-    while(len(curprops)>0 and level<3):
-        level += 1
-        props = curprops | props
-        curprops = get_props(rows,curprops,level)
-
-    props = curprops | props
+    curprops = get_props(rows,props)
+    props = curprops
     props['Dummy'] = 0
     scaler = MinMaxScaler()
     dfprops = pd.DataFrame(list(props.items()),columns=['Prop','Occurance'])
     dfprops['Scale'] = scaler.fit_transform(dfprops['Occurance'].values.reshape(-1,1))
     dfprops.to_csv('analyze_' + performance + '.csv',index=False)
 
-analyze_performance('Good')
-analyze_performance('Fail')
+def add_props(props,mark):
+    for i in range(len(props)):
+        curprop = props.iloc[i]
+        if curprop['Prop'] in global_prop:
+            global_prop[curprop['Prop']] += mark
+        else:
+            global_prop[curprop['Prop']] = mark
+
+
 analyze_performance('Great')
+analyze_performance('Good')
+analyze_performance('Fair')
+analyze_performance('Fail')
 
 great_data = pd.read_csv('analyze_Great.csv')
 good_data = pd.read_csv('analyze_Good.csv')
-positif_data = pd.concat([great_data,good_data])
-positif_data.to_csv('analyze_positive.csv',index=False)
+fair_data = pd.read_csv('analyze_Fair.csv')
+fail_data = pd.read_csv('analyze_Fail.csv')
+# positif_data = pd.concat([great_data,good_data])
+# positif_data.to_csv('analyze_positive.csv',index=False)
+
+add_props(great_data,3)
+add_props(good_data,2)
+add_props(fair_data,1)
+
+for i in range(len(fail_data)):
+    curdat = fail_data.iloc[i]
+    marks = -6
+    got_great = great_data[great_data['Prop']==curdat['Prop']]
+    if len(got_great)>0:
+        marks += 3
+    print("Got great:",got_great)
+    got_good = good_data[good_data['Prop']==curdat['Prop']]
+    if len(got_good)>0:
+        marks += 2
+    print("Got good:",got_good)
+    got_fair = fair_data[fair_data['Prop']==curdat['Prop']]
+    if len(got_fair)>0:
+        marks += 1
+    print("Got fair:",got_fair)
+    if curdat['Prop'] in global_prop:
+        global_prop[curdat['Prop']] += marks
+    else:
+        global_prop[curdat['Prop']] = marks
+
+
+outdata = pd.DataFrame(list(global_prop.items()), columns=['Prop','Marks'])
+outdata.to_csv('analyze_global.csv',index=False)
