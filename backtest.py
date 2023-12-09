@@ -1176,10 +1176,44 @@ def findgap():
                                 if p in tickers_data[ticker]:
                                     curmark += 1
                             if curmark==target:
+                                if manualstocks:
+                                    print("Adding ",curprop['Marks'], " for ",breakup)
                                 if ticker in ticker_marks:
                                     ticker_marks[ticker] += curprop['Marks']
                                 else:
                                     ticker_marks[ticker] = curprop['Marks']
+                        global_fail = pd.read_csv('analyze_global_fail.csv')
+                        for i in range(len(global_fail)):
+                            curprop = global_fail.iloc[i]
+                            breakup = curprop['Prop'].split(':')
+                            target = len(breakup)
+                            curmark = 0
+                            for p in breakup:
+                                if p in tickers_data[ticker]:
+                                    curmark += 1
+                            if curmark==target:
+                                if manualstocks:
+                                    print("Deducting ",curprop['Marks'], " for ",breakup)
+                                if ticker in ticker_marks:
+                                    ticker_marks[ticker] -= curprop['Marks']
+                                else:
+                                    ticker_marks[ticker] = 0 - curprop['Marks']
+                        global_negate = pd.read_csv('analyze_global_negate.csv')
+                        for i in range(len(global_negate)):
+                            curprop = global_negate.iloc[i]
+                            breakup = curprop['Prop'].split(':')
+                            target = len(breakup)
+                            curmark = 0
+                            for p in breakup:
+                                if not p in tickers_data[ticker]:
+                                    curmark += 1
+                            if curmark!=target:
+                                if manualstocks:
+                                    print("Negating ",curprop['Marks'], " for ",breakup)
+                                if ticker in ticker_marks:
+                                    ticker_marks[ticker] -= curprop['Marks']
+                                else:
+                                    ticker_marks[ticker] = 0 - curprop['Marks']
                         # for tm in prop_marks:
                         #     if isinstance(tm['prop'],str):
                         #         if tm['prop'] in tickers_data[ticker]:

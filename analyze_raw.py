@@ -143,6 +143,8 @@ prop_list = [
 'Volume Consecutive Above 10 Time Average',
 'New IPO',
 'Fairly New IPO',
+'Sluggish Ticker',
+'Continue Sluggish Ticker',
     ]
 
 ignore_prop = [
@@ -156,13 +158,27 @@ ignore_prop = [
 'Peak Lunch',
 'Min After Max',
 'Max After Min',
+'First Red',
+'Gap Down Above Average',
+'Gap Down Above 2 Day Average',
+'Gap Down Below Prev Min',
+'Gap Down',
+]
+
+punish_prop = [
+'Sluggish Ticker',
+'Continue Sluggish Ticker',
+'Limp Second Diff',
+'Limp Third Diff',
+'Consecutive Limp Diff',
 ]
 
 
-datas = pd.read_csv('raw_data_20231205.csv')
+datas = pd.read_csv('raw_data_20231209.csv')
 
 global_prop = {}
 global_fail = {}
+global_negate = {}
 
 def get_props(rows,profitablechk):
     halfnum = math.floor(len(rows)/2)
@@ -247,17 +263,32 @@ def add_props(props,mark,topup=0):
 #     else:
 #         global_prop[curdat['Prop']] = marks
 
-datas = datas[datas['First Green']==1]
+# datas = datas[datas['First Green']==1]
 for pl in prop_list:
     proprows = datas[datas[pl]==1]
     if len(proprows)>0 and pl not in ignore_prop:
         profitable = proprows[proprows['profitable']==1]
+        great = proprows[proprows['performance']=='Great']
+        good = proprows[proprows['performance']=='Good']
         failed = proprows[proprows['profitable']==0]
-        print("For prop:",pl," Profitable rows:",len(profitable)," Total rows:",len(proprows))
-        global_prop[pl] = round(len(profitable) / len(proprows),2)
+        greatratio = round(len(great)*100/len(proprows),2) * 100
+        goodratio = round(len(good)*10/len(proprows),2) * 1000
+        # print("For prop:",pl," Profitable rows:",len(profitable)," Total rows:",len(proprows))
+        print("Great ratio:",greatratio," Good ratio:",goodratio)
+        global_prop[pl] = round(len(profitable) / len(proprows),2) + ((greatratio) + (goodratio))
         global_fail[pl] = round(len(failed) / len(proprows),2)
+        if global_fail[pl]>0.97:
+            global_fail[pl] *= 100
+        if pl in punish_prop:
+            global_fail[pl] *= 100
+        failedratio = round(len(failed)/len(profitable),2)
+        if failedratio>50:
+            print("Putting prop into negate:",pl," Ratio:",failedratio)
+            global_negate[pl] = failedratio
 
 outdata = pd.DataFrame(list(global_prop.items()), columns=['Prop','Marks'])
 outdata.to_csv('analyze_global.csv',index=False)
+outdata = pd.DataFrame(list(global_negate.items()), columns=['Prop','Marks'])
+outdata.to_csv('analyze_global_negate.csv',index=False)
 outdata = pd.DataFrame(list(global_fail.items()), columns=['Prop','Marks'])
 outdata.to_csv('analyze_global_fail.csv',index=False)
