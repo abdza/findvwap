@@ -158,11 +158,6 @@ ignore_prop = [
 'Peak Lunch',
 'Min After Max',
 'Max After Min',
-'First Red',
-'Gap Down Above Average',
-'Gap Down Above 2 Day Average',
-'Gap Down Below Prev Min',
-'Gap Down',
 ]
 
 punish_prop = [
