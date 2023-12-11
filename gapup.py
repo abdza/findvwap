@@ -1197,7 +1197,7 @@ def findgap():
                 #                 ticker_marks[ticker] = tm['marks']
                 #             # print("Updated marks:",ticker_marks[ticker])
 
-                global_marks = pd.read_csv('analyze_global.csv')
+                global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
                 for i in range(len(global_marks)):
                     curprop = global_marks.iloc[i]
                     breakup = curprop['Prop'].split(':')
@@ -1213,7 +1213,7 @@ def findgap():
                             ticker_marks[ticker] += curprop['Marks']
                         else:
                             ticker_marks[ticker] = curprop['Marks']
-                global_fail = pd.read_csv('analyze_global_fail.csv')
+                global_fail = pd.read_csv(os.path.join(script_dir,'analyze_global_fail.csv'))
                 for i in range(len(global_fail)):
                     curprop = global_fail.iloc[i]
                     breakup = curprop['Prop'].split(':')
@@ -1229,7 +1229,7 @@ def findgap():
                             ticker_marks[ticker] -= curprop['Marks']
                         else:
                             ticker_marks[ticker] = 0 - curprop['Marks']
-                global_negate = pd.read_csv('analyze_global_negate.csv')
+                global_negate = pd.read_csv(os.path.join(script_dir,'analyze_global_negate.csv'))
                 for i in range(len(global_negate)):
                     curprop = global_negate.iloc[i]
                     breakup = curprop['Prop'].split(':')
