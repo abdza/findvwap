@@ -7,7 +7,6 @@ import sys
 import csv
 import getopt
 from datetime import datetime,timedelta
-from pandas.core.frame import AnyAll
 from pandas.core.indexing import convert_missing_indexer
 import yahooquery as yq
 import numpy as np
@@ -582,6 +581,19 @@ prop_list = [
 'Sluggish Ticker',
 'Continue Sluggish Ticker',
     ]
+
+ignore_prop = [
+'Big Reverse',
+'Two Small Reverse',
+'Bottom After Noon',
+'Bottom Before Noon',
+'Bottom Lunch',
+'Peak After Noon',
+'Peak Before Noon',
+'Peak Lunch',
+'Min After Max',
+'Max After Min',
+]
 
 prop_marks = [
     {'prop':'Volume Above 5 Time Average','marks':10},
@@ -1384,14 +1396,24 @@ profitablecsv = tocsv.copy()
 diffcsv = tocsv.copy()
 
 
-topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','diff_level','performance','profitable']
+topop = ['ticker','date','day','diff','diff_level','performance','profitable']
 for tp in topop:
     profitablecsv.pop(tp)
-profitablefloat = np.asarray(profitablecsv).astype(np.float32)
-tocsv['predicted_profitable'] = profitable_model.predict(profitablefloat)
-
-topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','profitable','performance','diff_level']
+for tp in ignore_prop:
+    profitablecsv.pop(tp)
+topop = ['yavg','yyavg','1range','1body','gap','marks']
 for tp in topop:
+    profitablecsv.pop(tp)
+# profitablefloat = np.asarray(profitablecsv).astype(np.float32)
+tocsv['predicted_profitable'] = profitable_model.predict(profitablecsv)
+
+# topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','profitable','performance','diff_level']
+# for tp in topop:
+#     diffcsv.pop(tp)
+topop = ['ticker','date','day','diff','diff_level','profitable','performance']
+for tp in topop:
+    diffcsv.pop(tp)
+for tp in ignore_prop:
     diffcsv.pop(tp)
 difffloat = np.asarray(diffcsv).astype(np.float32)
 tocsv['predicted_diff'] = diff_model.predict(difffloat)

@@ -201,25 +201,38 @@ except Exception:
 from sklearn.preprocessing import LabelEncoder
 labelencoder = LabelEncoder()
 
-raw_data = pd.read_csv('raw_data_range_20231203.csv')
-print("Nan data:",np.count_nonzero(np.isnan(raw_data)))
-raw_data = raw_data.dropna()
-print("After drop Nan data:",np.count_nonzero(np.isnan(raw_data)))
+raw_data = pd.read_csv('raw_data_20231209.csv')
 topop = ['ticker','date','day','diff','diff_level','performance']
 for tp in topop:
     raw_data.pop(tp)
 for tp in ignore_prop:
     raw_data.pop(tp)
+topop = ['yavg','yyavg','1range','1body','gap','marks']
+for tp in topop:
+    raw_data.pop(tp)
+print("Nan data:",np.count_nonzero(np.isnan(raw_data)))
+raw_data = raw_data.dropna()
+print("After drop Nan data:",np.count_nonzero(np.isnan(raw_data)))
 train_size = int(raw_data.shape[0] * 0.9)
 train_data = pd.DataFrame(raw_data[:train_size])
+print("Keys:",train_data.columns)
 test_data = pd.DataFrame(raw_data[train_size:])
-train_data[['yavg','yyavg','1range','1body','gap','marks']] = scaler.fit_transform(train_data[['yavg','yyavg','1range','1body','gap','marks']])
-y_data = raw_data.pop('profitable')
+# train_data[['yavg','yyavg','1range','1body','gap','marks']] = scaler.fit_transform(train_data[['yavg','yyavg','1range','1body','gap','marks']])
 # y_data = labelencoder.fit_transform(y_data)
+y_data = train_data.pop('profitable')
+column_types = {}
+for column_name in train_data.columns:
+    if column_name in prop_list:
+        column_types[column_name] = 'categorical'
+    else:
+        column_types[column_name] = 'numerical'
+print("Ct size:",len(column_types))
+print("Column types:",column_types)
 reg = ak.StructuredDataClassifier(
-    overwrite=True, max_trials=100
+    overwrite=True, max_trials=100, column_types=column_types, objective="val_accuracy", loss='categorical_crossentropy'
 )  # It tries 3 different models.
-reg.fit(x=raw_data,y=y_data,verbose=1,use_multiprocessing=True,epochs=1000)
+print("Train shape:",train_data.shape)
+reg.fit(x=train_data,y=y_data,verbose=1,epochs=1000)
 y_test = test_data.pop('profitable')
 print("Evaluate:",reg.evaluate(x=test_data,y=y_test))
 model = reg.export_model()
