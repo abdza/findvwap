@@ -1423,7 +1423,7 @@ tocsv.to_csv(os.path.join(script_dir,'gapup_raw_data.csv'),index=False)
 todisp = tocsv[['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance']]
 print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
 toresult = tocsv.iloc[:10][['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance','marks']]
-toresult.to_csv(os.path.join(script_dir,'results_predicted.csv'))
+toresult.to_csv(os.path.join(script_dir,'results_predicted.csv'),index=False)
 print("End trading:",endtrading)
 endtest = datetime.now()
 print("Start:",starttest)
