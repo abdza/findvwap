@@ -915,8 +915,8 @@ def findgap():
                     if len(bpeaks)>0 and len(bbottoms)>0:
                         maxp = max_peak(bpeaks,[bminute_candles.iloc[0]])
                         minp = min_bottom(bbottoms,[bminute_candles.iloc[0]])
-                        if maxp is not None and minp is not None and maxp['date']>minp['date']:
-                            ydiff = body_top(maxp) - body_top(minp)
+                        if maxp is not None and minp is not None and maxp['high']>body_top(bminute_candles.iloc[1]) and maxp['date']>bminute_candles.iloc[1]['date']:
+                            ydiff = body_top(maxp) - body_top(bminute_candles.iloc[1])
                             if ydiff > 5:
                                 tcat = 'Great'
                             elif ydiff > 1:
@@ -940,8 +940,8 @@ def findgap():
                     if len(bpeaks)>0 and len(bbottoms)>0:
                         maxp = max_peak(bpeaks,[bbminute_candles.iloc[0]])
                         minp = min_bottom(bbottoms,[bbminute_candles.iloc[0]])
-                        if maxp is not None and minp is not None and maxp['date']>minp['date']:
-                            ydiff = body_top(maxp) - body_top(minp)
+                        if maxp is not None and minp is not None and maxp['high']>body_top(bbminute_candles.iloc[1]) and maxp['date']>bbminute_candles.iloc[1]['date']:
+                            ydiff = body_top(maxp) - body_top(bbminute_candles.iloc[1])
                             if ydiff > 5:
                                 tcat = 'Great'
                             elif ydiff > 1:
