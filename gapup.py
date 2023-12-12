@@ -580,6 +580,21 @@ prop_list = [
 'Fairly New IPO',
 'Sluggish Ticker',
 'Continue Sluggish Ticker',
+'Late Start',
+'Yesterday Status Great',
+'Yesterday Status Good',
+'Yesterday Status Fair',
+'Yesterday Status Fail',
+'Yesterday Profitable',
+'Yesterday Loss',
+'Yesterday Absolute Loss',
+'2 Days Ago Status Great',
+'2 Days Ago Status Good',
+'2 Days Ago Status Fair',
+'2 Days Ago Status Fail',
+'2 Days Ago Profitable',
+'2 Days Ago Loss',
+'2 Days Ago Absolute Loss',
     ]
 
 ignore_prop = [
@@ -855,8 +870,15 @@ def findgap():
                 peaks,bottoms = gather_range(minute_candles)
 
                 if manualstocks:
+                    print("First candle:",minute_candles.iloc[0]['date'].hour,':',minute_candles.iloc[0]['date'].minute)
+                    print("First size:",minute_candles.iloc[0]['body_length'],':',(minute_candles.iloc[0]['body_length']==0))
                     print("Previous Minute Candles:",bminute_candles)
                     print("Previous NaN Check:",bminute_candles['open'].isnull().sum())
+
+                start_late = minute_candles.iloc[0]['date'].hour!=9 and minute_candles.iloc[0]['date'].minute!=30
+                zero_size = minute_candles.iloc[0]['body_length']==0
+                if start_late or zero_size:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Late Start',prop_data,tickers_data,all_props)
 
                 if len(bminute_candles)>0 and len(bminute_candles)<20:
                     prop_data, tickers_data, all_props = set_params(ticker,'Sluggish Ticker',prop_data,tickers_data,all_props)
@@ -899,6 +921,57 @@ def findgap():
                     first_price = append_hash_set(first_price,ticker,body_top(minute_candles.iloc[1]))
                 else:
                     first_price = append_hash_set(first_price,ticker,minute_candles.iloc[0]['open'])
+
+                if len(bminute_candles)>1:
+                    bpeaks,bbottoms = gather_range(bminute_candles)
+                    if len(bpeaks)>0 and len(bbottoms)>0:
+                        maxp = max_peak(bpeaks,[bminute_candles.iloc[0]])
+                        minp = min_bottom(bbottoms,[bminute_candles.iloc[0]])
+                        if maxp is not None and minp is not None and maxp['date']>minp['date']:
+                            ydiff = body_top(maxp) - body_top(minp)
+                            if ydiff > 5:
+                                tcat = 'Great'
+                            elif ydiff > 1:
+                                tcat = 'Good'
+                            elif ydiff > 0:
+                                tcat = 'Fair'
+                            else:
+                                tcat = 'Fail'
+                            prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Status ' + tcat,prop_data,tickers_data,all_props)
+                            if ydiff > 0.7:
+                                profitable = 1
+                                prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Profitable',prop_data,tickers_data,all_props)
+                            else:
+                                profitable = 0
+                                prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Loss',prop_data,tickers_data,all_props)
+                        else:
+                            prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Absolute Loss',prop_data,tickers_data,all_props)
+
+                if len(bbminute_candles)>1:
+                    bpeaks,bbottoms = gather_range(bbminute_candles)
+                    if len(bpeaks)>0 and len(bbottoms)>0:
+                        maxp = max_peak(bpeaks,[bbminute_candles.iloc[0]])
+                        minp = min_bottom(bbottoms,[bbminute_candles.iloc[0]])
+                        if maxp is not None and minp is not None and maxp['date']>minp['date']:
+                            ydiff = body_top(maxp) - body_top(minp)
+                            if ydiff > 5:
+                                tcat = 'Great'
+                            elif ydiff > 1:
+                                tcat = 'Good'
+                            elif ydiff > 0:
+                                tcat = 'Fair'
+                            else:
+                                tcat = 'Fail'
+                            prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Status ' + tcat,prop_data,tickers_data,all_props)
+                            if ydiff > 0.7:
+                                profitable = 1
+                                prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Profitable',prop_data,tickers_data,all_props)
+                            else:
+                                profitable = 0
+                        else:
+                            prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Absolute Loss',prop_data,tickers_data,all_props)
+
+
                 if len(bottoms)>0:
                     minb = min_bottom(bottoms,[minute_candles.iloc[0]])
                     if minb is not None:

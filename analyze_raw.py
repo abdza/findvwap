@@ -145,6 +145,21 @@ prop_list = [
 'Fairly New IPO',
 'Sluggish Ticker',
 'Continue Sluggish Ticker',
+'Late Start',
+'Yesterday Status Great',
+'Yesterday Status Good',
+'Yesterday Status Fair',
+'Yesterday Status Fail',
+'Yesterday Profitable',
+'Yesterday Loss',
+'Yesterday Absolute Loss',
+'2 Days Ago Status Great',
+'2 Days Ago Status Good',
+'2 Days Ago Status Fair',
+'2 Days Ago Status Fail',
+'2 Days Ago Profitable',
+'2 Days Ago Loss',
+'2 Days Ago Absolute Loss',
     ]
 
 ignore_prop = [
@@ -166,6 +181,8 @@ punish_prop = [
 'Limp Second Diff',
 'Limp Third Diff',
 'Consecutive Limp Diff',
+'Late Start',
+'First Red',
 ]
 
 
