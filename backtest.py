@@ -788,7 +788,7 @@ def findgap():
     ldate = None
 
     for i in range(len(stocks.index)):
-    # for i in range(10):
+    # for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -1506,7 +1506,7 @@ with open('day_count.csv', 'w') as f:
     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
     writer.writeheader()
 for day in range(60):
-# for day in range(2):
+# for day in range(5):
     instockdate = starttest - timedelta(days=day)
     print("Processing ",instockdate)
     tmpkey = str(instockdate.date())
@@ -1534,6 +1534,7 @@ for day in range(60):
     # print(tabulate(result,headers="keys",tablefmt="grid"))
 alldata = pd.read_csv('raw_data.csv')
 dates = alldata['date'].unique()
+print("Dates:",dates)
 dateperc = pd.DataFrame()
 for cdate in dates:
     daytrade = alldata[alldata['date']==cdate]
@@ -1546,7 +1547,7 @@ for cdate in dates:
     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
     dateperc = pd.concat([dateperc,percdf])
 alldata = alldata.set_index('date').join(dateperc.set_index('date'))
-alldata.to_csv(os.path.join(script_dir,'raw_data.csv'),index=False)
+alldata.to_csv(os.path.join(script_dir,'raw_data.csv'))
 
 with open(outfile, "w") as write_file:
     json.dump(data, write_file)
