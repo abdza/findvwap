@@ -185,8 +185,49 @@ punish_prop = [
 'First Red',
 ]
 
+reward_prop = [
+'Continue Higher Low',
+'Consecutive Early Green',
+'Open Higher Than Prev Max',
+'Gap Up Above Prev Max',
+'Range Above 2 Day Average',
+'Third Range Longer',
+'2 Days Ago Absolute Loss',
+'Gap Down Below Prev Min',
+'Second Range Shorter',
+'Limp Second Diff',
+'Third Green',
+'Second Green',
+'Higher Low',
+'Volume Open Lower',
+'2 Days Ago Status Fair',
+'Yesterday Loss',
+'Limp Third Diff',
+'Third Long',
+'Second Long',
+'Second Volume Lower',
+'Open Lower Than 2 Prev Max',
+'Open Higher Than 2 Prev Max',
+'Gap Up',
+'Consecutive Limp Diff',
+'Gap Up Above 2 Day Average',
+'Yesterday Status Fair',
+'Higher High',
+'Volume Higher Than Average',
+'Third Range Shorter',
+'Gap Up Above Average',
+'Consecutive Shorter Range',
+'Third Volume Higher',
+'First Green',
+'Lower High',
+'Range Above Average',
+'Range More Than Gap Up',
+'Yesterday End Volume Above Average',
+'Range Lower Average',
+]
 
-datas = pd.read_csv('raw_data_20231209.csv')
+
+datas = pd.read_csv('raw_data_20231212.csv')
 
 global_prop = {}
 global_fail = {}
@@ -288,11 +329,18 @@ for pl in prop_list:
         # print("For prop:",pl," Profitable rows:",len(profitable)," Total rows:",len(proprows))
         print("Great ratio:",greatratio," Good ratio:",goodratio)
         global_prop[pl] = round(len(profitable) / len(proprows),2) + ((greatratio) + (goodratio))
-        global_fail[pl] = round(len(failed) / len(proprows),2)
-        if global_fail[pl]>0.97:
-            global_fail[pl] *= 100
+        if pl not in reward_prop:
+            global_fail[pl] = round(len(failed) / len(proprows),2)
+            if global_fail[pl]>0.97:
+                global_fail[pl] *= 100
+        else:
+            global_prop[pl] *= 3
         if pl in punish_prop:
-            global_fail[pl] *= 100
+            if pl in global_fail:
+                global_fail[pl] *= 100
+            else:
+                global_fail[pl] = round(len(failed) / len(proprows),2) * 100
+
         failedratio = round(len(failed)/len(profitable),2)
         if failedratio>50:
             print("Putting prop into negate:",pl," Ratio:",failedratio)

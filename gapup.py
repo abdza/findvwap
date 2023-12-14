@@ -843,7 +843,8 @@ def findgap():
                     end_of_trading = True
 
                 if manualstocks:
-                    print("Minute Candles:",minute_candles)
+                    print("Minute Candles:")
+                    print(tabulate(minute_candles,headers='keys'))
                     print("Minute Size:",len(minute_candles))
                     print("NaN Check:",minute_candles['open'].isnull().sum())
 
@@ -872,7 +873,8 @@ def findgap():
                 if manualstocks:
                     print("First candle:",minute_candles.iloc[0]['date'].hour,':',minute_candles.iloc[0]['date'].minute)
                     print("First size:",minute_candles.iloc[0]['body_length'],':',(minute_candles.iloc[0]['body_length']==0))
-                    print("Previous Minute Candles:",bminute_candles)
+                    print("Previous Minute Candles:")
+                    print(tabulate(bminute_candles,headers='keys'))
                     print("Previous NaN Check:",bminute_candles['open'].isnull().sum())
 
                 start_late = minute_candles.iloc[0]['date'].hour!=9 and minute_candles.iloc[0]['date'].minute!=30
@@ -1371,6 +1373,9 @@ def findgap():
                     else:
                         profitable = 0
                     dlvl = str(round(curdiff,1))
+                    if manualstocks:
+                        print("Max Price:",max_price[ticker][0]," First Price:",first_price[ticker][0])
+                        print("Diff:",curdiff," Profitable:",profitable)
                     fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
                     try:
                         gap = minute_candles.iloc[0]['open']-bminute_candles.iloc[-1]['close']
@@ -1465,8 +1470,29 @@ diff_model = load_model(os.path.join(script_dir,"model_diff_level"), custom_obje
 profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
 # [print('Fd:',i,i.shape, i.dtype) for i in loaded_model.inputs]
 tocsv = pd.read_csv(os.path.join(script_dir,'gapup_raw_data.csv'))
+highcount = pd.read_csv(os.path.join(script_dir,'highcount.csv'))
+finalmarks = []
+for i in range(len(tocsv)):
+    curdat = tocsv.iloc[i]
+    totalplus = 1
+    for hc in range(len(highcount)):
+        hcdata = highcount.iloc[hc]
+        totalhc = len(tocsv[tocsv[hcdata['prop']]==1])
+        totalperc = totalhc/len(tocsv)
+        if totalperc > 0.5:
+            if curdat[hcdata['prop']]==1:
+                totalplus += hcdata['perc']
+    if totalplus>1:
+        finalmarks.append(curdat['marks'] * (totalplus * 300))
+    else:
+        finalmarks.append(curdat['marks'])
+
+tocsv.loc[:,'marks'] = finalmarks
+
+
 profitablecsv = tocsv.copy()
 diffcsv = tocsv.copy()
+
 
 
 topop = ['ticker','date','day','diff','diff_level','performance','profitable']

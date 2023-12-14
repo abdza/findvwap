@@ -143,6 +143,21 @@ prop_list = [
 'Fairly New IPO',
 'Sluggish Ticker',
 'Continue Sluggish Ticker',
+'Late Start',
+'Yesterday Status Great',
+'Yesterday Status Good',
+'Yesterday Status Fair',
+'Yesterday Status Fail',
+'Yesterday Profitable',
+'Yesterday Loss',
+'Yesterday Absolute Loss',
+'2 Days Ago Status Great',
+'2 Days Ago Status Good',
+'2 Days Ago Status Fair',
+'2 Days Ago Status Fail',
+'2 Days Ago Profitable',
+'2 Days Ago Loss',
+'2 Days Ago Absolute Loss',
     ]
 
 ignore_prop = [
@@ -160,7 +175,7 @@ ignore_prop = [
 
 
 starttest = datetime.now()
-raw_data = pd.read_csv('raw_data_20231209.csv')
+raw_data = pd.read_csv('raw_data_20231212.csv')
 topop = ['ticker','date','day','diff','profitable','performance']
 for tp in topop:
     raw_data.pop(tp)
@@ -185,7 +200,7 @@ for column_name in train_data.columns:
         column_types[column_name] = 'numerical'
 
 reg = ak.StructuredDataRegressor(
-    overwrite=True, max_trials=100, objective='val_loss', column_types=column_types
+    overwrite=True, max_trials=3, objective='val_loss', column_types=column_types
 )  # It tries 3 different models.
 
 reg.fit(x=train_data,y=y_data,verbose=1,use_multiprocessing=True,epochs=1000)
@@ -201,7 +216,7 @@ except Exception:
 from sklearn.preprocessing import LabelEncoder
 labelencoder = LabelEncoder()
 
-raw_data = pd.read_csv('raw_data_20231209.csv')
+raw_data = pd.read_csv('raw_data_20231212.csv')
 topop = ['ticker','date','day','diff','diff_level','performance']
 for tp in topop:
     raw_data.pop(tp)
@@ -229,7 +244,7 @@ for column_name in train_data.columns:
 print("Ct size:",len(column_types))
 print("Column types:",column_types)
 reg = ak.StructuredDataClassifier(
-    overwrite=True, max_trials=100, column_types=column_types, objective="val_accuracy", loss='categorical_crossentropy'
+    overwrite=True, max_trials=3, column_types=column_types, objective="val_accuracy", loss='categorical_crossentropy'
 )  # It tries 3 different models.
 print("Train shape:",train_data.shape)
 reg.fit(x=train_data,y=y_data,verbose=1,epochs=1000)
