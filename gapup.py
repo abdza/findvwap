@@ -1466,7 +1466,7 @@ result=sorted(result,key=lambda x:x['marks'])
 result = pd.DataFrame.from_dict(result)
 result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
 # loaded_model = load_model("model_autokeras", custom_objects=ak.CUSTOM_OBJECTS)
-diff_model = load_model(os.path.join(script_dir,"model_diff_level"), custom_objects=ak.CUSTOM_OBJECTS)
+# diff_model = load_model(os.path.join(script_dir,"model_diff_level"), custom_objects=ak.CUSTOM_OBJECTS)
 profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
 # [print('Fd:',i,i.shape, i.dtype) for i in loaded_model.inputs]
 tocsv = pd.read_csv(os.path.join(script_dir,'gapup_raw_data.csv'))
@@ -1491,7 +1491,7 @@ tocsv.loc[:,'marks'] = finalmarks
 
 
 profitablecsv = tocsv.copy()
-diffcsv = tocsv.copy()
+# diffcsv = tocsv.copy()
 
 
 
@@ -1509,13 +1509,13 @@ tocsv['predicted_profitable'] = profitable_model.predict(profitablecsv)
 # topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','profitable','performance','diff_level']
 # for tp in topop:
 #     diffcsv.pop(tp)
-topop = ['ticker','date','day','diff','diff_level','profitable','performance']
-for tp in topop:
-    diffcsv.pop(tp)
-for tp in ignore_prop:
-    diffcsv.pop(tp)
-difffloat = np.asarray(diffcsv).astype(np.float32)
-tocsv['predicted_diff'] = diff_model.predict(difffloat)
+# topop = ['ticker','date','day','diff','diff_level','profitable','performance']
+# for tp in topop:
+#     diffcsv.pop(tp)
+# for tp in ignore_prop:
+#     diffcsv.pop(tp)
+# difffloat = np.asarray(diffcsv).astype(np.float32)
+# tocsv['predicted_diff'] = diff_model.predict(difffloat)
 
 tocsv.sort_values(by=['predicted_profitable','predicted_diff'],ascending=False,inplace=True)
 tocsv.to_csv(os.path.join(script_dir,'gapup_raw_data.csv'),index=False)

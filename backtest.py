@@ -1506,7 +1506,7 @@ with open('day_count.csv', 'w') as f:
     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
     writer.writeheader()
 for day in range(60):
-# for day in range(5):
+# for day in range(2):
     instockdate = starttest - timedelta(days=day)
     print("Processing ",instockdate)
     tmpkey = str(instockdate.date())
@@ -1532,6 +1532,22 @@ for day in range(60):
             'diff_levels':diff_levels
         })
     # print(tabulate(result,headers="keys",tablefmt="grid"))
+alldata = pd.read_csv('raw_data.csv')
+dates = alldata['date'].unique()
+dateperc = pd.DataFrame()
+for cdate in dates:
+    daytrade = alldata[alldata['date']==cdate]
+    percdict = {}
+    percdict['date'] = cdate
+    for prop in prop_list:
+        dayprop = daytrade[daytrade[prop]==1]
+        propperc = round(len(dayprop)/len(daytrade),2)
+        percdict['Perc ' + prop] = propperc
+    percdf = pd.DataFrame.from_dict(percdict,orient='index').T
+    dateperc = pd.concat([dateperc,percdf])
+alldata = alldata.set_index('date').join(dateperc.set_index('date'))
+alldata.to_csv(os.path.join(script_dir,'raw_data.csv'),index=False)
+
 with open(outfile, "w") as write_file:
     json.dump(data, write_file)
 endtest = datetime.now()
