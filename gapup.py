@@ -597,6 +597,171 @@ prop_list = [
 '2 Days Ago Absolute Loss',
     ]
 
+summary_prop_list = [
+'Big Reverse',
+'Bottom After Noon',
+'Bottom Before Noon',
+'Bottom Lunch',
+'Peak After Noon',
+'Peak Before Noon',
+'Peak Lunch',
+'Two Small Reverse',
+'Max After Min',
+'Min After Max',
+    ]
+
+late_prop_list = [
+'Consecutive Early Green',
+'Consecutive Early Red',
+'Consecutive FVG',
+'Consecutive Green',
+'Consecutive Late Green',
+'Consecutive Late Red',
+'Consecutive Negative FVG',
+'Consecutive Negative Volume Gap',
+'Consecutive Red',
+'Consecutive Volume Gap',
+'Continue Higher High',
+'Continue Higher Low',
+'Continue Lower High',
+'Continue Lower Low',
+'FVG First',
+'FVG Second',
+'Higher High',
+'Higher Low',
+'Lower High',
+'Lower Low',
+'Negative FVG First',
+'Negative FVG Second',
+'Negative Volume Gap First',
+'Negative Volume Gap Second',
+'Second Green',
+'Second Hammer',
+'Second Long',
+'Second Red',
+'Second Reverse Hammer',
+'Second Short',
+'Third Green',
+'Third Hammer',
+'Third Long',
+'Third Red',
+'Third Reverse Hammer',
+'Third Short',
+'Volume Gap First',
+'Volume Gap Second',
+'Early Top Level',
+'Late Top Level',
+'Top Level',
+'Second Range Shorter',
+'Second Range Longer',
+'Third Range Longer',
+'Third Range Shorter',
+'Consecutive Shorter Range',
+'Consecutive Longer Range',
+'Second Range Very Shorter',
+'Second Range Very Longer',
+'Third Range Very Longer',
+'Third Range Very Shorter',
+'Consecutive Very Shorter Range',
+'Consecutive Very Longer Range',
+'Second Volume Lower',
+'Second Volume Higher',
+'Third Volume Higher',
+'Third Volume Lower',
+'Consecutive Lower Volume',
+'Consecutive Higher Volume',
+'Limp Second Diff',
+'Limp Third Diff',
+'Consecutive Limp Diff',
+'Second Tiny Range',
+'Third Tiny Range',
+'Consecutive Early Tiny Range',
+'Consecutive Late Tiny Range',
+'Consecutive Tiny Range',
+'Second Huge Range',
+'Third Huge Range',
+'Consecutive Early Huge Range',
+'Consecutive Late Huge Range',
+'Consecutive Huge Range',
+'Second Huge Negative Range',
+'Third Huge Negative Range',
+'Consecutive Early Huge Negative Range',
+'Consecutive Late Huge Negative Range',
+'Consecutive Huge Negative Range',
+'Yesterday End In Red',
+'Yesterday End Volume Above Average',
+'Late Start',
+    ]
+
+opening_prop_list = [
+'First Green',
+'First Hammer',
+'First Red',
+'First Reverse Hammer',
+'Gap Down Above Average',
+'Gap Down Above 2 Day Average',
+'Gap Down Below Prev Min',
+'Gap Down',
+'Gap Up Above Average',
+'Gap Up Above 2 Day Average',
+'Gap Up Above Prev Max',
+'Gap Up',
+'Open Higher Than 2 Prev Max',
+'Open Higher Than Prev Max Plus Average',
+'Open Higher Than Prev Max',
+'Open Lower Than 2 Prev Max',
+'Open Lower Than Prev Min Minus Average',
+'Open Lower Than Prev Min',
+'Range Above 2 Day Average',
+'Range Above Average',
+'Range Lower 2 Day Average',
+'Range Lower Average',
+'Range More Than Gap Down',
+'Range More Than Gap Up',
+'Volume Higher Than Average',
+'Volume Lower Than Average',
+'Volume Open Higher',
+'Volume Open Lower',
+'Volume Open Excedingly High',
+'Volume Open Excedingly Low',
+'Volume Open After High',
+'Volume Open After Low',
+'Tiny Range',
+'Huge Range',
+'Huge Negative Range',
+'Yesterday End In Red',
+'Yesterday End Volume Above Average',
+'Volume Above 5 Time Average',
+'Volume Above 10 Time Average',
+'Volume Above 5 Time Before Average',
+'Volume Above 10 Time Before Average',
+'Volume Consecutive Above 5 Time Average',
+'Volume Consecutive Above 10 Time Average',
+    ]
+
+prev_prop_list = [
+'Yesterday End In Red',
+'Yesterday End Volume Above Average',
+'New IPO',
+'Fairly New IPO',
+'Sluggish Ticker',
+'Continue Sluggish Ticker',
+'Yesterday Status Great',
+'Yesterday Status Good',
+'Yesterday Status Fair',
+'Yesterday Status Fail',
+'Yesterday Profitable',
+'Yesterday Loss',
+'Yesterday Absolute Loss',
+'2 Days Ago Status Great',
+'2 Days Ago Status Good',
+'2 Days Ago Status Fair',
+'2 Days Ago Status Fail',
+'2 Days Ago Profitable',
+'2 Days Ago Loss',
+'2 Days Ago Absolute Loss',
+    ]
+
 ignore_prop = [
 'Big Reverse',
 'Two Small Reverse',
@@ -792,6 +957,7 @@ def findgap():
     start_date = end_date - timedelta(days=365)
     tickers = []
     tickers_data = {}
+    full_data = []
     prop_data = {}
     ticker_marks = {}
     latest_price = {}
@@ -803,8 +969,8 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-    for i in range(len(stocks.index)):
-    # for i in range(5):
+    # for i in range(len(stocks.index)):
+    for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -1249,7 +1415,7 @@ def findgap():
                     print("Prop:",tickers_data[ticker])
                 tickers_data = append_hash_set(tickers_data,ticker,'------------')
                 maxmovement[ticker] = minute_candles['high'].max() - minute_candles['low'].min()
-            if ticker in tickers_data:
+            # if ticker in tickers_data:
                 # for tm in prop_marks:
                 #     if isinstance(tm['prop'],str):
                 #         if tm['prop'] in tickers_data[ticker]:
@@ -1272,54 +1438,56 @@ def findgap():
                 #                 ticker_marks[ticker] = tm['marks']
                 #             # print("Updated marks:",ticker_marks[ticker])
 
-                global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
-                for i in range(len(global_marks)):
-                    curprop = global_marks.iloc[i]
-                    breakup = curprop['Prop'].split(':')
-                    target = len(breakup)
-                    curmark = 0
-                    for p in breakup:
-                        if p in tickers_data[ticker]:
-                            curmark += 1
-                    if curmark==target:
-                        if manualstocks:
-                            print("Adding ",curprop['Marks'], " for ",breakup)
-                        if ticker in ticker_marks:
-                            ticker_marks[ticker] += curprop['Marks']
-                        else:
-                            ticker_marks[ticker] = curprop['Marks']
-                global_fail = pd.read_csv(os.path.join(script_dir,'analyze_global_fail.csv'))
-                for i in range(len(global_fail)):
-                    curprop = global_fail.iloc[i]
-                    breakup = curprop['Prop'].split(':')
-                    target = len(breakup)
-                    curmark = 0
-                    for p in breakup:
-                        if p in tickers_data[ticker]:
-                            curmark += 1
-                    if curmark==target:
-                        if manualstocks:
-                            print("Deducting ",curprop['Marks'], " for ",breakup)
-                        if ticker in ticker_marks:
-                            ticker_marks[ticker] -= curprop['Marks']
-                        else:
-                            ticker_marks[ticker] = 0 - curprop['Marks']
-                global_negate = pd.read_csv(os.path.join(script_dir,'analyze_global_negate.csv'))
-                for i in range(len(global_negate)):
-                    curprop = global_negate.iloc[i]
-                    breakup = curprop['Prop'].split(':')
-                    target = len(breakup)
-                    curmark = 0
-                    for p in breakup:
-                        if not p in tickers_data[ticker]:
-                            curmark += 1
-                    if curmark!=target:
-                        if manualstocks:
-                            print("Negating ",curprop['Marks'], " for ",breakup)
-                        if ticker in ticker_marks:
-                            ticker_marks[ticker] -= curprop['Marks']
-                        else:
-                            ticker_marks[ticker] = 0 - curprop['Marks']
+                # global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
+                # for i in range(len(global_marks)):
+                #     curprop = global_marks.iloc[i]
+                #     breakup = curprop['Prop'].split(':')
+                #     target = len(breakup)
+                #     curmark = 0
+                #     for p in breakup:
+                #         if p in tickers_data[ticker]:
+                #             curmark += 1
+                #     if curmark==target:
+                #         if manualstocks:
+                #             print("Adding ",curprop['Marks'], " for ",breakup)
+                #         if ticker in ticker_marks:
+                #             ticker_marks[ticker] += curprop['Marks']
+                #         else:
+                #             ticker_marks[ticker] = curprop['Marks']
+                # global_fail = pd.read_csv(os.path.join(script_dir,'analyze_global_fail.csv'))
+                # for i in range(len(global_fail)):
+                #     curprop = global_fail.iloc[i]
+                #     breakup = curprop['Prop'].split(':')
+                #     target = len(breakup)
+                #     curmark = 0
+                #     for p in breakup:
+                #         if p in tickers_data[ticker]:
+                #             curmark += 1
+                #     if curmark==target:
+                #         if manualstocks:
+                #             print("Deducting ",curprop['Marks'], " for ",breakup)
+                #         if ticker in ticker_marks:
+                #             ticker_marks[ticker] -= curprop['Marks']
+                #         else:
+                #             ticker_marks[ticker] = 0 - curprop['Marks']
+                # global_negate = pd.read_csv(os.path.join(script_dir,'analyze_global_negate.csv'))
+                # for i in range(len(global_negate)):
+                #     curprop = global_negate.iloc[i]
+                #     breakup = curprop['Prop'].split(':')
+                #     target = len(breakup)
+                #     curmark = 0
+                #     for p in breakup:
+                #         if not p in tickers_data[ticker]:
+                #             curmark += 1
+                #     if curmark!=target:
+                #         if manualstocks:
+                #             print("Negating ",curprop['Marks'], " for ",breakup)
+                #         if ticker in ticker_marks:
+                #             ticker_marks[ticker] -= curprop['Marks']
+                #         else:
+                #             ticker_marks[ticker] = 0 - curprop['Marks']
+                # if manualstocks:
+                #     print("After analyze:",ticker_marks[ticker])
 
                 # positive_marks = pd.read_csv('analyze_positive.csv')
                 # for i in range(len(positive_marks)):
@@ -1358,172 +1526,241 @@ def findgap():
                 #     ticker_marks[ticker] += adjust
                 # print("Final marks:",ticker_marks[ticker])
 
-                with open(os.path.join(script_dir,'gapup_raw_data.csv'), 'a') as f:
-                    curdiff = max_price[ticker][0] - first_price[ticker][0]
-                    if curdiff > 5:
-                        tcat = 'Great'
-                    elif curdiff > 1:
-                        tcat = 'Good'
-                    elif curdiff > 0:
-                        tcat = 'Fair'
+                # with open(os.path.join(script_dir,'gapup_raw_data.csv'), 'a') as f:
+                curdiff = max_price[ticker][0] - first_price[ticker][0]
+                if curdiff > 5:
+                    tcat = 'Great'
+                elif curdiff > 1:
+                    tcat = 'Good'
+                elif curdiff > 0:
+                    tcat = 'Fair'
+                else:
+                    tcat = 'Fail'
+                if curdiff > 0.7:
+                    profitable = 1
+                else:
+                    profitable = 0
+                dlvl = str(round(curdiff,1))
+                if manualstocks:
+                    print("Max Price:",max_price[ticker][0]," First Price:",first_price[ticker][0])
+                    print("Diff:",curdiff," Profitable:",profitable)
+                fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
+                try:
+                    gap = minute_candles.iloc[0]['open']-bminute_candles.iloc[-1]['close']
+                except:
+                    gap = 0
+                # row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'marks':ticker_marks[ticker],'yavg':y_avg,'yyavg':yy_avg,'1range':minute_candles.iloc[0]['range'],'1body':minute_candles.iloc[0]['body_length'],'gap':gap}
+                row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'yavg':y_avg,'yyavg':yy_avg,'1range':minute_candles.iloc[0]['range'],'1body':minute_candles.iloc[0]['body_length'],'gap':gap}
+                for pp in prop_list:
+                    fieldnames.append(pp)
+                    if pp in tickers_data[ticker]:
+                        row[pp] = 1
                     else:
-                        tcat = 'Fail'
-                    if curdiff > 0.7:
-                        profitable = 1
-                    else:
-                        profitable = 0
-                    dlvl = str(round(curdiff,1))
-                    if manualstocks:
-                        print("Max Price:",max_price[ticker][0]," First Price:",first_price[ticker][0])
-                        print("Diff:",curdiff," Profitable:",profitable)
-                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
-                    try:
-                        gap = minute_candles.iloc[0]['open']-bminute_candles.iloc[-1]['close']
-                    except:
-                        gap = 0
-                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'marks':ticker_marks[ticker],'yavg':y_avg,'yyavg':yy_avg,'1range':minute_candles.iloc[0]['range'],'1body':minute_candles.iloc[0]['body_length'],'gap':gap}
-                    for pp in prop_list:
-                        fieldnames.append(pp)
-                        if pp in tickers_data[ticker]:
-                            row[pp] = 1
-                        else:
-                            row[pp] = 0
-                    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-                    writer.writerow(row)
+                        row[pp] = 0
+                #     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+                #     writer.writerow(row)
+                full_data.append(row)
 
     print("End date:",end_date)
-    tckr_diff = {}
-    with_price = []
-    for ctckr in ticker_marks.keys():
-        tckr_diff[ctckr] = max_price[ctckr][0] - first_price[ctckr][0]
-        with_price.append({'date':latest_date[ctckr].strftime("%d/%m %H:%M"),'ticker':ctckr,'marks':ticker_marks[ctckr],'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
+    return full_data
+    # tckr_diff = {}
+    # with_price = []
+    # for ctckr in ticker_marks.keys():
+    #     tckr_diff[ctckr] = max_price[ctckr][0] - first_price[ctckr][0]
+    #     with_price.append({'date':latest_date[ctckr].strftime("%d/%m %H:%M"),'ticker':ctckr,'marks':ticker_marks[ctckr],'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
 
-    common_props = set(all_props)
-    fail_common_props = set(all_props)
-    prop_count = {}
-    fail_prop_count = {}
-    price_levels = {}
-    diff_levels = {}
-    outstanding = {}
-    top_prop = {}
-    for pinfo in with_price:
-        if not math.isnan(pinfo['price']):
-            plvl = str(round(pinfo['price'],0))
-            if not plvl in price_levels:
-                price_levels[plvl] = 1
-            else:
-                price_levels[plvl] += 1
-        if not math.isnan(pinfo['diff']):
-            dlvl = str(round(pinfo['diff'],1))
-            if pinfo['diff']>1:
-                outstanding[pinfo['ticker']] = dlvl
-                for td in tickers_data[pinfo['ticker']]:
-                    if not td in top_prop:
-                        top_prop[td] = 1
-                    else:
-                        top_prop[td] += 1
-            if not dlvl in diff_levels:
-                diff_levels[dlvl] = 1
-            else:
-                diff_levels[dlvl] += 1
-        if not math.isnan(pinfo['diff']) and pinfo['diff']>0.3:
-            common_props = common_props.intersection(tickers_data[pinfo['ticker']])
-            for td in tickers_data[pinfo['ticker']]:
-                if not td in prop_count:
-                    prop_count[td] = 1
-                else:
-                    prop_count[td] += 1
-        else:
-            fail_common_props = fail_common_props.intersection(tickers_data[pinfo['ticker']])
-            for td in tickers_data[pinfo['ticker']]:
-                if not td in fail_prop_count:
-                    fail_prop_count[td] = 1
-                else:
-                    fail_prop_count[td] += 1
-
-    print("Common props:",common_props)
-    print(tabulate(dict(sorted(prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
-    print("Fail Common props:",fail_common_props)
-    print(tabulate(dict(sorted(fail_prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
-    result=sorted(with_price,key=lambda x:x['diff'])
-    if len(result)>0:
-        print("Props of top ticker ",result[-1]['ticker'])
-        print("\n".join(tickers_data[result[-1]['ticker']]))
-    else:
-        print("No results found")
-    return with_price,end_of_trading
+    # common_props = set(all_props)
+    # fail_common_props = set(all_props)
+    # prop_count = {}
+    # fail_prop_count = {}
+    # price_levels = {}
+    # diff_levels = {}
+    # outstanding = {}
+    # top_prop = {}
+    # for pinfo in with_price:
+    #     if not math.isnan(pinfo['price']):
+    #         plvl = str(round(pinfo['price'],0))
+    #         if not plvl in price_levels:
+    #             price_levels[plvl] = 1
+    #         else:
+    #             price_levels[plvl] += 1
+    #     if not math.isnan(pinfo['diff']):
+    #         dlvl = str(round(pinfo['diff'],1))
+    #         if pinfo['diff']>1:
+    #             outstanding[pinfo['ticker']] = dlvl
+    #             for td in tickers_data[pinfo['ticker']]:
+    #                 if not td in top_prop:
+    #                     top_prop[td] = 1
+    #                 else:
+    #                     top_prop[td] += 1
+    #         if not dlvl in diff_levels:
+    #             diff_levels[dlvl] = 1
+    #         else:
+    #             diff_levels[dlvl] += 1
+    #     if not math.isnan(pinfo['diff']) and pinfo['diff']>0.3:
+    #         common_props = common_props.intersection(tickers_data[pinfo['ticker']])
+    #         for td in tickers_data[pinfo['ticker']]:
+    #             if not td in prop_count:
+    #                 prop_count[td] = 1
+    #             else:
+    #                 prop_count[td] += 1
+    #     else:
+    #         fail_common_props = fail_common_props.intersection(tickers_data[pinfo['ticker']])
+    #         for td in tickers_data[pinfo['ticker']]:
+    #             if not td in fail_prop_count:
+    #                 fail_prop_count[td] = 1
+    #             else:
+    #                 fail_prop_count[td] += 1
+    #
+    # print("Common props:",common_props)
+    # print(tabulate(dict(sorted(prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
+    # print("Fail Common props:",fail_common_props)
+    # print(tabulate(dict(sorted(fail_prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
+    # result=sorted(with_price,key=lambda x:x['diff'])
+    # if len(result)>0:
+    #     print("Props of top ticker ",result[-1]['ticker'])
+    #     print("\n".join(tickers_data[result[-1]['ticker']]))
+    # else:
+    #     print("No results found")
+    # return with_price,end_of_trading
 
 starttest = datetime.now()
-with open(os.path.join(script_dir,'gapup_raw_data.csv'), 'w') as f:
-    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
-    for pp in prop_list:
-        fieldnames.append(pp)
-    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-    writer.writeheader()
+# with open(os.path.join(script_dir,'gapup_raw_data.csv'), 'w') as f:
+#     fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
+#     for pp in prop_list:
+#         fieldnames.append(pp)
+#     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
+#     writer.writeheader()
 # result=sorted(findgap(),key=lambda x:x['diff'])
-result,endtrading = findgap()
-result=sorted(result,key=lambda x:x['marks'])
+result = findgap()
+# result = sorted(result,key=lambda x:x['marks'])
 result = pd.DataFrame.from_dict(result)
 result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
+# alldata = pd.read_csv('gapup_raw_data.csv')
+dates = result['date'].unique()
+print("Dates:",dates)
+dateperc = pd.DataFrame()
+for cdate in dates:
+    daytrade = result[result['date']==cdate]
+    percdict = {}
+    percdict['date'] = cdate
+    for prop in prop_list:
+        dayprop = daytrade[daytrade[prop]==1]
+        propperc = round(len(dayprop)/len(daytrade),2)
+        percdict['Perc ' + prop] = propperc
+    percdf = pd.DataFrame.from_dict(percdict,orient='index').T
+    dateperc = pd.concat([dateperc,percdf])
+result_perc = result.set_index('date').join(dateperc.set_index('date'))
+result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
+
+
+# summary_prop_list
+# late_prop_list
+# opening_prop_list
+# prev_prop_list
+
+global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
+highcount = pd.read_csv(os.path.join(script_dir,'highcount.csv'))
+
+result_perc['prev_marks'] = 0
+for prop in prev_prop_list:
+    cgmark = global_marks[global_marks['Prop']==prop]
+    if len(cgmark):
+        result_perc['prev_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+
+        hcmark = highcount[highcount['prop']==prop]
+        if len(hcmark):
+            result_perc.loc[result_perc['Perc ' + prop]>0.5,'prev_marks'] *= 1 + hcmark.iloc[0]['profit_perc']
+
+result_perc['opening_marks'] = 0
+for prop in opening_prop_list:
+    cgmark = global_marks[global_marks['Prop']==prop]
+    if len(cgmark):
+        result_perc['opening_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+
+        hcmark = highcount[highcount['prop']==prop]
+        if len(hcmark):
+            result_perc.loc[result_perc['Perc ' + prop]>0.5,'opening_marks'] *= 1 + hcmark.iloc[0]['profit_perc']
+
+result_perc['late_marks'] = 0
+for prop in late_prop_list:
+    cgmark = global_marks[global_marks['Prop']==prop]
+    if len(cgmark):
+        result_perc['late_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+
+        hcmark = highcount[highcount['prop']==prop]
+        if len(hcmark):
+            result_perc.loc[result_perc['Perc ' + prop]>0.5,'late_marks'] *= 1 + hcmark.iloc[0]['profit_perc']
+
+result_perc['marks'] = result_perc['prev_marks'] + result_perc['opening_marks'] + result_perc['late_marks']
+
+result_perc.to_csv(os.path.join(script_dir,'results_perc_marks.csv'),index=False)
+
+
+# alldata.to_csv(os.path.join(script_dir,'gapup_raw_data.csv'))
 # loaded_model = load_model("model_autokeras", custom_objects=ak.CUSTOM_OBJECTS)
 # diff_model = load_model(os.path.join(script_dir,"model_diff_level"), custom_objects=ak.CUSTOM_OBJECTS)
-profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
 # [print('Fd:',i,i.shape, i.dtype) for i in loaded_model.inputs]
-tocsv = pd.read_csv(os.path.join(script_dir,'gapup_raw_data.csv'))
-highcount = pd.read_csv(os.path.join(script_dir,'highcount.csv'))
-finalmarks = []
-for i in range(len(tocsv)):
-    curdat = tocsv.iloc[i]
-    totalplus = 1
-    for hc in range(len(highcount)):
-        hcdata = highcount.iloc[hc]
-        totalhc = len(tocsv[tocsv[hcdata['prop']]==1])
-        totalperc = totalhc/len(tocsv)
-        if totalperc > 0.5:
-            if curdat[hcdata['prop']]==1:
-                totalplus += hcdata['perc']
-    if totalplus>1:
-        finalmarks.append(curdat['marks'] * (totalplus * 300))
-    else:
-        finalmarks.append(curdat['marks'])
 
-tocsv.loc[:,'marks'] = finalmarks
+# tocsv = pd.read_csv(os.path.join(script_dir,'gapup_raw_data.csv'))
+# highcount = pd.read_csv(os.path.join(script_dir,'highcount.csv'))
+# finalmarks = []
+# for i in range(len(tocsv)):
+#     curdat = tocsv.iloc[i]
+#     totalplus = 1
+#     hpp = []
+#     for hc in range(len(highcount)):
+#         hcdata = highcount.iloc[hc]
+#         totalhc = len(tocsv[tocsv[hcdata['prop']]==1])
+#         totalperc = totalhc/len(tocsv)
+#         if totalperc > 0.5:
+#             hpp.append(hcdata['prop'])
+#             if curdat[hcdata['prop']]==1:
+#                 totalplus += hcdata['perc']
+#     if totalplus>1:
+#         finalmarks.append(curdat['marks'] * (totalplus * 300))
+#         if manualstocks:
+#             print("Got high prop:",",".join(hpp)," will add marks:",totalplus * 300," to final marks:",finalmarks[-1]," from:",curdat['marks'])
+#     else:
+#         finalmarks.append(curdat['marks'])
+#
+# tocsv.loc[:,'final_marks'] = finalmarks
+# tocsv.to_csv('gapup_raw_data.csv',index=False)
 
-
-profitablecsv = tocsv.copy()
-# diffcsv = tocsv.copy()
-
-
-
-topop = ['ticker','date','day','diff','diff_level','performance','profitable']
-for tp in topop:
-    profitablecsv.pop(tp)
-for tp in ignore_prop:
-    profitablecsv.pop(tp)
-topop = ['yavg','yyavg','1range','1body','gap','marks']
-for tp in topop:
-    profitablecsv.pop(tp)
-# profitablefloat = np.asarray(profitablecsv).astype(np.float32)
-tocsv['predicted_profitable'] = profitable_model.predict(profitablecsv)
-
-# topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','profitable','performance','diff_level']
+# profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
+# profitablecsv = tocsv.copy()
+# # diffcsv = tocsv.copy()
+#
+# topop = ['ticker','date','day','diff','diff_level','performance','profitable']
 # for tp in topop:
-#     diffcsv.pop(tp)
-# topop = ['ticker','date','day','diff','diff_level','profitable','performance']
-# for tp in topop:
-#     diffcsv.pop(tp)
+#     profitablecsv.pop(tp)
 # for tp in ignore_prop:
-#     diffcsv.pop(tp)
-# difffloat = np.asarray(diffcsv).astype(np.float32)
-# tocsv['predicted_diff'] = diff_model.predict(difffloat)
-
-tocsv.sort_values(by=['predicted_profitable','predicted_diff'],ascending=False,inplace=True)
-tocsv.to_csv(os.path.join(script_dir,'gapup_raw_data.csv'),index=False)
-todisp = tocsv[['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance']]
-print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
-toresult = tocsv.iloc[:10][['ticker','date','profitable','predicted_profitable','diff','diff_level','predicted_diff','performance','marks']]
-toresult.to_csv(os.path.join(script_dir,'results_predicted.csv'),index=False)
-print("End trading:",endtrading)
+#     profitablecsv.pop(tp)
+# topop = ['yavg','yyavg','1range','1body','gap','marks']
+# for tp in topop:
+#     profitablecsv.pop(tp)
+# # profitablefloat = np.asarray(profitablecsv).astype(np.float32)
+# tocsv['predicted_profitable'] = profitable_model.predict(profitablecsv)
+#
+# # topop = ['ticker','date','day','Big Reverse','Bottom After Noon','Bottom Before Noon','Bottom Lunch','Peak After Noon','Peak Before Noon','Peak Lunch','diff','profitable','performance','diff_level']
+# # for tp in topop:
+# #     diffcsv.pop(tp)
+# # topop = ['ticker','date','day','diff','diff_level','profitable','performance']
+# # for tp in topop:
+# #     diffcsv.pop(tp)
+# # for tp in ignore_prop:
+# #     diffcsv.pop(tp)
+# # difffloat = np.asarray(diffcsv).astype(np.float32)
+# # tocsv['predicted_diff'] = diff_model.predict(difffloat)
+#
+# # tocsv.sort_values(by=['predicted_profitable','predicted_diff'],ascending=False,inplace=True)
+# tocsv.sort_values(by=['predicted_profitable'],ascending=False,inplace=True)
+# tocsv.to_csv(os.path.join(script_dir,'gapup_raw_data.csv'),index=False)
+# todisp = tocsv[['ticker','date','profitable','predicted_profitable','diff','diff_level','performance']]
+# print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
+# toresult = tocsv.iloc[:10][['ticker','date','profitable','predicted_profitable','diff','diff_level','performance','marks']]
+# toresult.to_csv(os.path.join(script_dir,'results_predicted.csv'),index=False)
+# print("End trading:",endtrading)
 endtest = datetime.now()
 print("Start:",starttest)
 print("End:",endtest)

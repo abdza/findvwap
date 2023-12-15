@@ -192,7 +192,7 @@ def add_prop_data(daytotal,dayprofitable,prop,toappend):
     return toappend
 
 starttest = datetime.now()
-raw_data = pd.read_csv('raw_data_20231212.csv')
+raw_data = pd.read_csv('raw_data_20231214.csv')
 # raw_data = pd.read_csv('gapup_raw_data.csv')
 raw_data = raw_data[raw_data['Sluggish Ticker']==0]
 profitable = raw_data[raw_data['profitable']==1]

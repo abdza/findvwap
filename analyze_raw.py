@@ -227,7 +227,7 @@ reward_prop = [
 ]
 
 
-datas = pd.read_csv('raw_data_20231212.csv')
+datas = pd.read_csv('raw_data_20231214.csv')
 
 global_prop = {}
 global_fail = {}

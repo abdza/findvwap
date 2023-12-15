@@ -216,7 +216,7 @@ starttest = datetime.now()
 # from sklearn.preprocessing import LabelEncoder
 # labelencoder = LabelEncoder()
 
-raw_data = pd.read_csv('raw_data_20231212.csv')
+raw_data = pd.read_csv('raw_data_20231214.csv')
 topop = ['ticker','date','day','diff','diff_level','performance']
 for tp in topop:
     raw_data.pop(tp)
@@ -239,12 +239,13 @@ column_types = {}
 for column_name in train_data.columns:
     if column_name in prop_list:
         column_types[column_name] = 'categorical'
+        column_types['Perc ' + column_name] = 'numerical'
     else:
         column_types[column_name] = 'numerical'
 print("Ct size:",len(column_types))
 print("Column types:",column_types)
 reg = ak.StructuredDataClassifier(
-    overwrite=True, max_trials=3, column_types=column_types, objective="val_accuracy", loss='categorical_crossentropy'
+    overwrite=True, max_trials=20, column_types=column_types, objective="val_accuracy", loss='categorical_crossentropy'
 )  # It tries 3 different models.
 print("Train shape:",train_data.shape)
 reg.fit(x=train_data,y=y_data,verbose=1,epochs=1000)
