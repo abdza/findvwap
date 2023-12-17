@@ -19,6 +19,7 @@ from ta.trend import EMAIndicator
 import streamlit as st
 from streamlit_calendar import calendar
 from props import *
+from sklearn.preprocessing import MinMaxScaler
 
 def green_candle(candle):
     if candle['open']<candle['close']:
@@ -618,7 +619,8 @@ def findgap():
                     end_of_trading = True
 
                 if manualstocks:
-                    print("Minute Candles:",minute_candles)
+                    print("Minute Candles:")
+                    print(tabulate(minute_candles,headers='keys'))
 
                 datediff = 1
                 bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
@@ -645,7 +647,8 @@ def findgap():
                 if manualstocks:
                     print("First candle:",minute_candles.iloc[0]['date'].hour,':',minute_candles.iloc[0]['date'].minute)
                     print("First size:",minute_candles.iloc[0]['body_length'],':',(minute_candles.iloc[0]['body_length']==0))
-                    print("Previous Minute Candles:",bminute_candles)
+                    print("Previous Minute Candles:")
+                    print(tabulate(bminute_candles,headers='keys'))
                     print("Previous NaN Check:",bminute_candles['open'].isnull().sum())
 
                 start_late = minute_candles.iloc[0]['date'].hour!=9 and minute_candles.iloc[0]['date'].minute!=30
@@ -1074,55 +1077,6 @@ def findgap():
                                     ticker_marks[ticker] -= curprop['Marks']
                                 else:
                                     ticker_marks[ticker] = 0 - curprop['Marks']
-                        # for tm in prop_marks:
-                        #     if isinstance(tm['prop'],str):
-                        #         if tm['prop'] in tickers_data[ticker]:
-                        #             # print("Updating marks for ",tm['prop']," with ",tm['marks'])
-                        #             if ticker in ticker_marks:
-                        #                 ticker_marks[ticker] += tm['marks']
-                        #             else:
-                        #                 ticker_marks[ticker] = tm['marks']
-                        #             # print("Updated marks:",ticker_marks[ticker])
-                        #     else:
-                        #         rulecount = 0
-                        #         for pitem in tm['prop']:
-                        #             if pitem in tickers_data[ticker]:
-                        #                 rulecount += 1
-                        #         if rulecount==len(tm['prop']):
-                        #             # print("Updating marks for ",tm['prop']," with ",tm['marks'])
-                        #             if ticker in ticker_marks:
-                        #                 ticker_marks[ticker] += tm['marks']
-                        #             else:
-                        #                 ticker_marks[ticker] = tm['marks']
-                        #             # print("Updated marks:",ticker_marks[ticker])
-                        # positive_marks = pd.read_csv('analyze_positive.csv')
-                        # for i in range(len(positive_marks)):
-                        #     curprop = positive_marks.iloc[i]
-                        #     breakup = curprop['Prop'].split(':')
-                        #     target = len(breakup)
-                        #     curmark = 0
-                        #     for p in breakup:
-                        #         if p in tickers_data[ticker]:
-                        #             curmark += 1
-                        #     if curmark==target:
-                        #         if ticker in ticker_marks:
-                        #             ticker_marks[ticker] += curprop['Scale']
-                        #         else:
-                        #             ticker_marks[ticker] = curprop['Scale']
-                        # negative_marks = pd.read_csv('analyze_Fail.csv')
-                        # for i in range(len(negative_marks)):
-                        #     curprop = negative_marks.iloc[i]
-                        #     breakup = curprop['Prop'].split(':')
-                        #     target = len(breakup)
-                        #     curmark = 0
-                        #     for p in breakup:
-                        #         if p in tickers_data[ticker]:
-                        #             curmark += 1
-                        #     if curmark==target:
-                        #         if ticker in ticker_marks:
-                        #             ticker_marks[ticker] -= curprop['Scale']
-                        #         else:
-                        #             ticker_marks[ticker] = 0 - curprop['Scale']
                         if not ticker in ticker_marks:
                             ticker_marks[ticker] = 0
                     fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
@@ -1130,7 +1084,6 @@ def findgap():
                         gap = minute_candles.iloc[0]['open']-bminute_candles.iloc[-1]['close']
                     except:
                         gap = 0
-                    # row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'marks':ticker_marks[ticker],'yavg':y_avg,'yyavg':yy_avg,'1range':minute_candles.iloc[0]['range'],'1body':minute_candles.iloc[0]['body_length'],'gap':gap}
                     row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':curdiff,'diff_level':dlvl,'performance':tcat,'profitable':profitable,'yavg':y_avg,'yyavg':yy_avg,'1range':minute_candles.iloc[0]['range'],'1body':minute_candles.iloc[0]['body_length'],'gap':gap}
                     for pp in prop_list:
                         fieldnames.append(pp)
@@ -1139,213 +1092,12 @@ def findgap():
                         else:
                             row[pp] = 0
                     full_data.append(row)
-                    # writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-                    # writer.writerow(row)
 
     print("End date:",end_date)
     return full_data
-    # test_props = []
-    # if ldate:
-    #     with open('day_data.csv', 'a') as f:
-    #         fieldnames = ['date','day']
-    #         row = {'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A')}
-    #         for pp in prop_list:
-    #             fieldnames.append(pp)
-    #             if pp in prop_data:
-    #                 profitable = []
-    #                 for cp in prop_data[pp]:
-    #                     curdiff = max_price[cp][0] - first_price[cp][0]
-    #                     if curdiff > 1:
-    #                         profitable.append(cp)
-    #                 row[pp] = profitable
-    #             else:
-    #                 row[pp] = 0
-    #         writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-    #         writer.writerow(row)
-    #     with open('day_count.csv', 'a') as f:
-    #         fieldnames = ['date','day']
-    #         row = {'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A')}
-    #         for pp in prop_list:
-    #             fieldnames.append(pp)
-    #             if pp in prop_data:
-    #                 profitable = []
-    #                 for cp in prop_data[pp]:
-    #                     curdiff = max_price[cp][0] - first_price[cp][0]
-    #                     if curdiff > 1:
-    #                         profitable.append(cp)
-    #                 row[pp] = len(profitable)
-    #             else:
-    #                 row[pp] = 0
-    #         writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-    #         writer.writerow(row)
-    # if len(test_props)>0:
-    #     firstprop = 0
-    #     while not test_props[firstprop] in prop_data:
-    #         firstprop += 1
-    #     common_tckr = set(prop_data[test_props[firstprop]])
-    #     for test in test_props:
-    #         if test!=test_props[firstprop] and test in prop_data:
-    #             common_tckr = common_tckr.intersection(prop_data[test])
-    # else:
-    #     common_tckr = tickers
-    # negate_test_props = []
-    # toremove = []
-    # negated_props = {}
-    # if len(negate_test_props)>0:
-    #     for ctckr in common_tckr:
-    #         if ctckr in tickers_data:
-    #             negated_props[ctckr] = []
-    #             for test in negate_test_props:
-    #                 if test in tickers_data[ctckr]:
-    #                     if end_of_trading:
-    #                         negated_props = append_hash_set(negated_props,ctckr,test)
-    #                     else:
-    #                         negated_props[ctckr] = negate_test_props
-    #                     toremove.append(ctckr)
-    #         else:
-    #             negated_props[ctckr] = negate_test_props
-    # else:
-    #     for ctckr in common_tckr:
-    #         negated_props[ctckr] = negate_test_props
-    # if not end_of_trading and len(test_props)>0:
-    #     for tr in toremove:
-    #         if tr in common_tckr:
-    #             common_tckr.remove(tr)
-    #
-    # tckr_diff = {}
-    # with_price = []
-    # for ctckr in common_tckr:
-    #     if ctckr in tickers_data:
-    #         tckr_diff[ctckr] = max_price[ctckr][0] - first_price[ctckr][0]
-    #         with_price.append({'date':latest_date[ctckr],'ticker':ctckr,'open':first_price[ctckr][0],'price':latest_price[ctckr][0],'max':max_price[ctckr][0],'diff':tckr_diff[ctckr],'prop':"\n".join(tickers_data[ctckr]), 'negate':"\n".join(negated_props[ctckr]),'levels':"\n".join([ str(lvl['level']) + ' --- ' + str(lvl['count']) for lvl in levels[ctckr] ])})
-    #
-    # common_props = set(all_props)
-    # fail_common_props = set(all_props)
-    # prop_count = {}
-    # fail_prop_count = {}
-    # price_levels = {}
-    # diff_levels = {}
-    # outstanding = {}
-    # top_prop = {}
-    # for pinfo in with_price:
-    #     if not math.isnan(pinfo['price']):
-    #         plvl = str(round(pinfo['price'],0))
-    #         if not plvl in price_levels:
-    #             price_levels[plvl] = 1
-    #         else:
-    #             price_levels[plvl] += 1
-    #     if not math.isnan(pinfo['diff']):
-    #         dlvl = str(round(pinfo['diff'],1))
-    #         if pinfo['diff']>1:
-    #             outstanding[pinfo['ticker']] = dlvl
-    #             for td in tickers_data[pinfo['ticker']]:
-    #                 if not td in top_prop:
-    #                     top_prop[td] = 1
-    #                 else:
-    #                     top_prop[td] += 1
-    #         if not dlvl in diff_levels:
-    #             diff_levels[dlvl] = 1
-    #         else:
-    #             diff_levels[dlvl] += 1
-    #     if not math.isnan(pinfo['diff']) and pinfo['diff']>0.3:
-    #         common_props = common_props.intersection(tickers_data[pinfo['ticker']])
-    #         for td in tickers_data[pinfo['ticker']]:
-    #             if not td in prop_count:
-    #                 prop_count[td] = 1
-    #             else:
-    #                 prop_count[td] += 1
-    #     else:
-    #         fail_common_props = fail_common_props.intersection(tickers_data[pinfo['ticker']])
-    #         for td in tickers_data[pinfo['ticker']]:
-    #             if not td in fail_prop_count:
-    #                 fail_prop_count[td] = 1
-    #             else:
-    #                 fail_prop_count[td] += 1
-    #
-    # print("Common props:",common_props)
-    # print(tabulate(dict(sorted(prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
-    # print("Fail Common props:",fail_common_props)
-    # print(tabulate(dict(sorted(fail_prop_count.items(),key=lambda item: item[1],reverse=True)).items(),headers=['Prop','Count'],tablefmt="github"))
-    # result=sorted(with_price,key=lambda x:x['diff'])
-    # if len(result)>0:
-    #     print("Props of top ticker ",result[-1]['ticker'])
-    #     print("\n".join(tickers_data[result[-1]['ticker']]))
-    # else:
-    #     print("No results found")
-    # # return with_price,end_of_trading,prop_count,fail_prop_count,price_levels,diff_levels,outstanding,top_prop
-
 starttest = datetime.now()
 data = []
-with open('raw_data.csv', 'w') as f:
-    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
-    for pp in prop_list:
-        fieldnames.append(pp)
-    writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-    writer.writeheader()
-# with open('day_data.csv', 'w') as f:
-#     fieldnames = ['date','day']
-#     for pp in prop_list:
-#         fieldnames.append(pp)
-#     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-#     writer.writeheader()
-# with open('day_count.csv', 'w') as f:
-#     fieldnames = ['date','day']
-#     for pp in prop_list:
-#         fieldnames.append(pp)
-#     writer = csv.DictWriter(f,fieldnames=fieldnames,extrasaction='ignore')
-#     writer.writeheader()
-alldata = pd.DataFrame()
-for day in range(60):
-# for day in range(5):
-    instockdate = starttest - timedelta(days=day)
-    print("Processing ",instockdate)
-    tmpkey = str(instockdate.date())
-    print("Tmpkey :",tmpkey)
-# result=sorted(findgap(),key=lambda x:x['diff'])
-    result = findgap()
-    result = pd.DataFrame.from_dict(result)
-    alldata = pd.concat([alldata,result])
-    # result.to_csv(os.path.join(script_dir,'raw_data.csv'),index=False)
-    # result,endtrading,prop_count,fail_prop_count,price_levels,diff_levels,outstanding,top_prop = findgap()
-    # if len(result)>1:
-    #     if endtrading:
-    #         result=sorted(result,key=lambda x:x['diff'])
-    #     else:
-    #         result=sorted(result,key=lambda x:x['price'])
-    #
-    #     data.append({
-    #         'date':str(instockdate.date()),
-    #         'top_ticker':result[-1]['ticker'],
-    #         'top_price':result[-1]['price'],
-    #         'top_diff':result[-1]['diff'],
-    #         'outstanding':outstanding,
-    #         'top_prop':top_prop,
-    #         'prop':prop_count,
-    #         'fail_prop':fail_prop_count,
-    #         # 'price_levels':price_levels,
-    #         'diff_levels':diff_levels
-    #     })
-    # print(tabulate(result,headers="keys",tablefmt="grid"))
-alldata.to_csv(os.path.join(script_dir,'raw_data.csv'),index=False)
-# alldata = pd.read_csv('raw_data.csv')
-# dates = alldata['date'].unique()
-# print("Dates:",dates)
-# dateperc = pd.DataFrame()
-# for cdate in dates:
-#     daytrade = alldata[alldata['date']==cdate]
-#     percdict = {}
-#     percdict['date'] = cdate
-#     for prop in prop_list:
-#         dayprop = daytrade[daytrade[prop]==1]
-#         propperc = round(len(dayprop)/len(daytrade),2)
-#         percdict['Perc ' + prop] = propperc
-#     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
-#     dateperc = pd.concat([dateperc,percdf])
-# alldata = alldata.set_index('date').join(dateperc.set_index('date'))
-# alldata.to_csv(os.path.join(script_dir,'raw_data.csv'))
-#
-# with open(outfile, "w") as write_file:
-#     json.dump(data, write_file)
+alldata = pd.read_csv('raw_data.csv')
 dates = alldata['date'].unique()
 print("Dates:",dates)
 dateperc = pd.DataFrame()
@@ -1355,61 +1107,111 @@ for cdate in dates:
     percdict['date'] = cdate
     for prop in prop_list:
         dayprop = daytrade[daytrade[prop]==1]
-        propperc = round(len(dayprop)/len(daytrade),2)
+        propperc = round(len(dayprop)/len(daytrade),4)
         percdict['Perc ' + prop] = propperc
     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
     dateperc = pd.concat([dateperc,percdf])
 result_perc = alldata.set_index('date').join(dateperc.set_index('date'))
-result_perc.to_csv(os.path.join(script_dir,'raw_data_perc.csv'),index=False)
+result_perc.to_csv(os.path.join(script_dir,'raw_data_perc.csv'))
 
 global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
-highcount = pd.read_csv(os.path.join(script_dir,'highcount.csv'))
+global_fail = pd.read_csv(os.path.join(script_dir,'analyze_global_fail.csv'))
 
-result_perc['prev_marks'] = 0
+result_perc.reset_index(inplace=True)
+# result_perc.set_index(['date','ticker'])
+
+result_perc['prev_marks'] = 1
+result_perc['neg_prev_marks'] = 1
 for prop in prev_prop_list:
     cgmark = global_marks[global_marks['Prop']==prop]
     if len(cgmark):
-        result_perc['prev_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+        if cgmark.iloc[0]['Marks']>0:
+            # result_perc.loc[result_perc[prop]==1,'prev_marks'] *= cgmark.iloc[0]['Marks']
+            result_perc.loc[result_perc[prop]==1,'prev_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+        # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'prev_marks'] *= (1 + cgmark.iloc[0]['Median'])
+    cgmark = global_fail[global_fail['Prop']==prop]
+    if len(cgmark):
+        result_perc.loc[result_perc[prop]==1,'neg_prev_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
+result_perc['final_prev_marks'] = result_perc['prev_marks'] - result_perc['neg_prev_marks']
 
-        hcmark = highcount[highcount['prop']==prop]
-        if len(hcmark):
-            result_perc.loc[result_perc['Perc ' + prop]>0.5,'prev_marks'] *= 1 + hcmark.iloc[0]['profit_perc']
-
-result_perc['opening_marks'] = 0
+result_perc['opening_marks'] = 1
+result_perc['neg_opening_marks'] = 1
 for prop in opening_prop_list:
     cgmark = global_marks[global_marks['Prop']==prop]
     if len(cgmark):
-        result_perc['opening_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+        if cgmark.iloc[0]['Marks']>0:
+            # result_perc.loc[result_perc[prop]==1,'opening_marks'] *= cgmark.iloc[0]['Marks']
+            result_perc.loc[result_perc[prop]==1,'opening_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+        # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'opening_marks'] *= (1 + cgmark.iloc[0]['Median'])
+    cgmark = global_fail[global_fail['Prop']==prop]
+    if len(cgmark):
+        result_perc.loc[result_perc[prop]==1,'neg_opening_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
+result_perc['final_opening_marks'] = result_perc['opening_marks'] - result_perc['neg_opening_marks']
 
-        hcmark = highcount[highcount['prop']==prop]
-        if len(hcmark):
-            result_perc.loc[result_perc['Perc ' + prop]>0.5,'opening_marks'] *= 1 + hcmark.iloc[0]['profit_perc']
-
-result_perc['late_marks'] = 0
+result_perc['late_marks'] = 1
+result_perc['neg_late_marks'] = 1
 for prop in late_prop_list:
     cgmark = global_marks[global_marks['Prop']==prop]
     if len(cgmark):
-        result_perc['late_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+        if cgmark.iloc[0]['Marks']>0:
+            # result_perc.loc[result_perc[prop]==1,'late_marks'] *= cgmark.iloc[0]['Marks']
+            result_perc.loc[result_perc[prop]==1,'late_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+        # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'late_marks'] *= (1 + cgmark.iloc[0]['Median'])
+    cgmark = global_fail[global_fail['Prop']==prop]
+    if len(cgmark):
+        result_perc.loc[result_perc[prop]==1,'neg_late_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
+result_perc['final_late_marks'] = result_perc['late_marks'] - result_perc['neg_late_marks']
+        
 
-        hcmark = highcount[highcount['prop']==prop]
-        if len(hcmark):
-            result_perc.loc[result_perc['Perc ' + prop]>0.5,'late_marks'] *= 1 + hcmark.iloc[0]['profit_perc']
+    # print(tabulate(corr,headers='keys'))
+#     dayprop = daytrade[daytrade[prop]==1]
+#     print(corr.columns)
 
-result_perc['early_marks'] = result_perc['prev_marks'] + result_perc['opening_marks']
-result_perc['marks'] = result_perc['prev_marks'] + result_perc['opening_marks'] + result_perc['late_marks']
+scaler = MinMaxScaler()
+# result_perc[['prev_marks','opening_marks','late_marks']] = scaler.fit_transform(result_perc[['prev_marks','opening_marks','late_marks']])
+result_perc['early_marks'] = result_perc['final_prev_marks'] + result_perc['final_opening_marks']
+result_perc['marks'] = result_perc['final_prev_marks'] + result_perc['final_opening_marks'] + result_perc['final_late_marks']
+
+
+prop_corr = pd.read_csv(os.path.join(script_dir,'analyze_global_corr.csv'))
+print("prop:",prop_corr.columns)
+result_perc['corr_marks'] = 2
+for prop in prop_list:
+    print("Corr for ",prop)
+    filtered = result_perc[result_perc['Perc ' + prop]>0.5]
+    filtered = filtered[filtered[prop]==1]
+    if prop not in ignore_prop:
+        cgmark = global_marks[global_marks['Prop']==prop]
+        for tp in cgmark['All CP']:
+            # print("Tp:",tp)
+            intp = eval(tp)
+            for iii in intp:
+                print("In tp:",iii)
+                # if iii['CorrRatio']>0.3:
+                filtered = filtered[filtered[iii['Prop']]==1]
+                result_perc.loc[filtered.index,'corr_marks'] += result_perc['corr_marks'] * iii['CorrRatio']
+                print("We've got ratio")
+        # corr = prop_corr[prop_corr[prop]>0.5]
+        # filtered = result_perc[result_perc['Perc ' + prop]>0.5]
+        # filtered = filtered[filtered[prop]==1]
+        # for cp in corr['Prop']:
+        #     filtered = filtered[filtered[cp]==1]
+        #     print("P:",cp," Filter size:",len(filtered))
+        # if len(filtered)>0:
+        #     result_perc.loc[filtered.index,'corr_marks'] += 1
+
+result_perc[['corr_marks']] = scaler.fit_transform(result_perc[['corr_marks']])
+
+result_perc['final_marks'] = result_perc['marks'] + result_perc['corr_marks']
+
+fieldnames = ['date','ticker','diff_level','performance','profitable','prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','yavg','yyavg','1range','1body','gap']
+minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
+finalcolumns = fieldnames + minuscolumns
+
+result_perc = result_perc[finalcolumns]
 
 result_perc.to_csv(os.path.join(script_dir,'raw_data_perc_marks.csv'),index=False)
 endtest = datetime.now()
 print("Start:",starttest)
 print("End:",endtest)
 print("Time:",endtest-starttest)
-# alldata = pd.read_csv('raw_data.csv')
-# winners = alldata.groupby('date')['diff'].max().reset_index()
-# for win in winners:
-#     print("Win:",win)
-#     alldata.loc[alldata['diff']==win,'winner'] = 1
-# winners = winners.reindex(alldata['date'])
-# winners = alldata['diff'].max()
-# alldata_with_winners = alldata.merge(winners.to_frame('daywinner'), on='date')
-# alldata['gotwin'] = (alldata['diff']==winners)
-# winners.to_csv('winners.csv',index=False)

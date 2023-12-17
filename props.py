@@ -151,18 +151,6 @@ prop_list = [
 '2 Days Ago Absolute Loss',
     ]
 
-summary_prop_list = [
-'Big Reverse',
-'Bottom After Noon',
-'Bottom Before Noon',
-'Bottom Lunch',
-'Peak After Noon',
-'Peak Before Noon',
-'Peak Lunch',
-'Two Small Reverse',
-'Max After Min',
-'Min After Max',
-    ]
 
 late_prop_list = [
 'Consecutive Early Green',
@@ -242,8 +230,6 @@ late_prop_list = [
 'Consecutive Early Huge Negative Range',
 'Consecutive Late Huge Negative Range',
 'Consecutive Huge Negative Range',
-'Yesterday End In Red',
-'Yesterday End Volume Above Average',
 'Late Start',
     ]
 
@@ -283,8 +269,6 @@ opening_prop_list = [
 'Tiny Range',
 'Huge Range',
 'Huge Negative Range',
-'Yesterday End In Red',
-'Yesterday End Volume Above Average',
 'Volume Above 5 Time Average',
 'Volume Above 10 Time Average',
 'Volume Above 5 Time Before Average',
@@ -327,4 +311,68 @@ ignore_prop = [
 'Peak Lunch',
 'Min After Max',
 'Max After Min',
+]
+
+summary_prop_list = [
+'Big Reverse',
+'Bottom After Noon',
+'Bottom Before Noon',
+'Bottom Lunch',
+'Peak After Noon',
+'Peak Before Noon',
+'Peak Lunch',
+'Two Small Reverse',
+'Max After Min',
+'Min After Max',
+    ]
+
+punish_prop = [
+'Sluggish Ticker',
+'Continue Sluggish Ticker',
+'Limp Second Diff',
+'Limp Third Diff',
+'Consecutive Limp Diff',
+'Late Start',
+'First Red',
+]
+
+reward_prop = [
+'Continue Higher Low',
+'Consecutive Early Green',
+'Open Higher Than Prev Max',
+'Gap Up Above Prev Max',
+'Range Above 2 Day Average',
+'Third Range Longer',
+'2 Days Ago Absolute Loss',
+'Gap Down Below Prev Min',
+'Second Range Shorter',
+'Limp Second Diff',
+'Third Green',
+'Second Green',
+'Higher Low',
+'Volume Open Lower',
+'2 Days Ago Status Fair',
+'Yesterday Loss',
+'Limp Third Diff',
+'Third Long',
+'Second Long',
+'Second Volume Lower',
+'Open Lower Than 2 Prev Max',
+'Open Higher Than 2 Prev Max',
+'Gap Up',
+'Consecutive Limp Diff',
+'Gap Up Above 2 Day Average',
+'Yesterday Status Fair',
+'Higher High',
+'Volume Higher Than Average',
+'Third Range Shorter',
+'Gap Up Above Average',
+'Consecutive Shorter Range',
+'Third Volume Higher',
+'First Green',
+'Lower High',
+'Range Above Average',
+'Range More Than Gap Up',
+'Yesterday End Volume Above Average',
+'Range Lower Average',
 ]
