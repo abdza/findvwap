@@ -120,7 +120,7 @@ result_perc['final_marks'] = result_perc['marks'] + result_perc['corr_marks']
 
 fieldnames = ['date','ticker','diff_level','performance','profitable','prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','yavg','yyavg','1range','1body','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
-finalcolumns = fieldnames + minuscolumns
+finalcolumns = fieldnames + sorted(minuscolumns)
 
 result_perc = result_perc[finalcolumns]
 

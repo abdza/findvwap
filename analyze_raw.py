@@ -21,12 +21,32 @@ global_negate = {}
 dates = datas['date'].unique()
 print("Dates:",dates)
 
+fieldnames = ['diff_level']
+fieldnames += prop_list
+for prop in prop_list:
+    fieldnames.append('Perc ' + prop)
 profitable = datas[datas['profitable']==1]
-propsprofitable = profitable[prop_list]
+propsprofitable = profitable[fieldnames]
 corrprofit = propsprofitable.corr()
 
 corrprofit.index.names = ['Prop']
 corrprofit.to_csv("analyze_global_corr.csv")
+
+propsprofitable = datas[['profitable'] + fieldnames]
+propsprofitable = propsprofitable[propsprofitable['First Green']==1]
+for prop in prop_list:
+    propsprofitable['Profit ' + prop] = 0
+    appear = propsprofitable[propsprofitable[prop]==1]
+    appearprofit = appear[appear['profitable']==1]
+    if len(appearprofit):
+        propsprofitable.loc[appearprofit.index,'Profit ' + prop] = 1
+
+group_by_diff = propsprofitable.groupby('diff_level').sum()
+group_by_diff.reset_index(inplace=True)
+group_by_diff.to_csv("analyze_global_group_numbers.csv",index=False)
+group_by_diff = group_by_diff.corr()
+group_by_diff.index.names = ['Prop']
+group_by_diff.to_csv("analyze_global_group_corr.csv")
 
 for pl in prop_list:
     proprows = datas[datas[pl]==1]
@@ -74,7 +94,10 @@ for pl in prop_list:
                         cprow['CorrProfit'] = len(profitfilter)
                         lossfilter = cpfiltered[cpfiltered['profitable']==0]
                         cprow['CorrLoss'] = len(lossfilter)
-                        cprow['CorrRatio'] = cprow['CorrProfit']/cprow['CorrLoss']
+                        if cprow['CorrLoss']>0:
+                            cprow['CorrRatio'] = cprow['CorrProfit']/cprow['CorrLoss']
+                        else:
+                            cprow['CorrRatio'] = cprow['CorrProfit']
                         allcp.append(cprow)
         currow['All CP'] = allcp
         if pl not in reward_prop:
@@ -90,10 +113,11 @@ for pl in prop_list:
         #     else:
         #         global_fail[pl] = round(len(failed) / len(proprows),2) * 100
 
-        failedratio = round(len(failed)/len(profitable),2)
-        if failedratio>50:
-            print("Putting prop into negate:",pl," Ratio:",failedratio)
-            global_negate[pl] = failedratio
+        if len(profitable)>0:
+            failedratio = round(len(failed)/len(profitable),2)
+            if failedratio>50:
+                print("Putting prop into negate:",pl," Ratio:",failedratio)
+                global_negate[pl] = failedratio
         global_prop.append(currow)
 
 outdata = pd.DataFrame.from_dict(global_prop)
