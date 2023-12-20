@@ -232,7 +232,7 @@ def findgap():
 starttest = datetime.now()
 alldata = pd.DataFrame()
 # for day in range(60):
-for day in range(3):
+for day in range(10):
     instockdate = starttest - timedelta(days=day)
     result = findgap()
     result = pd.DataFrame.from_dict(result)

@@ -84,8 +84,8 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-    for i in range(len(stocks.index)):
-    # for i in range(5):
+    # for i in range(len(stocks.index)):
+    for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -202,110 +202,112 @@ for cdate in dates:
     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
     dateperc = pd.concat([dateperc,percdf])
 result_perc = result.set_index('date').join(dateperc.set_index('date'))
+result_perc.reset_index(inplace=True)
 result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
 
 # result_perc = pd.read_csv('raw_data_perc.csv')
 
-global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
-global_fail = pd.read_csv(os.path.join(script_dir,'analyze_global_fail.csv'))
-
-result_perc.reset_index(inplace=True)
-# result_perc.set_index(['date','ticker'])
-
-result_perc['prev_marks'] = 1
-result_perc['neg_prev_marks'] = 1
-for prop in prev_prop_list:
-    cgmark = global_marks[global_marks['Prop']==prop]
-    if len(cgmark):
-        if cgmark.iloc[0]['Marks']>0:
-            # result_perc.loc[result_perc[prop]==1,'prev_marks'] *= cgmark.iloc[0]['Marks']
-            result_perc.loc[result_perc[prop]==1,'prev_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
-        # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'prev_marks'] *= (1 + cgmark.iloc[0]['Median'])
-    cgmark = global_fail[global_fail['Prop']==prop]
-    if len(cgmark):
-        result_perc.loc[result_perc[prop]==1,'neg_prev_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
-result_perc['final_prev_marks'] = result_perc['prev_marks'] - result_perc['neg_prev_marks']
-
-result_perc['opening_marks'] = 1
-result_perc['neg_opening_marks'] = 1
-for prop in opening_prop_list:
-    cgmark = global_marks[global_marks['Prop']==prop]
-    if len(cgmark):
-        if cgmark.iloc[0]['Marks']>0:
-            # result_perc.loc[result_perc[prop]==1,'opening_marks'] *= cgmark.iloc[0]['Marks']
-            result_perc.loc[result_perc[prop]==1,'opening_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
-        # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'opening_marks'] *= (1 + cgmark.iloc[0]['Median'])
-    cgmark = global_fail[global_fail['Prop']==prop]
-    if len(cgmark):
-        result_perc.loc[result_perc[prop]==1,'neg_opening_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
-result_perc['final_opening_marks'] = result_perc['opening_marks'] - result_perc['neg_opening_marks']
-
-result_perc['late_marks'] = 1
-result_perc['neg_late_marks'] = 1
-for prop in late_prop_list:
-    cgmark = global_marks[global_marks['Prop']==prop]
-    if len(cgmark):
-        if cgmark.iloc[0]['Marks']>0:
-            # result_perc.loc[result_perc[prop]==1,'late_marks'] *= cgmark.iloc[0]['Marks']
-            result_perc.loc[result_perc[prop]==1,'late_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
-        # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'late_marks'] *= (1 + cgmark.iloc[0]['Median'])
-    cgmark = global_fail[global_fail['Prop']==prop]
-    if len(cgmark):
-        result_perc.loc[result_perc[prop]==1,'neg_late_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
-result_perc['final_late_marks'] = result_perc['late_marks'] - result_perc['neg_late_marks']
-        
-
-    # print(tabulate(corr,headers='keys'))
-#     dayprop = daytrade[daytrade[prop]==1]
-#     print(corr.columns)
-
-scaler = MinMaxScaler()
-result_perc[['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks']] = scaler.fit_transform(result_perc[['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks']])
-result_perc['early_marks'] = result_perc['final_prev_marks'] + result_perc['final_opening_marks']
-result_perc['marks'] = result_perc['final_prev_marks'] + result_perc['final_opening_marks'] + result_perc['final_late_marks']
-result_perc[['early_marks','marks']] = scaler.fit_transform(result_perc[['early_marks','marks']])
-
-
-prop_corr = pd.read_csv(os.path.join(script_dir,'analyze_global_corr.csv'))
-print("prop:",prop_corr.columns)
-result_perc['corr_marks'] = 1
-for prop in prop_list:
-    print("Corr for ",prop)
-    filtered = result_perc[result_perc['Perc ' + prop]>0.5]
-    filtered = filtered[filtered[prop]==1]
-    if prop not in ignore_prop:
-        cgmark = global_marks[global_marks['Prop']==prop]
-        for tp in cgmark['All CP']:
-            # print("Tp:",tp)
-            intp = eval(tp)
-            for iii in intp:
-                print("In tp:",iii)
-                # if iii['CorrRatio']>0.3:
-                filtered = filtered[filtered[iii['Prop']]==1]
-                result_perc.loc[filtered.index,'corr_marks'] += result_perc['corr_marks'] * iii['CorrRatio']
-                print("We've got ratio")
-        # corr = prop_corr[prop_corr[prop]>0.5]
-        # filtered = result_perc[result_perc['Perc ' + prop]>0.5]
-        # filtered = filtered[filtered[prop]==1]
-        # for cp in corr['Prop']:
-        #     filtered = filtered[filtered[cp]==1]
-        #     print("P:",cp," Filter size:",len(filtered))
-        # if len(filtered)>0:
-        #     result_perc.loc[filtered.index,'corr_marks'] += 1
-
-result_perc.loc[result_perc['corr_marks']==1,'corr_marks'] = 0
-
-result_perc[['corr_marks']] = scaler.fit_transform(result_perc[['corr_marks']])
-
-result_perc['final_marks'] = result_perc['marks'] + result_perc['corr_marks']
-result_perc[['final_marks']] = scaler.fit_transform(result_perc[['final_marks']])
-
-fieldnames = ['date','ticker','diff_level','performance','profitable','prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','yavg','yyavg','1range','1body','gap']
-minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
-finalcolumns = fieldnames + sorted(minuscolumns)
-
-result_perc = result_perc[finalcolumns]
-
+# global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
+# global_fail = pd.read_csv(os.path.join(script_dir,'analyze_global_fail.csv'))
+#
+# result_perc.reset_index(inplace=True)
+# # result_perc.set_index(['date','ticker'])
+#
+# result_perc['prev_marks'] = 1
+# result_perc['neg_prev_marks'] = 1
+# for prop in prev_prop_list:
+#     cgmark = global_marks[global_marks['Prop']==prop]
+#     if len(cgmark):
+#         if cgmark.iloc[0]['Marks']>0:
+#             # result_perc.loc[result_perc[prop]==1,'prev_marks'] *= cgmark.iloc[0]['Marks']
+#             result_perc.loc[result_perc[prop]==1,'prev_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+#         # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'prev_marks'] *= (1 + cgmark.iloc[0]['Median'])
+#     cgmark = global_fail[global_fail['Prop']==prop]
+#     if len(cgmark):
+#         result_perc.loc[result_perc[prop]==1,'neg_prev_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
+# result_perc['final_prev_marks'] = result_perc['prev_marks'] - result_perc['neg_prev_marks']
+#
+# result_perc['opening_marks'] = 1
+# result_perc['neg_opening_marks'] = 1
+# for prop in opening_prop_list:
+#     cgmark = global_marks[global_marks['Prop']==prop]
+#     if len(cgmark):
+#         if cgmark.iloc[0]['Marks']>0:
+#             # result_perc.loc[result_perc[prop]==1,'opening_marks'] *= cgmark.iloc[0]['Marks']
+#             result_perc.loc[result_perc[prop]==1,'opening_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+#         # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'opening_marks'] *= (1 + cgmark.iloc[0]['Median'])
+#     cgmark = global_fail[global_fail['Prop']==prop]
+#     if len(cgmark):
+#         result_perc.loc[result_perc[prop]==1,'neg_opening_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
+# result_perc['final_opening_marks'] = result_perc['opening_marks'] - result_perc['neg_opening_marks']
+#
+# result_perc['late_marks'] = 1
+# result_perc['neg_late_marks'] = 1
+# for prop in late_prop_list:
+#     cgmark = global_marks[global_marks['Prop']==prop]
+#     if len(cgmark):
+#         if cgmark.iloc[0]['Marks']>0:
+#             # result_perc.loc[result_perc[prop]==1,'late_marks'] *= cgmark.iloc[0]['Marks']
+#             result_perc.loc[result_perc[prop]==1,'late_marks'] += result_perc[prop] * cgmark.iloc[0]['Marks']
+#         # result_perc.loc[result_perc['Perc ' + prop]>cgmark.iloc[0]['Median'],'late_marks'] *= (1 + cgmark.iloc[0]['Median'])
+#     cgmark = global_fail[global_fail['Prop']==prop]
+#     if len(cgmark):
+#         result_perc.loc[result_perc[prop]==1,'neg_late_marks'] *= cgmark.iloc[0]['Marks'] * 0.3
+# result_perc['final_late_marks'] = result_perc['late_marks'] - result_perc['neg_late_marks']
+#         
+#
+#     # print(tabulate(corr,headers='keys'))
+# #     dayprop = daytrade[daytrade[prop]==1]
+# #     print(corr.columns)
+#
+# scaler = MinMaxScaler()
+# result_perc[['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks']] = scaler.fit_transform(result_perc[['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks']])
+# result_perc['early_marks'] = result_perc['final_prev_marks'] + result_perc['final_opening_marks']
+# result_perc['marks'] = result_perc['final_prev_marks'] + result_perc['final_opening_marks'] + result_perc['final_late_marks']
+# result_perc[['early_marks','marks']] = scaler.fit_transform(result_perc[['early_marks','marks']])
+#
+#
+# prop_corr = pd.read_csv(os.path.join(script_dir,'analyze_global_corr.csv'))
+# print("prop:",prop_corr.columns)
+# result_perc['corr_marks'] = 1
+# for prop in prop_list:
+#     print("Corr for ",prop)
+#     filtered = result_perc[result_perc['Perc ' + prop]>0.5]
+#     filtered = filtered[filtered[prop]==1]
+#     if prop not in ignore_prop:
+#         cgmark = global_marks[global_marks['Prop']==prop]
+#         for tp in cgmark['All CP']:
+#             # print("Tp:",tp)
+#             intp = eval(tp)
+#             for iii in intp:
+#                 print("In tp:",iii)
+#                 # if iii['CorrRatio']>0.3:
+#                 filtered = filtered[filtered[iii['Prop']]==1]
+#                 result_perc.loc[filtered.index,'corr_marks'] += result_perc['corr_marks'] * iii['CorrRatio']
+#                 print("We've got ratio")
+#         # corr = prop_corr[prop_corr[prop]>0.5]
+#         # filtered = result_perc[result_perc['Perc ' + prop]>0.5]
+#         # filtered = filtered[filtered[prop]==1]
+#         # for cp in corr['Prop']:
+#         #     filtered = filtered[filtered[cp]==1]
+#         #     print("P:",cp," Filter size:",len(filtered))
+#         # if len(filtered)>0:
+#         #     result_perc.loc[filtered.index,'corr_marks'] += 1
+#
+# result_perc.loc[result_perc['corr_marks']==1,'corr_marks'] = 0
+#
+# result_perc[['corr_marks']] = scaler.fit_transform(result_perc[['corr_marks']])
+#
+# result_perc['final_marks'] = result_perc['marks'] + result_perc['corr_marks']
+# result_perc[['final_marks']] = scaler.fit_transform(result_perc[['final_marks']])
+#
+# fieldnames = ['date','ticker','diff_level','performance','profitable','prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','gap']
+# minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
+# finalcolumns = fieldnames + sorted(minuscolumns)
+#
+# result_perc = result_perc[finalcolumns]
+#
+result_perc = calc_marks(result_perc)
 result_perc.to_csv(os.path.join(script_dir,'results_marks.csv'),index=False)
 
 
@@ -343,10 +345,14 @@ profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custo
 profitablecsv = result_perc.copy()
 # diffcsv = tocsv.copy()
 
+print("Prepop Columns:",profitablecsv.columns)
 topop = ['ticker','date','day','diff','diff_level','performance','profitable']
 for tp in topop:
     profitablecsv.pop(tp)
 for tp in ignore_prop:
+    profitablecsv.pop(tp)
+todrop = ['prev_marks','opening_marks','late_marks','marks','gap']
+for tp in todrop:
     profitablecsv.pop(tp)
 # topop = ['yavg','yyavg','1range','1body','gap','marks']
 # for tp in topop:
@@ -355,7 +361,7 @@ print("Columns:",profitablecsv.columns)
 profitablefloat = np.asarray(profitablecsv).astype(np.float32)
 result_perc['predicted_profitable'] = profitable_model.predict(profitablefloat)
 
-fieldnames = ['date','ticker','diff_level','performance','profitable','final_marks','predicted_profitable','prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','gap']
+fieldnames = ['date','ticker','diff_level','performance','profitable','predicted_profitable','prev_marks','opening_marks','late_marks','marks','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
 finalcolumns = fieldnames + sorted(minuscolumns)
 
@@ -375,7 +381,7 @@ result_perc = result_perc[finalcolumns]
 # tocsv.sort_values(by=['predicted_profitable','predicted_diff'],ascending=False,inplace=True)
 result_perc.sort_values(by=['predicted_profitable'],ascending=False,inplace=True)
 result_perc.to_csv(os.path.join(script_dir,'results_profitability.csv'),index=False)
-todisp = result_perc[['ticker','date','profitable','predicted_profitable','final_marks','diff_level','performance']]
+todisp = result_perc[['ticker','date','profitable','predicted_profitable','diff_level','performance']]
 print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
 # toresult = tocsv.iloc[:10][['ticker','date','profitable','predicted_profitable','diff','diff_level','performance','marks']]
 # toresult.to_csv(os.path.join(script_dir,'results_predicted.csv'),index=False)

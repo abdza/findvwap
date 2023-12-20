@@ -1,6 +1,11 @@
 import numpy as np
+import pandas as pd 
+import os
 from numerize import numerize
 from sklearn.cluster import KMeans
+
+script_path = os.path.abspath(__file__)
+script_dir = os.path.dirname(script_path)
 
 prop_list = [
 'Big Reverse',
@@ -1238,3 +1243,23 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
     summary = {'max_price':max_price,'first_price':first_price,'category':tcat,'profitable':profitable,'diff':curdiff,'diff_level':dlvl,'gap':gap}
 
     return prop_data, tickers_data, all_props, summary
+
+def calc_marks(proparray):
+    global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
+    proparray['prev_marks'] = 1.0
+    for prop in prev_prop_list:
+        cgmark = global_marks[global_marks['Prop']==prop]
+        if len(cgmark):
+            proparray.loc[proparray[prop]==1,'prev_marks'] *= cgmark.iloc[0]['Marks']
+    proparray['opening_marks'] = 1.0
+    for prop in opening_prop_list:
+        cgmark = global_marks[global_marks['Prop']==prop]
+        if len(cgmark):
+            proparray.loc[proparray[prop]==1,'opening_marks'] *= cgmark.iloc[0]['Marks']
+    proparray['late_marks'] = 1.0
+    for prop in late_prop_list:
+        cgmark = global_marks[global_marks['Prop']==prop]
+        if len(cgmark):
+            proparray.loc[proparray[prop]==1,'late_marks'] *= cgmark.iloc[0]['Marks']
+    proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks']
+    return proparray
