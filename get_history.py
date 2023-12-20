@@ -78,8 +78,8 @@ def findgap():
     end_of_trading = False
     ldate = None
 
-    # for i in range(len(stocks.index)):
-    for i in range(10):
+    for i in range(len(stocks.index)):
+    # for i in range(10):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -231,8 +231,8 @@ def findgap():
 
 starttest = datetime.now()
 alldata = pd.DataFrame()
-# for day in range(60):
-for day in range(10):
+for day in range(60):
+# for day in range(10):
     instockdate = starttest - timedelta(days=day)
     result = findgap()
     result = pd.DataFrame.from_dict(result)
