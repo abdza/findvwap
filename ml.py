@@ -19,6 +19,9 @@ for tp in topop:
     raw_data.pop(tp)
 for tp in ignore_prop:
     raw_data.pop(tp)
+todrop = ['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','yavg','yyavg','1range','1body','gap']
+for tp in todrop:
+    raw_data.pop(tp)
 # topop = ['yavg','yyavg','1range','1body','gap','marks']
 # for tp in topop:
 #     raw_data.pop(tp)
@@ -29,7 +32,7 @@ train_size = int(raw_data.shape[0] * 0.9)
 train_data = pd.DataFrame(raw_data[:train_size])
 print("Keys:",train_data.columns)
 test_data = pd.DataFrame(raw_data[train_size:])
-train_data[['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','yavg','yyavg','1range','1body','gap']] = scaler.fit_transform(train_data[['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','yavg','yyavg','1range','1body','gap']])
+# train_data[['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','yavg','yyavg','1range','1body','gap']] = scaler.fit_transform(train_data[['prev_marks','neg_prev_marks','final_prev_marks','opening_marks','neg_opening_marks','final_opening_marks','late_marks','neg_late_marks','final_late_marks','early_marks','marks','corr_marks','final_marks','yavg','yyavg','1range','1body','gap']])
 # y_data = labelencoder.fit_transform(y_data)
 y_data = train_data.pop('profitable')
 
@@ -43,10 +46,10 @@ for column_name in train_data.columns:
 print("Ct size:",len(column_types))
 print("Column types:",column_types)
 reg = ak.StructuredDataClassifier(
-    overwrite=True, max_trials=100, column_types=column_types, objective="val_accuracy", loss='categorical_crossentropy'
+    overwrite=True, max_trials=5, column_types=column_types, objective="val_accuracy", loss='categorical_crossentropy'
 )  # It tries 3 different models.
 print("Train shape:",train_data.shape)
-reg.fit(x=train_data,y=y_data,verbose=1,epochs=1000)
+reg.fit(x=train_data,y=y_data,verbose=1,epochs=100)
 y_test = test_data.pop('profitable')
 print("Evaluate:",reg.evaluate(x=test_data,y=y_test))
 model = reg.export_model()

@@ -22,10 +22,18 @@ if len(opts)>0:
         if opt in ("-h", "--highest"):
             maxheight = int(arg)
             todisp = datas.sort_values('diff_level',ascending=False)
-            todisp = todisp[todisp['First Green']==1]
+            # todisp = todisp[todisp['First Green']==1]
             todisp = todisp[:maxheight]
+            pcount = []
+            for p in prop_list:
+                if p not in ignore_prop:
+                    pcount.append({'prop':p,'count':todisp[p].sum()})
             todisp = todisp.transpose()
             print(tabulate(todisp,headers="keys"))
+            pcdf = pd.DataFrame(pcount)
+            pcdf.sort_values('count',inplace=True,ascending=False)
+            pcdf.to_csv("analyze_highest_prop.csv",index=False)
+            print(pcdf)
             todisp.to_csv("analyze_highest.csv")
 
 
@@ -34,6 +42,7 @@ if len(args)>0:
     print("Iprop:",iprop)
     pfpdata = datas
     pdat = {}
+    done = []
     for ip in iprop:
         ip = ip.strip()
         pfpdata = pfpdata[pfpdata[ip]==1]
@@ -44,7 +53,15 @@ if len(args)>0:
             ratio = 0
         fullcount = datas[datas[ip]==1]
         fullratio = round(len(fullcount)/len(datas),2)
-        pdat[ip] = {'Profit':len(profit),'Full':len(pfpdata),'Ratio':ratio,'Full Count':len(fullcount),'Full Ratio':fullratio}
+        nextprop = {}
+        done.append(ip)
+        for p in prop_list:
+            if p not in ignore_prop and p not in done:
+                nextdat = pfpdata[pfpdata[p]==1]
+                nextprof = nextdat[nextdat['profitable']==1]
+                nextprop[p]=len(nextprof)
+        nextprop = sorted(nextprop.items(),key=lambda x:x[1],reverse=True)
+        pdat[ip] = {'Profit':len(profit),'Full':len(pfpdata),'Ratio':ratio,'Full Count':len(fullcount),'Full Ratio':fullratio,'Next Prop':'\n'.join([ k + ':' + str(v) for k,v in nextprop[:5]])}
     df = pd.DataFrame().from_dict(pdat)
     print(tabulate(df.transpose(),headers="keys"))
 else:
