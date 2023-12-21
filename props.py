@@ -1240,7 +1240,8 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
         gap = minute_candles.iloc[0]['open']-bminute_candles.iloc[-1]['close']
     except:
         gap = 0
-    summary = {'max_price':max_price,'first_price':first_price,'category':tcat,'profitable':profitable,'diff':curdiff,'diff_level':dlvl,'gap':gap}
+    final_price = minute_candles.iloc[-1]['close']
+    summary = {'max_price':max_price,'first_price':first_price,'category':tcat,'profitable':profitable,'diff':curdiff,'diff_level':dlvl,'gap':gap,'final_price':final_price}
 
     return prop_data, tickers_data, all_props, summary
 

@@ -84,8 +84,8 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-    # for i in range(len(stocks.index)):
-    for i in range(5):
+    for i in range(len(stocks.index)):
+    # for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -164,7 +164,7 @@ def findgap():
                     print("Max Price:",summary['max_price']," First Price:",summary['first_price'])
                     print("Diff:",summary['diff']," Profitable:",summary['profitable'])
                 fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
-                row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap']}
+                row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
                 for pp in prop_list:
                     fieldnames.append(pp)
                     if pp in tickers_data[ticker]:
@@ -211,7 +211,7 @@ for tp in topop:
     profitablecsv.pop(tp)
 for tp in ignore_prop:
     profitablecsv.pop(tp)
-todrop = ['prev_marks','opening_marks','late_marks','marks','gap']
+todrop = ['prev_marks','opening_marks','late_marks','marks','gap','price']
 for tp in todrop:
     profitablecsv.pop(tp)
 print("Columns:",profitablecsv.columns)
