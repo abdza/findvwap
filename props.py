@@ -1248,19 +1248,39 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
 def calc_marks(proparray):
     global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
     proparray['prev_marks'] = 1.0
+    print("Mean profitable:",global_marks['Profitable'].mean())
     for prop in prev_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
-            proparray.loc[proparray[prop]==1,'prev_marks'] *= cgmark.iloc[0]['Marks']
+            curmark = 0
+            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
+                curmark += cgmark.iloc[0]['Profitable'] * 2
+            curmark += cgmark.iloc[0]['Good'] * 4
+            curmark += cgmark.iloc[0]['Great'] * 4
+            curmark *= cgmark.iloc[0]['Corr']
+            proparray.loc[proparray[prop]==1,'prev_marks'] += curmark
     proparray['opening_marks'] = 1.0
     for prop in opening_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
-            proparray.loc[proparray[prop]==1,'opening_marks'] *= cgmark.iloc[0]['Marks']
+            curmark = 0
+            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
+                curmark += cgmark.iloc[0]['Profitable'] * 2
+            curmark += cgmark.iloc[0]['Good'] * 4
+            curmark += cgmark.iloc[0]['Great'] * 4
+            curmark *= cgmark.iloc[0]['Corr']
+            proparray.loc[proparray[prop]==1,'opening_marks'] += curmark
     proparray['late_marks'] = 1.0
     for prop in late_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
-            proparray.loc[proparray[prop]==1,'late_marks'] *= cgmark.iloc[0]['Marks']
+            curmark = 0
+            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
+                curmark += cgmark.iloc[0]['Profitable'] * 2
+            curmark += cgmark.iloc[0]['Good'] * 4
+            curmark += cgmark.iloc[0]['Great'] * 4
+            curmark *= cgmark.iloc[0]['Corr']
+            proparray.loc[proparray[prop]==1,'late_marks'] += curmark
+ 
     proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks']
     return proparray

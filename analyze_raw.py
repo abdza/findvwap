@@ -49,9 +49,23 @@ for prop in prop_list:
 profitable = datas[datas['profitable']==1]
 propsprofitable = profitable[fieldnames]
 corrprofit = propsprofitable.corr()
-
-corrprofit.index.names = ['Prop']
+# corrprofit.index.names = ['Prop']
+upper_corr_mat = corrprofit.where( 
+    np.triu(np.ones(corrprofit.shape), k=1).astype(bool)) 
+  
+# Convert to 1-D series and drop Null values 
+unique_corr_pairs = upper_corr_mat.unstack().dropna() 
+  
+# Sort correlation pairs 
+sorted_mat = unique_corr_pairs.sort_values(ascending=False) 
+most_corr_prop = {}
+for index,value in sorted_mat.items():
+    if index[1]=='diff_level':
+        if index[0] in prop_list:
+            most_corr_prop[index[0]] = value*100
+        print("Index:",index," Value:",value)
 corrprofit.to_csv("analyze_global_corr.csv")
+print("Most corr:",most_corr_prop)
 
 propsprofitable = datas[['profitable'] + fieldnames]
 # propsprofitable = propsprofitable[propsprofitable['First Green']==1]
@@ -69,83 +83,51 @@ group_by_diff = group_by_diff.corr()
 group_by_diff.index.names = ['Prop']
 group_by_diff.to_csv("analyze_global_group_corr.csv")
 
+pair_prop = [
+['First Red','First Green'],
+['Yesterday Loss','Yesterday Profitable'],
+['Volume Open Lower','Volume Open Higher'],
+['Volume Lower Than Average','Volume Higher Than Average'],
+['Tiny Range','Huge Range'],
+['Third Volume Lower','Third Volume Higher'],
+['Third Tiny Range','Third Huge Range'],
+['Third Red','Third Green'],
+['Second Volume Lower','Second Volume Higher'],
+['Second Tiny Range','Second Huge Range'],
+['Second Red','Second Green'],
+]
+
 for pl in prop_list:
-    proprows = datas[datas[pl]==1]
-    if len(proprows)>0 and pl not in ignore_prop:
-        profitable = proprows[proprows['profitable']==1]
-        great = proprows[proprows['performance']=='Great']
-        good = proprows[proprows['performance']=='Good']
-        failed = proprows[proprows['profitable']==0]
-        greatratio = round(len(great)/len(proprows),2)
-        goodratio = round(len(good)/len(proprows),2)
-        # print("For prop:",pl," Profitable rows:",len(profitable)," Total rows:",len(proprows))
-        print("Great ratio:",greatratio," Good ratio:",goodratio)
+    if pl not in ignore_prop:
         currow = {}
         currow['Prop'] = pl
-        currow['Category'] = ''
-        if pl in prev_prop_list:
-            currow['Category'] += 'Prev'
-        if pl in opening_prop_list:
-            currow['Category'] += 'Opening'
-        if pl in late_prop_list:
-            currow['Category'] += 'Late'
-        currow['Ratio'] = len(profitable)/len(proprows)
-        currow['Full Ratio'] = len(proprows)/len(datas)
-        currow['Marks'] = round(currow['Ratio']*currow['Full Ratio'],4)
-        currow['Failed Marks'] = round(len(failed)/len(datas),4)
-        currow['Multiplier'] = 0
-        currow['GreatRatio'] = greatratio
-        currow['GoodRatio'] = goodratio
-        currow['Len Profitable'] = len(profitable)
-        currow['Len Property'] = len(proprows)
-        currow['Median'] = round(datas['Perc ' + pl].median(),4)
-        currow['Mean'] = round(datas['Perc ' + pl].mean(),4)
-        currow['Min'] = round(datas['Perc ' + pl].min(),4)
-        currow['Max'] = round(datas['Perc ' + pl].max(),4)
-        allcp = []
-        corr = corrprofit[corrprofit[pl]>0.3]
-        filtered = datas[datas['Perc ' + pl]>0.5]
-        filtered = filtered[filtered[pl]==1]
-        for cp in corr.index:
-            if cp!=pl:
-                cpfiltered = filtered[filtered[cp]==1]
-                print("P:",cp," Filter size:",len(cpfiltered))
-                if len(cpfiltered)>0:
-                    profitfilter = cpfiltered[cpfiltered['profitable']==1]
-                    cprow = {}
-                    cprow['Prop'] = cp
-                    cprow['CorrProfit'] = len(profitfilter)
-                    lossfilter = cpfiltered[cpfiltered['profitable']==0]
-                    cprow['CorrLoss'] = len(lossfilter)
-                    if cprow['CorrLoss']>0:
-                        cprow['CorrRatio'] = cprow['CorrProfit']/cprow['CorrLoss']
+        proprows = datas[datas[pl]==1]
+        currow['Count'] = len(proprows)
+        inpair = False
+        for pp in pair_prop:
+            if pp[0]==pl or pp[1]==pl:
+                inpair = True
+                pp0 = len(datas[datas[pp[0]]==1])
+                pp1 = len(datas[datas[pp[1]]==1])
+                if pp0>pp1:
+                    if pp[0]==pl:
+                        profitable = proprows[proprows['profitable']==1]
                     else:
-                        cprow['CorrRatio'] = cprow['CorrProfit']
-                    allcp.append(cprow)
-        currow['All CP'] = allcp
-        cpcount = pcdf[pcdf['prop']==pl]
-        if len(cpcount)>0 and cpcount.iloc[0]['count']>10:
-            print("Gapping up prop ",pl)
-            currow['Marks'] += currow['Marks'] * (cpcount.iloc[0]['count'] * 10)
-            currow['Multiplier'] = cpcount.iloc[0]['count']
-        else:
-            print("Gapping down prop ",pl)
-            mcpcount = mpcdf[mpcdf['prop']==pl]
-            if len(mcpcount)>0 and mcpcount.iloc[0]['count']>0:
-                global_fail[pl] = currow['Failed Marks'] * (mcpcount.iloc[0]['count'] * 10)
-                # currow['Marks'] -= currow['Failed Marks'] * (cpcount.iloc[0]['count'] * 10)
-                # currow['Multiplier'] = cpcount.iloc[0]['count'] * -1
-        # if pl in punish_prop:
-        #     if pl in global_fail:
-        #         global_fail[pl] *= 100
-        #     else:
-        #         global_fail[pl] = round(len(failed) / len(proprows),2) * 100
-
-        if len(profitable)>0:
-            failedratio = round(len(failed)/len(profitable),2)
-            if failedratio>50:
-                print("Putting prop into negate:",pl," Ratio:",failedratio)
-                global_negate[pl] = failedratio
+                        profitable = []
+                else:
+                    if pp[1]==pl:
+                        profitable = proprows[proprows['profitable']==1]
+                    else:
+                        profitable = []
+        if not inpair:
+            profitable = proprows[proprows['profitable']==1]
+        great = proprows[proprows['performance']=='Great']
+        good = proprows[proprows['performance']=='Good']
+        currow['Profitable'] = len(profitable)
+        currow['Great'] = len(great)
+        currow['Good'] = len(good)
+        if pl in most_corr_prop.keys():
+            currow['Corr'] = most_corr_prop[pl]
         global_prop.append(currow)
 
 outdata = pd.DataFrame.from_dict(global_prop)

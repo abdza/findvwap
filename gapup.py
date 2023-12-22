@@ -224,7 +224,7 @@ finalcolumns = fieldnames + sorted(minuscolumns)
 
 result_perc = result_perc[finalcolumns]
 
-result_perc.sort_values(by=['predicted_profitable'],ascending=False,inplace=True)
+result_perc.sort_values(by=['marks'],ascending=False,inplace=True)
 result_perc.to_csv(os.path.join(script_dir,'results_profitability.csv'),index=False)
 todisp = result_perc[['ticker','date','profitable','predicted_profitable','diff_level','performance']]
 print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
