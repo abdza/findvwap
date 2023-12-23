@@ -172,4 +172,5 @@ structured_data_regressor/
 model_autokeras/
 model_profitable/
 model_diff_level/
+model_diff/
 structured_data_classifier/
