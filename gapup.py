@@ -211,7 +211,8 @@ for tp in topop:
     profitablecsv.pop(tp)
 for tp in ignore_prop:
     profitablecsv.pop(tp)
-todrop = ['prev_marks','opening_marks','late_marks','marks','gap','price']
+# todrop = ['prev_marks','opening_marks','late_marks','marks','gap','price']
+todrop = ['gap','price']
 for tp in todrop:
     profitablecsv.pop(tp)
 print("Columns:",profitablecsv.columns)

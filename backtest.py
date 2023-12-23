@@ -26,7 +26,7 @@ script_dir = os.path.dirname(script_path)
 
 starttest = datetime.now()
 
-result_perc = pd.read_csv('raw_data_perc.csv')
+result_perc = pd.read_csv(os.path.join(script_dir,'raw_data_perc.csv'))
 
 result_perc = calc_marks(result_perc)
 

@@ -12,7 +12,10 @@ from tabulate import tabulate
 from sklearn.preprocessing import MinMaxScaler
 from props import *
 
-datas = pd.read_csv('raw_data_perc.csv')
+script_path = os.path.abspath(__file__)
+script_dir = os.path.dirname(script_path)
+
+datas = pd.read_csv(os.path.join(script_dir,'raw_data_perc.csv'))
 
 maxheight = 20
 todisp = datas.sort_values('diff_level',ascending=False)
@@ -23,7 +26,7 @@ for p in prop_list:
         pcount.append({'prop':p,'count':todisp[p].sum()})
 pcdf = pd.DataFrame(pcount)
 pcdf.sort_values('count',inplace=True,ascending=False)
-pcdf.to_csv("analyze_highest_prop.csv",index=False)
+pcdf.to_csv(os.path.join(script_dir,"analyze_highest_prop.csv"),index=False)
 
 tominus = datas.sort_values('diff_level')
 tominus = tominus[:maxheight]
@@ -33,7 +36,7 @@ for p in prop_list:
         mpcount.append({'prop':p,'count':tominus[p].sum()})
 mpcdf = pd.DataFrame(mpcount)
 mpcdf.sort_values('count',inplace=True,ascending=False)
-mpcdf.to_csv("analyze_lowest_prop.csv",index=False)
+mpcdf.to_csv(os.path.join(script_dir,"analyze_lowest_prop.csv"),index=False)
 
 global_prop = []
 global_fail = {}
@@ -64,7 +67,7 @@ for index,value in sorted_mat.items():
         if index[0] in prop_list:
             most_corr_prop[index[0]] = value*100
         print("Index:",index," Value:",value)
-corrprofit.to_csv("analyze_global_corr.csv")
+corrprofit.to_csv(os.path.join(script_dir,"analyze_global_corr.csv"))
 print("Most corr:",most_corr_prop)
 
 propsprofitable = datas[['profitable'] + fieldnames]
@@ -78,10 +81,10 @@ for prop in prop_list:
 
 group_by_diff = propsprofitable.groupby('diff_level').sum()
 group_by_diff.reset_index(inplace=True)
-group_by_diff.to_csv("analyze_global_group_numbers.csv",index=False)
+group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_numbers.csv"),index=False)
 group_by_diff = group_by_diff.corr()
 group_by_diff.index.names = ['Prop']
-group_by_diff.to_csv("analyze_global_group_corr.csv")
+group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_corr.csv"))
 
 pair_prop = [
 ['First Red','First Green'],
@@ -131,11 +134,11 @@ for pl in prop_list:
         global_prop.append(currow)
 
 outdata = pd.DataFrame.from_dict(global_prop)
-outdata.to_csv('analyze_global.csv',index=False)
+outdata.to_csv(os.path.join(script_dir,'analyze_global.csv'),index=False)
 # outdata = pd.DataFrame(list(global_negate.items()), columns=['Prop','Marks'])
-# outdata.to_csv('analyze_global_negate.csv',index=False)
+# outdata.to_csv(os.path.join(script_dir,'analyze_global_negate.csv'),index=False)
 outdata = pd.DataFrame(list(global_fail.items()), columns=['Prop','Marks'])
-outdata.to_csv('analyze_global_fail.csv',index=False)
+outdata.to_csv(os.path.join(script_dir,'analyze_global_fail.csv'),index=False)
 
 
 # for prop in prop_list:

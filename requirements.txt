@@ -4,7 +4,7 @@ ta
 pandas
 scikit-learn
 numerize
-numpy
+numpy==1.24.4
 tabulate
 streamlit
 streamlit-calendar
