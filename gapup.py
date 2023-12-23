@@ -84,8 +84,8 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-    for i in range(len(stocks.index)):
-    # for i in range(5):
+    # for i in range(len(stocks.index)):
+    for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
@@ -205,6 +205,7 @@ result_perc.to_csv(os.path.join(script_dir,'results_marks.csv'),index=False)
 profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
 profitablecsv = result_perc.copy()
 
+
 print("Prepop Columns:",profitablecsv.columns)
 topop = ['ticker','date','day','diff','diff_level','performance','profitable']
 for tp in topop:
@@ -212,12 +213,18 @@ for tp in topop:
 for tp in ignore_prop:
     profitablecsv.pop(tp)
 # todrop = ['prev_marks','opening_marks','late_marks','marks','gap','price']
-todrop = ['gap','price']
+todrop = ['gap']
 for tp in todrop:
     profitablecsv.pop(tp)
 print("Columns:",profitablecsv.columns)
 profitablefloat = np.asarray(profitablecsv).astype(np.float32)
+
+file1 = open('gapup_columns.csv', 'w')
+file1.writelines(s + '\n' for s in profitablecsv.columns)
+file1.close()
+
 result_perc['predicted_profitable'] = profitable_model.predict(profitablefloat)
+
 
 fieldnames = ['date','ticker','diff_level','performance','profitable','predicted_profitable','prev_marks','opening_marks','late_marks','marks','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))

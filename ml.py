@@ -8,6 +8,7 @@ from datetime import datetime,timedelta
 import autokeras as ak
 from sklearn.preprocessing import MinMaxScaler
 from props import *
+import csv
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
@@ -42,6 +43,10 @@ train_data = pd.DataFrame(raw_data[:train_size])
 print("Keys:",train_data.columns)
 test_data = pd.DataFrame(raw_data[train_size:])
 y_data = train_data.pop('profitable')
+
+file1 = open('ml_columns.csv', 'w')
+file1.writelines(s + '\n' for s in train_data.columns)
+file1.close()
 
 print("Numerical columns:",numerical_columns)
 print("Ct size:",len(column_types))
