@@ -78,14 +78,20 @@ prop_list = [
 'Two Small Reverse',
 'Volume Gap First',
 'Volume Gap Second',
-'Volume Higher Than Average',
-'Volume Lower Than Average',
 'Volume Open Higher',
 'Volume Open Lower',
-'Volume Open Excedingly High',
-'Volume Open Excedingly Low',
-'Volume Open After High',
-'Volume Open After Low',
+'Volume Higher Than Average',
+'Volume Open Higher Than Close And Average',
+'Volume Open Lower Than Close But Higher Than Average',
+'Volume 5 Times Above Yesterday Average',
+'Volume 5 Times Above 2 Days Ago Average',
+'Volume Consecutive Above 5 Times Average',
+'Volume 10 Times Above Yesterday Average',
+'Volume 10 Times Above 2 Days Ago Average',
+'Volume Consecutive Above 10 Times Average',
+'Volume Lower Than Average',
+'Volume Open Lower Than Close And Average',
+'Volume Open Higher Than Close But Lower Than Average',
 'Early Top Level',
 'Late Top Level',
 'Top Level',
@@ -132,12 +138,6 @@ prop_list = [
 'Min After Max',
 'Yesterday End In Red',
 'Yesterday End Volume Above Average',
-'Volume Above 5 Time Average',
-'Volume Above 10 Time Average',
-'Volume Above 5 Time Before Average',
-'Volume Above 10 Time Before Average',
-'Volume Consecutive Above 5 Time Average',
-'Volume Consecutive Above 10 Time Average',
 'New IPO',
 'Fairly New IPO',
 'Sluggish Ticker',
@@ -284,23 +284,23 @@ opening_prop_list = [
 'Range Lower Average',
 'Range More Than Gap Down',
 'Range More Than Gap Up',
-'Volume Higher Than Average',
-'Volume Lower Than Average',
 'Volume Open Higher',
 'Volume Open Lower',
-'Volume Open Excedingly High',
-'Volume Open Excedingly Low',
-'Volume Open After High',
-'Volume Open After Low',
+'Volume Higher Than Average',
+'Volume Open Higher Than Close And Average',
+'Volume Open Lower Than Close But Higher Than Average',
+'Volume 5 Times Above Yesterday Average',
+'Volume 5 Times Above 2 Days Ago Average',
+'Volume Consecutive Above 5 Times Average',
+'Volume 10 Times Above Yesterday Average',
+'Volume 10 Times Above 2 Days Ago Average',
+'Volume Consecutive Above 10 Times Average',
+'Volume Lower Than Average',
+'Volume Open Lower Than Close And Average',
+'Volume Open Higher Than Close But Lower Than Average',
 'Tiny Range',
 'Huge Range',
 'Huge Negative Range',
-'Volume Above 5 Time Average',
-'Volume Above 10 Time Average',
-'Volume Above 5 Time Before Average',
-'Volume Above 10 Time Before Average',
-'Volume Consecutive Above 5 Time Average',
-'Volume Consecutive Above 10 Time Average',
     ]
 
 prev_prop_list = [
@@ -1192,24 +1192,28 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
             prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Lower',prop_data,tickers_data,all_props)
         if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*1.5:
             prop_data, tickers_data, all_props = set_params(ticker,'Volume Higher Than Average',prop_data,tickers_data,all_props)
+            if 'Volume Open Higher' in tickers_data[ticker]:
+                prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Higher Than Close And Average',prop_data,tickers_data,all_props)
+            else:
+                prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Lower Than Close But Higher Than Average',prop_data,tickers_data,all_props)
             if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*5:
-                prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 5 Time Average',prop_data,tickers_data,all_props)
+                prop_data, tickers_data, all_props = set_params(ticker,'Volume 5 Times Above Yesterday Average',prop_data,tickers_data,all_props)
             if minute_candles.iloc[0]['volume']>bbminute_candles['volume'].mean()*5:
-                prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 5 Time Before Average',prop_data,tickers_data,all_props)
-                if 'Volume Above 5 Time Average' in tickers_data[ticker]:
-                    prop_data, tickers_data, all_props = set_params(ticker,'Volume Consecutive Above 5 Time Average',prop_data,tickers_data,all_props)
+                prop_data, tickers_data, all_props = set_params(ticker,'Volume 5 Times Above 2 Days Ago Average',prop_data,tickers_data,all_props)
+                if 'Volume 5 Times Above Yesterday Average' in tickers_data[ticker]:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Volume Consecutive Above 5 Times Average',prop_data,tickers_data,all_props)
             if minute_candles.iloc[0]['volume']>bminute_candles['volume'].mean()*10:
-                prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 10 Time Average',prop_data,tickers_data,all_props)
+                prop_data, tickers_data, all_props = set_params(ticker,'Volume 10 Times Above Yesterday Average',prop_data,tickers_data,all_props)
             if minute_candles.iloc[0]['volume']>bbminute_candles['volume'].mean()*10:
-                prop_data, tickers_data, all_props = set_params(ticker,'Volume Above 10 Time Before Average',prop_data,tickers_data,all_props)
-                if 'Volume Above 10 Time Average' in tickers_data[ticker]:
-                    prop_data, tickers_data, all_props = set_params(ticker,'Volume Consecutive Above 10 Time Average',prop_data,tickers_data,all_props)
+                prop_data, tickers_data, all_props = set_params(ticker,'Volume 10 Times Above 2 Days Ago Average',prop_data,tickers_data,all_props)
+                if 'Volume 10 Times Above Yesterday Average' in tickers_data[ticker]:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Volume Consecutive Above 10 Times Average',prop_data,tickers_data,all_props)
         if minute_candles.iloc[0]['volume']<bminute_candles['volume'].mean()*0.5:
             prop_data, tickers_data, all_props = set_params(ticker,'Volume Lower Than Average',prop_data,tickers_data,all_props)
             if 'Volume Open Lower' in tickers_data[ticker]:
-                prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Excedingly Low',prop_data,tickers_data,all_props)
+                prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Lower Than Close And Average',prop_data,tickers_data,all_props)
             else:
-                prop_data, tickers_data, all_props = set_params(ticker,'Volume Open After Low',prop_data,tickers_data,all_props)
+                prop_data, tickers_data, all_props = set_params(ticker,'Volume Open Higher Than Close But Lower Than Average',prop_data,tickers_data,all_props)
 
         bpeaks,bbottoms = gather_range(bminute_candles)
         if len(bpeaks)>0 and len(bbottoms)>0:
@@ -1399,7 +1403,8 @@ def calc_marks(proparray):
                 curmark += cgmark.iloc[0]['Profitable'] * 2
             curmark += cgmark.iloc[0]['Good'] * 4
             curmark += cgmark.iloc[0]['Great'] * 4
-            curmark *= cgmark.iloc[0]['Corr']
+            if cgmark.iloc[0]['Corr']!=0:
+                curmark *= cgmark.iloc[0]['Corr']
             proparray.loc[proparray[prop]==1,'prev_marks'] += curmark
     proparray['opening_marks'] = 1.0
     for prop in opening_prop_list:
@@ -1410,7 +1415,8 @@ def calc_marks(proparray):
                 curmark += cgmark.iloc[0]['Profitable'] * 2
             curmark += cgmark.iloc[0]['Good'] * 4
             curmark += cgmark.iloc[0]['Great'] * 4
-            curmark *= cgmark.iloc[0]['Corr']
+            if cgmark.iloc[0]['Corr']!=0:
+                curmark *= cgmark.iloc[0]['Corr']
             proparray.loc[proparray[prop]==1,'opening_marks'] += curmark
     proparray['late_marks'] = 1.0
     for prop in late_prop_list:
@@ -1421,7 +1427,8 @@ def calc_marks(proparray):
                 curmark += cgmark.iloc[0]['Profitable'] * 2
             curmark += cgmark.iloc[0]['Good'] * 4
             curmark += cgmark.iloc[0]['Great'] * 4
-            curmark *= cgmark.iloc[0]['Corr']
+            if cgmark.iloc[0]['Corr']!=0:
+                curmark *= cgmark.iloc[0]['Corr']
             proparray.loc[proparray[prop]==1,'late_marks'] += curmark
  
     proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks']

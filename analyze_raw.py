@@ -100,13 +100,10 @@ pair_prop = [
 ['Second Red','Second Green'],
 ['Yesterday Positive Morning Range','Yesterday Negative Morning Range'],
 ['2 Days Ago Negative Morning Range','2 Days Ago Positive Morning Range'],
-['Consecutive Negative Morning Range','Consecutive Positive Morning Range'],
 ['Yesterday Negative Afternoon Range','Yesterday Positive Afternoon Range'],
 ['2 Days Ago Negative Afternoon Range','2 Days Ago Positive Afternoon Range'],
-['Consecutive Negative Afternoon Range','Consecutive Positive Afternoon Range'],
 ['Yesterday Morning Range Larger','Yesterday Afternoon Range Larger'],
 ['2 Days Ago Morning Range Larger','2 Days Ago Afternoon Range Larger'],
-['Consecutive Morning Range Larger','Consecutive Afternoon Range Larger'],
 ]
 
 for pl in prop_list:
