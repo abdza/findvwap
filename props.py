@@ -157,6 +157,24 @@ prop_list = [
 '2 Days Ago Profitable',
 '2 Days Ago Loss',
 '2 Days Ago Absolute Loss',
+'Yesterday Negative Morning Range',
+'2 Days Ago Negative Morning Range',
+'Consecutive Negative Morning Range',
+'Yesterday Positive Morning Range',
+'2 Days Ago Positive Morning Range',
+'Consecutive Positive Morning Range',
+'Yesterday Negative Afternoon Range',
+'2 Days Ago Negative Afternoon Range',
+'Consecutive Negative Afternoon Range',
+'Yesterday Positive Afternoon Range',
+'2 Days Ago Positive Afternoon Range',
+'Consecutive Positive Afternoon Range',
+'Yesterday Morning Range Larger',
+'2 Days Ago Morning Range Larger',
+'Consecutive Morning Range Larger',
+'Yesterday Afternoon Range Larger',
+'2 Days Ago Afternoon Range Larger',
+'Consecutive Afternoon Range Larger',
     ]
 
 
@@ -306,6 +324,24 @@ prev_prop_list = [
 '2 Days Ago Profitable',
 '2 Days Ago Loss',
 '2 Days Ago Absolute Loss',
+'Yesterday Negative Morning Range',
+'2 Days Ago Negative Morning Range',
+'Consecutive Negative Morning Range',
+'Yesterday Positive Morning Range',
+'2 Days Ago Positive Morning Range',
+'Consecutive Positive Morning Range',
+'Yesterday Negative Afternoon Range',
+'2 Days Ago Negative Afternoon Range',
+'Consecutive Negative Afternoon Range',
+'Yesterday Positive Afternoon Range',
+'2 Days Ago Positive Afternoon Range',
+'Consecutive Positive Afternoon Range',
+'Yesterday Morning Range Larger',
+'2 Days Ago Morning Range Larger',
+'Consecutive Morning Range Larger',
+'Yesterday Afternoon Range Larger',
+'2 Days Ago Afternoon Range Larger',
+'Consecutive Afternoon Range Larger',
     ]
 
 ignore_prop = [
@@ -1177,6 +1213,54 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
 
         bpeaks,bbottoms = gather_range(bminute_candles)
         if len(bpeaks)>0 and len(bbottoms)>0:
+            morningpeak = None
+            morningbottom = None
+            afternoonpeak = None
+            afternoonbottom = None
+            for peak in bpeaks:
+                if peak['date'].hour<13:
+                    if morningpeak==None:
+                        morningpeak = peak
+                    elif morningpeak['high'] < peak['high']:
+                        morningpeak = peak
+                else:
+                    if afternoonpeak==None:
+                        afternoonpeak = peak
+                    elif afternoonpeak['high'] < peak['high']:
+                        afternoonpeak = peak
+            for bottom in bbottoms:
+                if bottom['date'].hour<13:
+                    if morningbottom==None:
+                        morningbottom = bottom
+                    elif morningbottom['low'] > bottom['low']:
+                        morningbottom = bottom
+                else:
+                    if afternoonbottom==None:
+                        afternoonbottom = bottom
+                    elif afternoonbottom['low'] > bottom['low']:
+                        afternoonbottom = bottom
+            morningrange = None
+            afternoonrange = None
+            if morningpeak!=None and morningbottom!=None:
+                morningrange = morningpeak['high'] - morningbottom['low']
+                if morningpeak['date']<morningbottom['date']:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Negative Morning Range',prop_data,tickers_data,all_props)
+                else:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Positive Morning Range',prop_data,tickers_data,all_props)
+
+            if afternoonpeak!=None and afternoonbottom!=None:
+                afternoonrange = afternoonpeak['high'] - afternoonbottom['low']
+                if afternoonpeak['date']<afternoonbottom['date']:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Negative Afternoon Range',prop_data,tickers_data,all_props)
+                else:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Positive Afternoon Range',prop_data,tickers_data,all_props)
+            if morningrange!=None and afternoonrange!=None:
+                if morningrange>afternoonrange:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Morning Range Larger',prop_data,tickers_data,all_props)
+                elif afternoonrange>morningrange:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Afternoon Range Larger',prop_data,tickers_data,all_props)
+
+
             maxp = max_peak(bpeaks,[bminute_candles.iloc[0]])
             minp = min_bottom(bbottoms,[bminute_candles.iloc[0]])
             if maxp is not None and minp is not None and maxp['high']>body_top(bminute_candles.iloc[1]) and maxp['date']>bminute_candles.iloc[1]['date']:
@@ -1201,6 +1285,64 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
 
         bpeaks,bbottoms = gather_range(bbminute_candles)
         if len(bpeaks)>0 and len(bbottoms)>0:
+            morningpeak = None
+            morningbottom = None
+            afternoonpeak = None
+            afternoonbottom = None
+            for peak in bpeaks:
+                if peak['date'].hour<13:
+                    if morningpeak==None:
+                        morningpeak = peak
+                    elif morningpeak['high'] < peak['high']:
+                        morningpeak = peak
+                else:
+                    if afternoonpeak==None:
+                        afternoonpeak = peak
+                    elif afternoonpeak['high'] < peak['high']:
+                        afternoonpeak = peak
+            for bottom in bbottoms:
+                if bottom['date'].hour<13:
+                    if morningbottom==None:
+                        morningbottom = bottom
+                    elif morningbottom['low'] > bottom['low']:
+                        morningbottom = bottom
+                else:
+                    if afternoonbottom==None:
+                        afternoonbottom = bottom
+                    elif afternoonbottom['low'] > bottom['low']:
+                        afternoonbottom = bottom
+            morningrange = None
+            afternoonrange = None
+            if morningpeak!=None and morningbottom!=None:
+                morningrange = morningpeak['high'] - morningbottom['low']
+                if morningpeak['date']<morningbottom['date']:
+                    prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Negative Morning Range',prop_data,tickers_data,all_props)
+                    if 'Yesterday Negative Morning Range' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Negative Morning Range',prop_data,tickers_data,all_props)
+                else:
+                    prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Positive Morning Range',prop_data,tickers_data,all_props)
+                    if 'Yesterday Positive Morning Range' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Positive Morning Range',prop_data,tickers_data,all_props)
+
+            if afternoonpeak!=None and afternoonbottom!=None:
+                afternoonrange = afternoonpeak['high'] - afternoonbottom['low']
+                if afternoonpeak['date']<afternoonbottom['date']:
+                    prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Negative Afternoon Range',prop_data,tickers_data,all_props)
+                    if 'Yesterday Negative Afternoon Range' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Negative Afternoon Range',prop_data,tickers_data,all_props)
+                else:
+                    prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Positive Afternoon Range',prop_data,tickers_data,all_props)
+                    if 'Yesterday Positive Afternoon Range' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Positive Afternoon Range',prop_data,tickers_data,all_props)
+            if morningrange!=None and afternoonrange!=None:
+                if morningrange>afternoonrange:
+                    prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Morning Range Larger',prop_data,tickers_data,all_props)
+                    if 'Yesterday Morning Range Large' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Morning Range Larger',prop_data,tickers_data,all_props)
+                elif afternoonrange>morningrange:
+                    prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Afternoon Range Larger',prop_data,tickers_data,all_props)
+                    if 'Yesterday Afternoon Range Large' in tickers_data[ticker]:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Afternoon Range Larger',prop_data,tickers_data,all_props)
             maxp = max_peak(bpeaks,[bbminute_candles.iloc[0]])
             minp = min_bottom(bbottoms,[bbminute_candles.iloc[0]])
             if maxp is not None and minp is not None and maxp['high']>body_top(bbminute_candles.iloc[1]) and maxp['date']>bbminute_candles.iloc[1]['date']:

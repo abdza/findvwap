@@ -25,6 +25,17 @@ todrop = ['gap']
 for tp in todrop:
     raw_data.pop(tp)
 raw_data = raw_data.dropna()
+column_types = {}
+numerical_columns = []
+for column_name in raw_data.columns:
+    if column_name!='profitable':
+        if column_name in prop_list:
+            column_types[column_name] = 'categorical'
+            column_types['Perc ' + column_name] = 'numerical'
+        else:
+            numerical_columns.append(column_name)
+            column_types[column_name] = 'numerical'
+raw_data[numerical_columns] = scaler.fit_transform(raw_data[numerical_columns])
 train_size = int(raw_data.shape[0] * 0.9)
 print("Train size:",train_size)
 train_data = pd.DataFrame(raw_data[:train_size])
@@ -32,13 +43,7 @@ print("Keys:",train_data.columns)
 test_data = pd.DataFrame(raw_data[train_size:])
 y_data = train_data.pop('profitable')
 
-column_types = {}
-for column_name in train_data.columns:
-    if column_name in prop_list:
-        column_types[column_name] = 'categorical'
-        column_types['Perc ' + column_name] = 'numerical'
-    else:
-        column_types[column_name] = 'numerical'
+print("Numerical columns:",numerical_columns)
 print("Ct size:",len(column_types))
 print("Column types:",column_types)
 reg = ak.StructuredDataClassifier(
