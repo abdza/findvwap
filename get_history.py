@@ -157,74 +157,15 @@ def findgap():
 
                 prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles)
 
-                if len(candles)>100:
-                    levels[ticker] = find_levels(candles)
-                else:
-                    levels[ticker] = []
-                if manualstocks:
-                    print("Prop:",tickers_data[ticker])
-                tickers_data = append_hash_set(tickers_data,ticker,'------------')
-                with open(os.path.join(script_dir,'raw_data.csv'), 'a') as f:
-                    if ticker in tickers_data:
-                        global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
-                        for i in range(len(global_marks)):
-                            curprop = global_marks.iloc[i]
-                            breakup = curprop['Prop'].split(':')
-                            target = len(breakup)
-                            curmark = 0
-                            for p in breakup:
-                                if p in tickers_data[ticker]:
-                                    curmark += 1
-                            if curmark==target:
-                                if manualstocks:
-                                    print("Adding ",curprop['Marks'], " for ",breakup)
-                                if ticker in ticker_marks:
-                                    ticker_marks[ticker] += curprop['Marks']
-                                else:
-                                    ticker_marks[ticker] = curprop['Marks']
-                        global_fail = pd.read_csv(os.path.join(script_dir,'analyze_global_fail.csv'))
-                        for i in range(len(global_fail)):
-                            curprop = global_fail.iloc[i]
-                            breakup = curprop['Prop'].split(':')
-                            target = len(breakup)
-                            curmark = 0
-                            for p in breakup:
-                                if p in tickers_data[ticker]:
-                                    curmark += 1
-                            if curmark==target:
-                                if manualstocks:
-                                    print("Deducting ",curprop['Marks'], " for ",breakup)
-                                if ticker in ticker_marks:
-                                    ticker_marks[ticker] -= curprop['Marks']
-                                else:
-                                    ticker_marks[ticker] = 0 - curprop['Marks']
-                        global_negate = pd.read_csv(os.path.join(script_dir,'analyze_global_negate.csv'))
-                        for i in range(len(global_negate)):
-                            curprop = global_negate.iloc[i]
-                            breakup = curprop['Prop'].split(':')
-                            target = len(breakup)
-                            curmark = 0
-                            for p in breakup:
-                                if not p in tickers_data[ticker]:
-                                    curmark += 1
-                            if curmark!=target:
-                                if manualstocks:
-                                    print("Negating ",curprop['Marks'], " for ",breakup)
-                                if ticker in ticker_marks:
-                                    ticker_marks[ticker] -= curprop['Marks']
-                                else:
-                                    ticker_marks[ticker] = 0 - curprop['Marks']
-                        if not ticker in ticker_marks:
-                            ticker_marks[ticker] = 0
-                    fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
-                    row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap']}
-                    for pp in prop_list:
-                        fieldnames.append(pp)
-                        if pp in tickers_data[ticker]:
-                            row[pp] = 1
-                        else:
-                            row[pp] = 0
-                    full_data.append(row)
+                fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','gap','price']
+                row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
+                for pp in prop_list:
+                    fieldnames.append(pp)
+                    if pp in tickers_data[ticker]:
+                        row[pp] = 1
+                    else:
+                        row[pp] = 0
+                full_data.append(row)
 
     print("End date:",end_date)
     return full_data

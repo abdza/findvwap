@@ -163,7 +163,7 @@ def findgap():
                 if manualstocks:
                     print("Max Price:",summary['max_price']," First Price:",summary['first_price'])
                     print("Diff:",summary['diff']," Profitable:",summary['profitable'])
-                fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','marks','yavg','yyavg','1range','1body','gap']
+                fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','gap','price']
                 row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
                 for pp in prop_list:
                     fieldnames.append(pp)
