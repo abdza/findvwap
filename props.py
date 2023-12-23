@@ -1219,42 +1219,42 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
             afternoonbottom = None
             for peak in bpeaks:
                 if peak['date'].hour<13:
-                    if morningpeak==None:
+                    if morningpeak is not None and morningpeak['high'] < peak['high']:
                         morningpeak = peak
-                    elif morningpeak['high'] < peak['high']:
+                    else:
                         morningpeak = peak
                 else:
-                    if afternoonpeak==None:
+                    if afternoonpeak is not None and afternoonpeak['high'] < peak['high']:
                         afternoonpeak = peak
-                    elif afternoonpeak['high'] < peak['high']:
+                    else:
                         afternoonpeak = peak
             for bottom in bbottoms:
                 if bottom['date'].hour<13:
-                    if morningbottom==None:
+                    if morningbottom is not None and morningbottom['low'] > bottom['low']:
                         morningbottom = bottom
-                    elif morningbottom['low'] > bottom['low']:
+                    else:
                         morningbottom = bottom
                 else:
-                    if afternoonbottom==None:
+                    if afternoonbottom is not None and afternoonbottom['low'] > bottom['low']:
                         afternoonbottom = bottom
-                    elif afternoonbottom['low'] > bottom['low']:
+                    else:
                         afternoonbottom = bottom
             morningrange = None
             afternoonrange = None
-            if morningpeak!=None and morningbottom!=None:
+            if morningpeak is not None and morningbottom is not None:
                 morningrange = morningpeak['high'] - morningbottom['low']
                 if morningpeak['date']<morningbottom['date']:
                     prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Negative Morning Range',prop_data,tickers_data,all_props)
                 else:
                     prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Positive Morning Range',prop_data,tickers_data,all_props)
 
-            if afternoonpeak!=None and afternoonbottom!=None:
+            if afternoonpeak is not None and afternoonbottom is not None:
                 afternoonrange = afternoonpeak['high'] - afternoonbottom['low']
                 if afternoonpeak['date']<afternoonbottom['date']:
                     prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Negative Afternoon Range',prop_data,tickers_data,all_props)
                 else:
                     prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Positive Afternoon Range',prop_data,tickers_data,all_props)
-            if morningrange!=None and afternoonrange!=None:
+            if morningrange is not None and afternoonrange is not None:
                 if morningrange>afternoonrange:
                     prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Morning Range Larger',prop_data,tickers_data,all_props)
                 elif afternoonrange>morningrange:
@@ -1291,29 +1291,29 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
             afternoonbottom = None
             for peak in bpeaks:
                 if peak['date'].hour<13:
-                    if morningpeak==None:
+                    if morningpeak is not None and morningpeak['high'] < peak['high']:
                         morningpeak = peak
-                    elif morningpeak['high'] < peak['high']:
+                    else:
                         morningpeak = peak
                 else:
-                    if afternoonpeak==None:
+                    if afternoonpeak is not None and afternoonpeak['high'] < peak['high']:
                         afternoonpeak = peak
-                    elif afternoonpeak['high'] < peak['high']:
+                    else:
                         afternoonpeak = peak
             for bottom in bbottoms:
                 if bottom['date'].hour<13:
-                    if morningbottom==None:
+                    if morningbottom is not None and morningbottom['low'] > bottom['low']:
                         morningbottom = bottom
-                    elif morningbottom['low'] > bottom['low']:
+                    else:
                         morningbottom = bottom
                 else:
-                    if afternoonbottom==None:
+                    if afternoonbottom is not None and afternoonbottom['low'] > bottom['low']:
                         afternoonbottom = bottom
-                    elif afternoonbottom['low'] > bottom['low']:
+                    else:
                         afternoonbottom = bottom
             morningrange = None
             afternoonrange = None
-            if morningpeak!=None and morningbottom!=None:
+            if morningpeak is not None and morningbottom is not None:
                 morningrange = morningpeak['high'] - morningbottom['low']
                 if morningpeak['date']<morningbottom['date']:
                     prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Negative Morning Range',prop_data,tickers_data,all_props)
@@ -1324,7 +1324,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
                     if 'Yesterday Positive Morning Range' in tickers_data[ticker]:
                         prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Positive Morning Range',prop_data,tickers_data,all_props)
 
-            if afternoonpeak!=None and afternoonbottom!=None:
+            if afternoonpeak is not None and afternoonbottom is not None:
                 afternoonrange = afternoonpeak['high'] - afternoonbottom['low']
                 if afternoonpeak['date']<afternoonbottom['date']:
                     prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Negative Afternoon Range',prop_data,tickers_data,all_props)
@@ -1334,7 +1334,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
                     prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Positive Afternoon Range',prop_data,tickers_data,all_props)
                     if 'Yesterday Positive Afternoon Range' in tickers_data[ticker]:
                         prop_data, tickers_data, all_props = set_params(ticker,'Consecutive Positive Afternoon Range',prop_data,tickers_data,all_props)
-            if morningrange!=None and afternoonrange!=None:
+            if morningrange is not None and afternoonrange is not None:
                 if morningrange>afternoonrange:
                     prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Morning Range Larger',prop_data,tickers_data,all_props)
                     if 'Yesterday Morning Range Large' in tickers_data[ticker]:
