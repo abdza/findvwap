@@ -1391,10 +1391,12 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
 
     return prop_data, tickers_data, all_props, summary
 
-def calc_marks(proparray):
+def calc_marks(proparray,verbose=False):
     global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
     proparray['prev_marks'] = 1.0
     print("Mean profitable:",global_marks['Profitable'].mean())
+    if verbose:
+        print("Prev Marks")
     for prop in prev_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
@@ -1406,7 +1408,13 @@ def calc_marks(proparray):
             if cgmark.iloc[0]['Corr']!=0:
                 curmark *= cgmark.iloc[0]['Corr']
             proparray.loc[proparray[prop]==1,'prev_marks'] += curmark
+            if verbose:
+                print(prop," : ",curmark, " : ",proparray.iloc[0]['prev_marks'])
+    if verbose:
+        print("Total Prev Mark:",proparray['prev_marks'].values)
     proparray['opening_marks'] = 1.0
+    if verbose:
+        print("Opening Marks")
     for prop in opening_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
@@ -1417,8 +1425,14 @@ def calc_marks(proparray):
             curmark += cgmark.iloc[0]['Great'] * 4
             if cgmark.iloc[0]['Corr']!=0:
                 curmark *= cgmark.iloc[0]['Corr']
+            if verbose:
+                print(prop," : ",curmark, " : ",proparray.iloc[0]['opening_marks'])
             proparray.loc[proparray[prop]==1,'opening_marks'] += curmark
+    if verbose:
+        print("Total Opening Mark:",proparray['opening_marks'].values)
     proparray['late_marks'] = 1.0
+    if verbose:
+        print("Late Marks")
     for prop in late_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
@@ -1429,7 +1443,13 @@ def calc_marks(proparray):
             curmark += cgmark.iloc[0]['Great'] * 4
             if cgmark.iloc[0]['Corr']!=0:
                 curmark *= cgmark.iloc[0]['Corr']
+            if verbose:
+                print(prop," : ",curmark, " : ",proparray.iloc[0]['late_marks'])
             proparray.loc[proparray[prop]==1,'late_marks'] += curmark
+    if verbose:
+        print("Total Late Mark:",proparray['late_marks'].values)
  
     proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks']
+    if verbose:
+        print("Total Marks:",proparray['marks'].values)
     return proparray

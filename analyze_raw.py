@@ -49,7 +49,8 @@ fieldnames = ['diff_level']
 fieldnames += prop_list
 for prop in prop_list:
     fieldnames.append('Perc ' + prop)
-profitable = datas[datas['profitable']==1]
+# profitable = datas[datas['profitable']==1]
+profitable = datas.copy()
 propsprofitable = profitable[fieldnames]
 corrprofit = propsprofitable.corr()
 # corrprofit.index.names = ['Prop']

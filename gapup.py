@@ -86,12 +86,16 @@ def findgap():
 
     for i in range(len(stocks.index)):
     # for i in range(5):
+        candles = []
         if isinstance(stocks.iloc[i]['Ticker'], str):
-            ticker = stocks.iloc[i]['Ticker'].upper()
-            dticker = yq.Ticker(ticker)
-            candles = dticker.history(start=start_date,end=end_date,interval='1d')
-            candles = candles.loc[(candles['volume']>0)]
-            print("Processing ",ticker, " got ",len(candles))
+            try:
+                ticker = stocks.iloc[i]['Ticker'].upper()
+                dticker = yq.Ticker(ticker)
+                candles = dticker.history(start=start_date,end=end_date,interval='1d')
+                candles = candles.loc[(candles['volume']>0)]
+                print("Processing ",ticker, " got ",len(candles))
+            except Exception as exp:
+                print("Error downloading candles:",exp)
         else:
             continue
 
@@ -106,9 +110,13 @@ def findgap():
                 curkey = str(curcandle['date'])
             minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
             minute_start_date = minute_end_date - timedelta(days=5)
-            full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
-            full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
-            full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
+            full_minute_candles = []
+            try:
+                full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
+                full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
+                full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
+            except Exception as exp:
+                print("Error downloading minute candles:",exp)
             peaks = []
             bottoms = []
             if len(full_minute_candles)>1:
@@ -156,8 +164,8 @@ def findgap():
                 else:
                     levels[ticker] = []
                 latest_date[ticker] = minute_candles.iloc[-1]['date']
-                if manualstocks:
-                    print("Prop:",tickers_data[ticker])
+                # if manualstocks:
+                #     print("Prop:",tickers_data[ticker])
                 tickers_data = append_hash_set(tickers_data,ticker,'------------')
                 maxmovement[ticker] = minute_candles['high'].max() - minute_candles['low'].min()
                 if manualstocks:
@@ -198,14 +206,17 @@ result_perc = result.set_index('date').join(dateperc.set_index('date'))
 result_perc.reset_index(inplace=True)
 result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
 
-result_perc = calc_marks(result_perc)
+if manualstocks:
+    result_perc = calc_marks(result_perc,True)
+else:
+    result_perc = calc_marks(result_perc)
 result_perc.to_csv(os.path.join(script_dir,'results_marks.csv'),index=False)
 
 
 profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
 profitablecsv = result_perc.copy()
 
-print("Prepop Columns:",profitablecsv.columns)
+# print("Prepop Columns:",profitablecsv.columns)
 topop = ['ticker','date','day','diff','diff_level','performance','profitable']
 for tp in topop:
     profitablecsv.pop(tp)
@@ -215,7 +226,7 @@ for tp in ignore_prop:
 todrop = ['gap']
 for tp in todrop:
     profitablecsv.pop(tp)
-print("Columns:",profitablecsv.columns)
+# print("Columns:",profitablecsv.columns)
 profitablefloat = np.asarray(profitablecsv).astype(np.float32)
 
 file1 = open('gapup_columns.csv', 'w')
@@ -228,7 +239,7 @@ result_perc['predicted_profitable'] = profitable_model.predict(profitablefloat)
 diff_model = load_model(os.path.join(script_dir,"model_diff"), custom_objects=ak.CUSTOM_OBJECTS)
 diffcsv = result_perc.copy()
 
-print("Prepop Columns:",diffcsv.columns)
+# print("Prepop Columns:",diffcsv.columns)
 topop = ['ticker','date','day','diff','diff_level','performance','profitable','predicted_profitable']
 for tp in topop:
     diffcsv.pop(tp)
@@ -238,7 +249,7 @@ for tp in ignore_prop:
 todrop = ['gap']
 for tp in todrop:
     diffcsv.pop(tp)
-print("Columns:",diffcsv.columns)
+# print("Columns:",diffcsv.columns)
 difffloat = np.asarray(diffcsv).astype(np.float32)
 
 result_perc['predicted_diff'] = diff_model.predict(difffloat)
