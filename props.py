@@ -1498,7 +1498,7 @@ def calc_marks(proparray,verbose=False):
 
     proparray.pop('calc')
  
-    proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks']
+    proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks'] + proparray['hour_marks']
     if verbose:
         print("Total Marks:",proparray['marks'].values)
     return proparray

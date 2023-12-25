@@ -121,6 +121,8 @@ for pl in prop_list:
             currow['Category'] = 'Opening'
         elif pl in late_prop_list:
             currow['Category'] = 'Late'
+        elif pl in hour_prop_list:
+            currow['Category'] = 'Hour'
         proprows = datas[datas[pl]==1]
         currow['Count'] = len(proprows)
         inpair = False

@@ -30,7 +30,7 @@ result_perc = pd.read_csv(os.path.join(script_dir,'raw_data_perc.csv'))
 
 result_perc = calc_marks(result_perc)
 
-fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','gap']
+fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
 finalcolumns = fieldnames + sorted(minuscolumns)
 
