@@ -1385,7 +1385,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
         prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Red',prop_data,tickers_data,all_props)
 
     hourpeaks,hourbottoms = gather_range(hour_candles)
-    if hourpeaks[-1].date < hourbottoms[-1].date:
+    if hourpeaks[-1]['date'] < hourbottoms[-1]['date']:
         prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom After Last Peak',prop_data,tickers_data,all_props)
     else:
         prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom Before Last Peak',prop_data,tickers_data,all_props)
