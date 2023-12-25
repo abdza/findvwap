@@ -109,6 +109,12 @@ pair_prop = [
 ['2 Days Ago Morning Range Larger','2 Days Ago Afternoon Range Larger'],
 ['Hour End In Green','Hour End In Red'],
 ['Hour Last Bottom After Last Peak','Hour Last Bottom Before Last Peak'],
+['Range Larger Than Hourly Average','Range Smaller Than Hourly Average'],
+['Range Larger Than Daily Average','Range Smaller Than Daily Average'],
+['Yesterday Range Larger Than Hourly Average','Yesterday Range Smaller Than Hourly Average'],
+['Yesterday Range Larger Than Daily Average','Yesterday Range Smaller Than Daily Average'],
+['2 Days Ago Range Larger Than Hourly Average','2 Days Ago Range Smaller Than Hourly Average'],
+['2 Days Ago Range Larger Than Daily Average','2 Days Ago Range Smaller Than Daily Average'],
 ]
 
 for pl in prop_list:
@@ -146,6 +152,7 @@ for pl in prop_list:
         great = proprows[proprows['performance']=='Great']
         good = proprows[proprows['performance']=='Good']
         currow['Profitable'] = len(profitable)
+        currow['Count Profitable'] = len(proprows[proprows['profitable']==1])
         currow['Great'] = len(great)
         currow['Good'] = len(good)
         if pl in most_corr_prop.keys():
