@@ -108,9 +108,12 @@ def findgap():
             full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
             full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
             hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
+            hour_candles['range'] = hour_candles['high'] - hour_candles['low']
+            hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
             if len(full_minute_candles)>1:
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
+                hour_candles = hour_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
                 ldate = str(minutelastcandle['date'].date())
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
