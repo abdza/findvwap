@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from numerize import numerize
 from sklearn.cluster import KMeans
+from tabulate import tabulate
 
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
@@ -1397,57 +1398,63 @@ def calc_marks(proparray,verbose=False):
     print("Mean profitable:",global_marks['Profitable'].mean())
     if verbose:
         print("Prev Marks")
+    proparray['calc'] = 0
     for prop in prev_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
-            curmark = 0
+            curarray = proparray.loc[proparray[prop]==1]
             if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
-                curmark += cgmark.iloc[0]['Profitable'] * 2
-            curmark += cgmark.iloc[0]['Good'] * 4
-            curmark += cgmark.iloc[0]['Great'] * 4
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             if cgmark.iloc[0]['Corr']!=0:
-                curmark *= cgmark.iloc[0]['Corr']
-            proparray.loc[proparray[prop]==1,'prev_marks'] += curmark
+                curarray['calc'] *= cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'prev_marks'] += curarray['calc']
             if verbose:
-                print(prop," : ",curmark, " : ",proparray.iloc[0]['prev_marks'])
+                print("Prop: ",prop," --> Prev Marks: ",proparray.loc[curarray.index,'prev_marks'])
+                # print(tabulate(curarray.T,headers="keys"))
     if verbose:
         print("Total Prev Mark:",proparray['prev_marks'].values)
     proparray['opening_marks'] = 1.0
     if verbose:
         print("Opening Marks")
+    proparray['calc'] = 0
     for prop in opening_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
-            curmark = 0
+            curarray = proparray.loc[proparray[prop]==1]
             if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
-                curmark += cgmark.iloc[0]['Profitable'] * 2
-            curmark += cgmark.iloc[0]['Good'] * 4
-            curmark += cgmark.iloc[0]['Great'] * 4
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             if cgmark.iloc[0]['Corr']!=0:
-                curmark *= cgmark.iloc[0]['Corr']
+                curarray['calc'] *= cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'opening_marks'] += curarray['calc']
             if verbose:
-                print(prop," : ",curmark, " : ",proparray.iloc[0]['opening_marks'])
-            proparray.loc[proparray[prop]==1,'opening_marks'] += curmark
+                print("Prop: ",prop," --> Opening Marks: ",proparray.loc[curarray.index,'opening_marks'])
     if verbose:
         print("Total Opening Mark:",proparray['opening_marks'].values)
     proparray['late_marks'] = 1.0
     if verbose:
         print("Late Marks")
+    proparray['calc'] = 0
     for prop in late_prop_list:
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
-            curmark = 0
+            curarray = proparray.loc[proparray[prop]==1]
             if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
-                curmark += cgmark.iloc[0]['Profitable'] * 2
-            curmark += cgmark.iloc[0]['Good'] * 4
-            curmark += cgmark.iloc[0]['Great'] * 4
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             if cgmark.iloc[0]['Corr']!=0:
-                curmark *= cgmark.iloc[0]['Corr']
+                curarray['calc'] *= cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'late_marks'] += curarray['calc']
             if verbose:
-                print(prop," : ",curmark, " : ",proparray.iloc[0]['late_marks'])
-            proparray.loc[proparray[prop]==1,'late_marks'] += curmark
+                print("Prop: ",prop," --> Late Marks: ",proparray.loc[curarray.index,'late_marks'])
     if verbose:
         print("Total Late Mark:",proparray['late_marks'].values)
+
+    proparray.pop('calc')
  
     proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks']
     if verbose:

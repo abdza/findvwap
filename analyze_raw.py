@@ -111,6 +111,12 @@ for pl in prop_list:
     if pl not in ignore_prop:
         currow = {}
         currow['Prop'] = pl
+        if pl in prev_prop_list:
+            currow['Category'] = 'Prev'
+        elif pl in opening_prop_list:
+            currow['Category'] = 'Opening'
+        elif pl in late_prop_list:
+            currow['Category'] = 'Late'
         proprows = datas[datas[pl]==1]
         currow['Count'] = len(proprows)
         inpair = False
