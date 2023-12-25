@@ -5,8 +5,6 @@ from numerize import numerize
 from sklearn.cluster import KMeans
 from tabulate import tabulate
 
-from findgreen import green_high
-
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 
@@ -1381,7 +1379,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
             else:
                 prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Absolute Loss',prop_data,tickers_data,all_props)
 
-    if green_high(hour_candles.iloc[-1]):
+    if green_candle(hour_candles.iloc[-1]):
         prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Green',prop_data,tickers_data,all_props)
     else:
         prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Red',prop_data,tickers_data,all_props)
