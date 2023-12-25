@@ -184,6 +184,18 @@ prop_list = [
 'Daily End In Red',
 'Daily Last Bottom After Last Peak',
 'Daily Last Bottom Before Last Peak',
+'Range Larger Than Hourly Average',
+'Range Smaller Than Hourly Average',
+'Range Larger Than Daily Average',
+'Range Smaller Than Daily Average',
+'Yesterday Range Larger Than Hourly Average',
+'Yesterday Range Smaller Than Hourly Average',
+'Yesterday Range Larger Than Daily Average',
+'Yesterday Range Smaller Than Daily Average',
+'2 Days Ago Range Larger Than Hourly Average',
+'2 Days Ago Range Smaller Than Hourly Average',
+'2 Days Ago Range Larger Than Daily Average',
+'2 Days Ago Range Smaller Than Daily Average',
     ]
 
 hour_prop_list = [
@@ -323,6 +335,10 @@ opening_prop_list = [
 'Tiny Range',
 'Huge Range',
 'Huge Negative Range',
+'Range Larger Than Hourly Average',
+'Range Smaller Than Hourly Average',
+'Range Larger Than Daily Average',
+'Range Smaller Than Daily Average',
     ]
 
 prev_prop_list = [
@@ -364,6 +380,14 @@ prev_prop_list = [
 'Yesterday Afternoon Range Larger',
 '2 Days Ago Afternoon Range Larger',
 'Consecutive Afternoon Range Larger',
+'Yesterday Range Larger Than Hourly Average',
+'Yesterday Range Smaller Than Hourly Average',
+'Yesterday Range Larger Than Daily Average',
+'Yesterday Range Smaller Than Daily Average',
+'2 Days Ago Range Larger Than Hourly Average',
+'2 Days Ago Range Smaller Than Hourly Average',
+'2 Days Ago Range Larger Than Daily Average',
+'2 Days Ago Range Smaller Than Daily Average',
     ]
 
 ignore_prop = [
@@ -925,7 +949,10 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
     prop_data = {}
     tickers_data = {}
     all_props = []
-    maxprice = minute_candles.iloc[0]['high']
+
+    hour_avg = hour_candles['range'].mean()
+    daily_avg = daily_candles['range'].mean()
+
     if len(minute_candles)>1:
         first_price = body_top(minute_candles.iloc[1])
     else:
@@ -1148,6 +1175,14 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
         prop_data, tickers_data, all_props = set_params(ticker,'Huge Range',prop_data,tickers_data,all_props)
     if minute_candles.iloc[0]['range']>0.3 and red_candle(minute_candles.iloc[0]):
         prop_data, tickers_data, all_props = set_params(ticker,'Huge Negative Range',prop_data,tickers_data,all_props)
+    if minute_candles.iloc[0]['range']>hour_avg:
+        prop_data, tickers_data, all_props = set_params(ticker,'Range Larger Than Hourly Average',prop_data,tickers_data,all_props)
+    else:
+        prop_data, tickers_data, all_props = set_params(ticker,'Range Smaller Than Hourly Average',prop_data,tickers_data,all_props)
+    if minute_candles.iloc[0]['range']>daily_avg:
+        prop_data, tickers_data, all_props = set_params(ticker,'Range Larger Than Daily Average',prop_data,tickers_data,all_props)
+    else:
+        prop_data, tickers_data, all_props = set_params(ticker,'Range Smaller Than Daily Average',prop_data,tickers_data,all_props)
 
     if len(bminute_candles)>0 and len(bminute_candles)<20:
         prop_data, tickers_data, all_props = set_params(ticker,'Sluggish Ticker',prop_data,tickers_data,all_props)
@@ -1163,6 +1198,24 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
         y_avg = bminute_candles['range'].mean()
         yy_avg = bbminute_candles['range'].mean()
         avg_multiple = 3
+
+        if bminute_candles.iloc[0]['range']>hour_avg:
+            prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Range Larger Than Hourly Average',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Range Smaller Than Hourly Average',prop_data,tickers_data,all_props)
+        if bminute_candles.iloc[0]['range']>daily_avg:
+            prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Range Larger Than Daily Average',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Yesterday Range Smaller Than Daily Average',prop_data,tickers_data,all_props)
+
+        if bbminute_candles.iloc[0]['range']>hour_avg:
+            prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Range Larger Than Hourly Average',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Range Smaller Than Hourly Average',prop_data,tickers_data,all_props)
+        if bbminute_candles.iloc[0]['range']>daily_avg:
+            prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Range Larger Than Daily Average',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Range Smaller Than Daily Average',prop_data,tickers_data,all_props)
 
         if minute_candles.iloc[0]['range'] > y_avg*avg_multiple:
             prop_data, tickers_data, all_props = set_params(ticker,'Range Above Average',prop_data,tickers_data,all_props)
