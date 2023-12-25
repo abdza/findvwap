@@ -115,10 +115,10 @@ def findgap():
                 full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
                 full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
                 full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
+
+                hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
             except Exception as exp:
                 print("Error downloading minute candles:",exp)
-            peaks = []
-            bottoms = []
             if len(full_minute_candles)>1:
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
@@ -157,7 +157,7 @@ def findgap():
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
-                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles)
+                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles)
 
                 if len(candles)>100:
                     levels[ticker] = find_levels(candles)

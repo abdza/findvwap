@@ -49,7 +49,9 @@ fieldnames = ['diff_level']
 fieldnames += prop_list
 for prop in prop_list:
     fieldnames.append('Perc ' + prop)
-# profitable = datas[datas['profitable']==1]
+profitable = datas[datas['profitable']==1]
+profitable = profitable[profitable['First Green']==1]
+profitable = profitable[profitable['Gap Up']==1]
 profitable = datas.copy()
 propsprofitable = profitable[fieldnames]
 corrprofit = propsprofitable.corr()
@@ -105,6 +107,8 @@ pair_prop = [
 ['2 Days Ago Negative Afternoon Range','2 Days Ago Positive Afternoon Range'],
 ['Yesterday Morning Range Larger','Yesterday Afternoon Range Larger'],
 ['2 Days Ago Morning Range Larger','2 Days Ago Afternoon Range Larger'],
+['Hour End In Green','Hour End In Red'],
+['Hour Last Bottom After Last Peak','Hour Last Bottom Before Last Peak'],
 ]
 
 for pl in prop_list:

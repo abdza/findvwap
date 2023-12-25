@@ -107,8 +107,7 @@ def findgap():
             full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
             full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
             full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
-            peaks = []
-            bottoms = []
+            hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
             if len(full_minute_candles)>1:
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
@@ -155,7 +154,7 @@ def findgap():
 
                 latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
 
-                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles)
+                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles)
 
                 fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','gap','price']
                 row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}

@@ -5,6 +5,8 @@ from numerize import numerize
 from sklearn.cluster import KMeans
 from tabulate import tabulate
 
+from findgreen import green_high
+
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 
@@ -176,8 +178,18 @@ prop_list = [
 'Yesterday Afternoon Range Larger',
 '2 Days Ago Afternoon Range Larger',
 'Consecutive Afternoon Range Larger',
+'Hour End In Green',
+'Hour End In Red',
+'Hour Last Bottom After Last Peak',
+'Hour Last Bottom Before Last Peak',
     ]
 
+hour_prop_list = [
+'Hour End In Green',
+'Hour End In Red',
+'Hour Last Bottom After Last Peak',
+'Hour Last Bottom Before Last Peak',
+]
 
 late_prop_list = [
 'Consecutive Early Green',
@@ -900,7 +912,7 @@ def set_params(ticker,proptext,prop_data,tickers_data,all_props):
     all_props.append(proptext)
     return prop_data, tickers_data, all_props
 
-def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
+def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles):
     prop_data = {}
     tickers_data = {}
     all_props = []
@@ -1369,6 +1381,18 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles):
             else:
                 prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Absolute Loss',prop_data,tickers_data,all_props)
 
+    if green_high(hour_candles.iloc[-1]):
+        prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Green',prop_data,tickers_data,all_props)
+    else:
+        prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Red',prop_data,tickers_data,all_props)
+
+    hourpeaks,hourbottoms = gather_range(hour_candles)
+    if hourpeaks[-1].date < hourbottoms[-1].date:
+        prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom After Last Peak',prop_data,tickers_data,all_props)
+    else:
+        prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom Before Last Peak',prop_data,tickers_data,all_props)
+
+
     curdiff = max_price - first_price
     if curdiff > 5:
         tcat = 'Great'
@@ -1453,6 +1477,26 @@ def calc_marks(proparray,verbose=False):
                 print("Prop: ",prop," --> Late Marks: ",proparray.loc[curarray.index,'late_marks'])
     if verbose:
         print("Total Late Mark:",proparray['late_marks'].values)
+
+    proparray['hour_marks'] = 1.0
+    if verbose:
+        print("Hour Marks")
+    proparray['calc'] = 0
+    for prop in hour_prop_list:
+        cgmark = global_marks[global_marks['Prop']==prop]
+        if len(cgmark):
+            curarray = proparray.loc[proparray[prop]==1]
+            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
+            if cgmark.iloc[0]['Corr']!=0:
+                curarray['calc'] *= cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'hour_marks'] += curarray['calc']
+            if verbose:
+                print("Prop: ",prop," --> Hour Marks: ",proparray.loc[curarray.index,'hour_marks'])
+    if verbose:
+        print("Total Hour Mark:",proparray['hour_marks'].values)
 
     proparray.pop('calc')
  
