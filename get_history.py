@@ -157,7 +157,7 @@ def findgap():
 
                 latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
 
-                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles)
+                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,candles)
 
                 fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','gap','price']
                 row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
@@ -175,7 +175,7 @@ def findgap():
 starttest = datetime.now()
 alldata = pd.DataFrame()
 for day in range(60):
-# for day in range(10):
+# for day in range(5):
     instockdate = starttest - timedelta(days=day)
     result = findgap()
     result = pd.DataFrame.from_dict(result)

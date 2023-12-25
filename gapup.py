@@ -117,11 +117,14 @@ def findgap():
                 full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
 
                 hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
+                hour_candles['range'] = hour_candles['high'] - hour_candles['low']
+                hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
             except Exception as exp:
                 print("Error downloading minute candles:",exp)
             if len(full_minute_candles)>1:
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
+                hour_candles = hour_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
                 ldate = str(minutelastcandle['date'].date())
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
@@ -157,7 +160,7 @@ def findgap():
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
-                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles)
+                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,candles)
 
                 if len(candles)>100:
                     levels[ticker] = find_levels(candles)
@@ -255,7 +258,7 @@ difffloat = np.asarray(diffcsv).astype(np.float32)
 result_perc['predicted_diff'] = diff_model.predict(difffloat)
 
 
-fieldnames = ['date','ticker','diff_level','performance','profitable','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','marks','gap']
+fieldnames = ['date','ticker','diff_level','performance','profitable','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','marks','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
 finalcolumns = fieldnames + sorted(minuscolumns)
 
