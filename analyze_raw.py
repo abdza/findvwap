@@ -49,9 +49,9 @@ fieldnames = ['diff_level']
 fieldnames += prop_list
 for prop in prop_list:
     fieldnames.append('Perc ' + prop)
-profitable = datas[datas['profitable']==1]
-profitable = profitable[profitable['First Green']==1]
-profitable = profitable[profitable['Gap Up']==1]
+# profitable = datas[datas['profitable']==1]
+# profitable = profitable[profitable['First Green']==1]
+# profitable = profitable[profitable['Gap Up']==1]
 profitable = datas.copy()
 propsprofitable = profitable[fieldnames]
 corrprofit = propsprofitable.corr()
@@ -88,6 +88,13 @@ group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_numbers.csv")
 group_by_diff = group_by_diff.corr()
 group_by_diff.index.names = ['Prop']
 group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_corr.csv"))
+
+tickerprice = datas.copy()
+tickerprice = tickerprice[['date','ticker','price']]
+pivot_tickerprice = tickerprice.pivot(index='date',columns='ticker',values='price')
+# tickerprice['ticker'] = tickerprice['ticker'].astype('category')
+tickercoor = pivot_tickerprice.corr()
+tickercoor.to_csv(os.path.join(script_dir,"analyze_ticker_coor.csv"))
 
 pair_prop = [
 ['First Red','First Green'],

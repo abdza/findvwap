@@ -84,8 +84,12 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-    for i in range(len(stocks.index)):
-    # for i in range(5):
+    tickercoor = pd.read_csv(os.path.join(script_dir,'analyze_ticker_coor.csv'),index_col='ticker')
+    print("Columns:",tickercoor.columns)
+    # tickercoor.set_index('ticker')
+
+    # for i in range(len(stocks.index)):
+    for i in range(5):
         candles = []
         if isinstance(stocks.iloc[i]['Ticker'], str):
             try:
@@ -94,6 +98,9 @@ def findgap():
                 candles = dticker.history(start=start_date,end=end_date,interval='1d')
                 candles = candles.loc[(candles['volume']>0)]
                 print("Processing ",ticker, " got ",len(candles))
+                coortickers = tickercoor[ticker].sort_values(ascending=False)
+                coortickers = coortickers.iloc[:5]
+                print("Correlated tickers:",coortickers.index)
             except Exception as exp:
                 print("Error downloading candles:",exp)
         else:
