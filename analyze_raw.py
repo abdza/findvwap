@@ -135,18 +135,32 @@ for pl in prop_list:
         for pp in pair_prop:
             if pp[0]==pl or pp[1]==pl:
                 inpair = True
-                pp0 = len(datas[datas[pp[0]]==1])
-                pp1 = len(datas[datas[pp[1]]==1])
-                if pp0>pp1:
-                    if pp[0]==pl:
-                        profitable = proprows[proprows['profitable']==1]
+                if pl in most_corr_prop.keys():
+                    pc0 = most_corr_prop[pp[0]]
+                    pc1 = most_corr_prop[pp[1]]
+                    if pc0>pc1:
+                        if pp[0]==pl:
+                            profitable = proprows[proprows['profitable']==1]
+                        else:
+                            profitable = []
                     else:
-                        profitable = []
+                        if pp[1]==pl:
+                            profitable = proprows[proprows['profitable']==1]
+                        else:
+                            profitable = []
                 else:
-                    if pp[1]==pl:
-                        profitable = proprows[proprows['profitable']==1]
+                    pp0 = len(datas[datas[pp[0]]==1])
+                    pp1 = len(datas[datas[pp[1]]==1])
+                    if pp0>pp1:
+                        if pp[0]==pl:
+                            profitable = proprows[proprows['profitable']==1]
+                        else:
+                            profitable = []
                     else:
-                        profitable = []
+                        if pp[1]==pl:
+                            profitable = proprows[proprows['profitable']==1]
+                        else:
+                            profitable = []
         if not inpair:
             profitable = proprows[proprows['profitable']==1]
         great = proprows[proprows['performance']=='Great']
