@@ -1498,16 +1498,16 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
     else:
         prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom Before Last Peak',prop_data,tickers_data,all_props)
 
-    if hourbottoms.iloc[-1]['low'] > hourbottoms.iloc[-2]['low'] and hourbottoms.iloc[-2]['low'] > hourbottoms.iloc[-3]['low']:
+    if hourbottoms[-1]['low'] > hourbottoms[-2]['low'] and hourbottoms[-2]['low'] > hourbottoms[-3]['low']:
         prop_data, tickers_data, all_props = set_params(ticker,'Hour Low Higher',prop_data,tickers_data,all_props)
 
-    if hourbottoms.iloc[-1]['low'] < hourbottoms.iloc[-2]['low'] and hourbottoms.iloc[-2]['low'] < hourbottoms.iloc[-3]['low']:
+    if hourbottoms[-1]['low'] < hourbottoms[-2]['low'] and hourbottoms[-2]['low'] < hourbottoms[-3]['low']:
         prop_data, tickers_data, all_props = set_params(ticker,'Hour Low Lower',prop_data,tickers_data,all_props)
 
-    if hourpeaks.iloc[-1]['high'] > hourpeaks.iloc[-2]['high'] and hourpeaks.iloc[-2]['high'] > hourpeaks.iloc[-3]['high']:
+    if hourpeaks[-1]['high'] > hourpeaks[-2]['high'] and hourpeaks[-2]['high'] > hourpeaks[-3]['high']:
         prop_data, tickers_data, all_props = set_params(ticker,'Hour High Higher',prop_data,tickers_data,all_props)
 
-    if hourpeaks.iloc[-1]['high'] < hourpeaks.iloc[-2]['high'] and hourpeaks.iloc[-2]['high'] < hourpeaks.iloc[-3]['high']:
+    if hourpeaks[-1]['high'] < hourpeaks[-2]['high'] and hourpeaks[-2]['high'] < hourpeaks[-3]['high']:
         prop_data, tickers_data, all_props = set_params(ticker,'Hour High Lower',prop_data,tickers_data,all_props)
 
 
@@ -1535,16 +1535,16 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
     else:
         prop_data, tickers_data, all_props = set_params(ticker,'Daily Last Bottom Before Last Peak',prop_data,tickers_data,all_props)
 
-    if dailybottoms.iloc[-1]['low'] > dailybottoms.iloc[-2]['low'] and dailybottoms.iloc[-2]['low'] > dailybottoms.iloc[-3]['low']:
+    if dailybottoms[-1]['low'] > dailybottoms[-2]['low'] and dailybottoms[-2]['low'] > dailybottoms[-3]['low']:
         prop_data, tickers_data, all_props = set_params(ticker,'Daily Low Higher',prop_data,tickers_data,all_props)
 
-    if dailybottoms.iloc[-1]['low'] < dailybottoms.iloc[-2]['low'] and dailybottoms.iloc[-2]['low'] < dailybottoms.iloc[-3]['low']:
+    if dailybottoms[-1]['low'] < dailybottoms[-2]['low'] and dailybottoms[-2]['low'] < dailybottoms[-3]['low']:
         prop_data, tickers_data, all_props = set_params(ticker,'Daily Low Lower',prop_data,tickers_data,all_props)
 
-    if dailypeaks.iloc[-1]['high'] > dailypeaks.iloc[-2]['high'] and dailypeaks.iloc[-2]['high'] > dailypeaks.iloc[-3]['high']:
+    if dailypeaks[-1]['high'] > dailypeaks[-2]['high'] and dailypeaks[-2]['high'] > dailypeaks[-3]['high']:
         prop_data, tickers_data, all_props = set_params(ticker,'Daily High Higher',prop_data,tickers_data,all_props)
 
-    if dailypeaks.iloc[-1]['high'] < dailypeaks.iloc[-2]['high'] and dailypeaks.iloc[-2]['high'] < dailypeaks.iloc[-3]['high']:
+    if dailypeaks[-1]['high'] < dailypeaks[-2]['high'] and dailypeaks[-2]['high'] < dailypeaks[-3]['high']:
         prop_data, tickers_data, all_props = set_params(ticker,'Daily High Lower',prop_data,tickers_data,all_props)
 
 
