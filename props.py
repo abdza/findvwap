@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd 
 import os
 from numerize import numerize
+from datetime import datetime
 from sklearn.cluster import KMeans
 from tabulate import tabulate
 
