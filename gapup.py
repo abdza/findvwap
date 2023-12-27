@@ -88,8 +88,8 @@ def findgap():
     print("Columns:",tickercoor.columns)
     # tickercoor.set_index('ticker')
 
-    # for i in range(len(stocks.index)):
-    for i in range(5):
+    for i in range(len(stocks.index)):
+    # for i in range(5):
         candles = []
         if isinstance(stocks.iloc[i]['Ticker'], str):
             try:
