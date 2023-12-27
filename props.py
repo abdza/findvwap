@@ -1493,22 +1493,25 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
             else:
                 prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Absolute Loss',prop_data,tickers_data,all_props)
 
-    if green_candle(hour_candles.iloc[-1]):
-        prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Green',prop_data,tickers_data,all_props)
-        if green_candle(hour_candles.iloc[-2]) and green_candle(hour_candles.iloc[-3]):
-            prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Hours End In Green',prop_data,tickers_data,all_props)
-        if red_candle(hour_candles.iloc[-2]) and red_candle(hour_candles.iloc[-3]) and red_candle(hour_candles.iloc[-4]):
-            prop_data, tickers_data, all_props = set_params(ticker,'Hour Green After 3 Hours Of Red',prop_data,tickers_data,all_props)
-            if hour_candles.iloc[-1]['range'] > hour_candles.iloc[-2]['range']:
-                prop_data, tickers_data, all_props = set_params(ticker,'Hour Strong Reverse',prop_data,tickers_data,all_props)
-    else:
-        prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Red',prop_data,tickers_data,all_props)
-        if red_candle(hour_candles.iloc[-2]) and red_candle(hour_candles.iloc[-3]):
-            prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Hours End In Red',prop_data,tickers_data,all_props)
-        if green_candle(hour_candles.iloc[-2]) and green_candle(hour_candles.iloc[-3]) and green_candle(hour_candles.iloc[-4]):
-            prop_data, tickers_data, all_props = set_params(ticker,'Hour Red After 3 Hours Of Green',prop_data,tickers_data,all_props)
-            if hour_candles.iloc[-1]['range'] > hour_candles.iloc[-2]['range']:
-                prop_data, tickers_data, all_props = set_params(ticker,'Hour Strong Reverse',prop_data,tickers_data,all_props)
+    if len(hour_candles):
+        if green_candle(hour_candles.iloc[-1]):
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Green',prop_data,tickers_data,all_props)
+            if len(hour_candles)>3:
+                if green_candle(hour_candles.iloc[-2]) and green_candle(hour_candles.iloc[-3]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Hours End In Green',prop_data,tickers_data,all_props)
+                if red_candle(hour_candles.iloc[-2]) and red_candle(hour_candles.iloc[-3]) and red_candle(hour_candles.iloc[-4]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hour Green After 3 Hours Of Red',prop_data,tickers_data,all_props)
+                    if hour_candles.iloc[-1]['range'] > hour_candles.iloc[-2]['range']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Hour Strong Reverse',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Red',prop_data,tickers_data,all_props)
+            if len(hour_candles)>3:
+                if red_candle(hour_candles.iloc[-2]) and red_candle(hour_candles.iloc[-3]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Hours End In Red',prop_data,tickers_data,all_props)
+                if green_candle(hour_candles.iloc[-2]) and green_candle(hour_candles.iloc[-3]) and green_candle(hour_candles.iloc[-4]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hour Red After 3 Hours Of Green',prop_data,tickers_data,all_props)
+                    if hour_candles.iloc[-1]['range'] > hour_candles.iloc[-2]['range']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Hour Strong Reverse',prop_data,tickers_data,all_props)
 
     hourpeaks,hourbottoms = gather_range(hour_candles)
     if len(hourpeaks) and len(hourbottoms):
@@ -1534,22 +1537,25 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
             prop_data, tickers_data, all_props = set_params(ticker,'Hour High Lower',prop_data,tickers_data,all_props)
 
 
-    if green_candle(daily_candles.iloc[-1]):
-        prop_data, tickers_data, all_props = set_params(ticker,'Daily End In Green',prop_data,tickers_data,all_props)
-        if green_candle(daily_candles.iloc[-2]) and green_candle(daily_candles.iloc[-3]):
-            prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Days End In Green',prop_data,tickers_data,all_props)
-        if red_candle(daily_candles.iloc[-2]) and red_candle(daily_candles.iloc[-3]) and red_candle(daily_candles.iloc[-4]):
-            prop_data, tickers_data, all_props = set_params(ticker,'Daily Green After 3 Days Of Red',prop_data,tickers_data,all_props)
-            if daily_candles.iloc[-1]['range'] > daily_candles.iloc[-2]['range']:
-                prop_data, tickers_data, all_props = set_params(ticker,'Daily Strong Reverse',prop_data,tickers_data,all_props)
-    else:
-        prop_data, tickers_data, all_props = set_params(ticker,'Daily End In Red',prop_data,tickers_data,all_props)
-        if red_candle(daily_candles.iloc[-2]) and red_candle(daily_candles.iloc[-3]):
-            prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Days End In Red',prop_data,tickers_data,all_props)
-        if green_candle(daily_candles.iloc[-2]) and green_candle(daily_candles.iloc[-3]) and green_candle(daily_candles.iloc[-4]):
-            prop_data, tickers_data, all_props = set_params(ticker,'Daily Red After 3 Days Of Green',prop_data,tickers_data,all_props)
-            if daily_candles.iloc[-1]['range'] > daily_candles.iloc[-2]['range']:
-                prop_data, tickers_data, all_props = set_params(ticker,'Daily Strong Reverse',prop_data,tickers_data,all_props)
+    if len(daily_candles):
+        if green_candle(daily_candles.iloc[-1]):
+            prop_data, tickers_data, all_props = set_params(ticker,'Daily End In Green',prop_data,tickers_data,all_props)
+            if len(daily_candles)>3:
+                if green_candle(daily_candles.iloc[-2]) and green_candle(daily_candles.iloc[-3]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Days End In Green',prop_data,tickers_data,all_props)
+                if red_candle(daily_candles.iloc[-2]) and red_candle(daily_candles.iloc[-3]) and red_candle(daily_candles.iloc[-4]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Daily Green After 3 Days Of Red',prop_data,tickers_data,all_props)
+                    if daily_candles.iloc[-1]['range'] > daily_candles.iloc[-2]['range']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Daily Strong Reverse',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Daily End In Red',prop_data,tickers_data,all_props)
+            if len(daily_candles)>3:
+                if red_candle(daily_candles.iloc[-2]) and red_candle(daily_candles.iloc[-3]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Days End In Red',prop_data,tickers_data,all_props)
+                if green_candle(daily_candles.iloc[-2]) and green_candle(daily_candles.iloc[-3]) and green_candle(daily_candles.iloc[-4]):
+                    prop_data, tickers_data, all_props = set_params(ticker,'Daily Red After 3 Days Of Green',prop_data,tickers_data,all_props)
+                    if daily_candles.iloc[-1]['range'] > daily_candles.iloc[-2]['range']:
+                        prop_data, tickers_data, all_props = set_params(ticker,'Daily Strong Reverse',prop_data,tickers_data,all_props)
 
     dailypeaks,dailybottoms = gather_range(daily_candles,True)
     if len(dailypeaks) and len(dailybottoms):
