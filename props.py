@@ -1511,10 +1511,11 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                 prop_data, tickers_data, all_props = set_params(ticker,'Hour Strong Reverse',prop_data,tickers_data,all_props)
 
     hourpeaks,hourbottoms = gather_range(hour_candles)
-    if hourpeaks[-1]['date'] < hourbottoms[-1]['date']:
-        prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom After Last Peak',prop_data,tickers_data,all_props)
-    else:
-        prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom Before Last Peak',prop_data,tickers_data,all_props)
+    if len(hourpeaks) and len(hourbottoms):
+        if hourpeaks[-1]['date'] < hourbottoms[-1]['date']:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom After Last Peak',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour Last Bottom Before Last Peak',prop_data,tickers_data,all_props)
 
     if len(hourbottoms)>3:
 
@@ -1551,10 +1552,11 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                 prop_data, tickers_data, all_props = set_params(ticker,'Daily Strong Reverse',prop_data,tickers_data,all_props)
 
     dailypeaks,dailybottoms = gather_range(daily_candles,True)
-    if dailypeaks[-1]['date'] < dailybottoms[-1]['date']:
-        prop_data, tickers_data, all_props = set_params(ticker,'Daily Last Bottom After Last Peak',prop_data,tickers_data,all_props)
-    else:
-        prop_data, tickers_data, all_props = set_params(ticker,'Daily Last Bottom Before Last Peak',prop_data,tickers_data,all_props)
+    if len(dailypeaks) and len(dailybottoms):
+        if dailypeaks[-1]['date'] < dailybottoms[-1]['date']:
+            prop_data, tickers_data, all_props = set_params(ticker,'Daily Last Bottom After Last Peak',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Daily Last Bottom Before Last Peak',prop_data,tickers_data,all_props)
 
     if len(dailybottoms)>3:
 
