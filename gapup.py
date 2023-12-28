@@ -84,8 +84,8 @@ def findgap():
     all_props = []
     end_of_trading = False
 
-    tickercoor = pd.read_csv(os.path.join(script_dir,'analyze_ticker_coor.csv'),index_col='ticker')
-    print("Columns:",tickercoor.columns)
+    # tickercoor = pd.read_csv(os.path.join(script_dir,'analyze_ticker_coor.csv'),index_col='ticker')
+    # print("Columns:",tickercoor.columns)
     # tickercoor.set_index('ticker')
 
     for i in range(len(stocks.index)):
@@ -98,9 +98,9 @@ def findgap():
                 candles = dticker.history(start=start_date,end=end_date,interval='1d')
                 candles = candles.loc[(candles['volume']>0)]
                 print("Processing ",ticker, " got ",len(candles))
-                coortickers = tickercoor[ticker].sort_values(ascending=False)
-                coortickers = coortickers.iloc[:5]
-                print("Correlated tickers:",coortickers.index)
+                # coortickers = tickercoor[ticker].sort_values(ascending=False)
+                # coortickers = coortickers.iloc[:5]
+                # print("Correlated tickers:",coortickers.index)
             except Exception as exp:
                 print("Error downloading candles:",exp)
         else:
@@ -116,22 +116,18 @@ def findgap():
             else:
                 curkey = str(curcandle['date'])
             minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
-            minute_start_date = minute_end_date - timedelta(days=5)
+            minute_start_date = minute_end_date - timedelta(days=10)
             full_minute_candles = []
             try:
                 full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
                 full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
                 full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
 
-                hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
-                hour_candles['range'] = hour_candles['high'] - hour_candles['low']
-                hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
             except Exception as exp:
                 print("Error downloading minute candles:",exp)
             if len(full_minute_candles)>1:
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
-                hour_candles = hour_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
                 ldate = str(minutelastcandle['date'].date())
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
@@ -151,23 +147,28 @@ def findgap():
                 bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                 bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                 bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
-                while len(bminute_candles)==0 and datediff<=5:
+                while len(bminute_candles)==0 and datediff<=10:
                     datediff += 1
                     bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                     bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
 
+                hour_candles = dticker.history(start=minute_start_date,end=bminute_candles.iloc[-1]['date'],interval='1h')
+                hour_candles['range'] = hour_candles['high'] - hour_candles['low']
+                hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
+                hour_candles = hour_candles.reset_index(level=[0,1])
+
                 datediff += 1
                 bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                 bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                 bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<bdate)]
-                while len(bbminute_candles)==0 and datediff<=5:
+                while len(bbminute_candles)==0 and datediff<=10:
                     datediff += 1
                     bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
-                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,candles)
+                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,candles[:-2])
 
                 if len(candles)>100:
                     levels[ticker] = find_levels(candles)
@@ -215,6 +216,8 @@ for cdate in dates:
 result_perc = result.set_index('date').join(dateperc.set_index('date'))
 result_perc.reset_index(inplace=True)
 result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
+
+# result_perc = pd.read_csv(os.path.join(script_dir,'results_perc.csv'))
 
 if manualstocks:
     result_perc = calc_marks(result_perc,True)
@@ -265,7 +268,8 @@ difffloat = np.asarray(diffcsv).astype(np.float32)
 result_perc['predicted_diff'] = diff_model.predict(difffloat)
 
 
-fieldnames = ['date','ticker','diff_level','performance','profitable','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','marks','gap']
+fieldnames = ['date','ticker','diff_level','performance','profitable','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','marks','coor_marks','full_marks','gap']
+# fieldnames = ['date','ticker','diff_level','performance','profitable','full_marks','coor_marks','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
 finalcolumns = fieldnames + sorted(minuscolumns)
 
@@ -273,7 +277,8 @@ result_perc = result_perc[finalcolumns]
 
 result_perc.sort_values(by=['marks'],ascending=False,inplace=True)
 result_perc.to_csv(os.path.join(script_dir,'results_profitability.csv'),index=False)
-todisp = result_perc[['ticker','date','profitable','predicted_profitable','predicted_diff','diff_level','performance']]
+todisp = result_perc[['ticker','date','profitable','marks','full_marks','late_marks','predicted_profitable','predicted_diff','diff_level','performance']]
+# todisp = result_perc[['ticker','date','profitable','marks','full_marks','diff_level','performance']]
 print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
 endtest = datetime.now()
 print("Start:",starttest)

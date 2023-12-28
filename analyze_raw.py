@@ -90,8 +90,8 @@ group_by_diff.index.names = ['Prop']
 group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_corr.csv"))
 
 tickerprice = datas.copy()
-tickerprice = tickerprice[['date','ticker','price']]
-pivot_tickerprice = tickerprice.pivot(index='date',columns='ticker',values='price')
+tickerprice = tickerprice[['date','ticker','diff']]
+pivot_tickerprice = tickerprice.pivot(index='date',columns='ticker',values='diff')
 # tickerprice['ticker'] = tickerprice['ticker'].astype('category')
 tickercoor = pivot_tickerprice.corr()
 tickercoor.to_csv(os.path.join(script_dir,"analyze_ticker_coor.csv"))
@@ -136,40 +136,42 @@ for pl in prop_list:
             currow['Category'] = 'Late'
         elif pl in hour_prop_list:
             currow['Category'] = 'Hour'
+        elif pl in daily_prop_list:
+            currow['Category'] = 'Daily'
         proprows = datas[datas[pl]==1]
         currow['Count'] = len(proprows)
-        inpair = False
-        for pp in pair_prop:
-            if pp[0]==pl or pp[1]==pl:
-                inpair = True
-                if pl in most_corr_prop.keys():
-                    pc0 = most_corr_prop[pp[0]]
-                    pc1 = most_corr_prop[pp[1]]
-                    if pc0>pc1:
-                        if pp[0]==pl:
-                            profitable = proprows[proprows['profitable']==1]
-                        else:
-                            profitable = []
-                    else:
-                        if pp[1]==pl:
-                            profitable = proprows[proprows['profitable']==1]
-                        else:
-                            profitable = []
-                else:
-                    pp0 = len(datas[datas[pp[0]]==1])
-                    pp1 = len(datas[datas[pp[1]]==1])
-                    if pp0>pp1:
-                        if pp[0]==pl:
-                            profitable = proprows[proprows['profitable']==1]
-                        else:
-                            profitable = []
-                    else:
-                        if pp[1]==pl:
-                            profitable = proprows[proprows['profitable']==1]
-                        else:
-                            profitable = []
-        if not inpair:
-            profitable = proprows[proprows['profitable']==1]
+        # inpair = False
+        # for pp in pair_prop:
+        #     if pp[0]==pl or pp[1]==pl:
+        #         inpair = True
+        #         if pl in most_corr_prop.keys():
+        #             pc0 = most_corr_prop[pp[0]]
+        #             pc1 = most_corr_prop[pp[1]]
+        #             if pc0>pc1:
+        #                 if pp[0]==pl:
+        #                     profitable = proprows[proprows['profitable']==1]
+        #                 else:
+        #                     profitable = []
+        #             else:
+        #                 if pp[1]==pl:
+        #                     profitable = proprows[proprows['profitable']==1]
+        #                 else:
+        #                     profitable = []
+        #         else:
+        #             pp0 = len(datas[datas[pp[0]]==1])
+        #             pp1 = len(datas[datas[pp[1]]==1])
+        #             if pp0>pp1:
+        #                 if pp[0]==pl:
+        #                     profitable = proprows[proprows['profitable']==1]
+        #                 else:
+        #                     profitable = []
+        #             else:
+        #                 if pp[1]==pl:
+        #                     profitable = proprows[proprows['profitable']==1]
+        #                 else:
+        #                     profitable = []
+        # if not inpair:
+        profitable = proprows[proprows['profitable']==1]
         great = proprows[proprows['performance']=='Great']
         good = proprows[proprows['performance']=='Good']
         currow['Profitable'] = len(profitable)

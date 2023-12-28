@@ -103,17 +103,13 @@ def findgap():
                 print("Latest date for ",ticker," is already ",curkey)
                 continue
             minute_end_date = datetime.strptime(curkey + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
-            minute_start_date = minute_end_date - timedelta(days=5)
+            minute_start_date = minute_end_date - timedelta(days=10)
             full_minute_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='15m')
             full_minute_candles['range'] = full_minute_candles['high'] - full_minute_candles['low']
             full_minute_candles['body_length'] = full_minute_candles['close'] - full_minute_candles['open']
-            hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
-            hour_candles['range'] = hour_candles['high'] - hour_candles['low']
-            hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
             if len(full_minute_candles)>1:
                 tickers.append(ticker)
                 full_minute_candles = full_minute_candles.reset_index(level=[0,1])
-                hour_candles = hour_candles.reset_index(level=[0,1])
                 minutelastcandle = full_minute_candles.iloc[-2]
                 ldate = str(minutelastcandle['date'].date())
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
@@ -132,17 +128,22 @@ def findgap():
                 bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                 bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                 bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
-                while len(bminute_candles)==0 and datediff<=5:
+                while len(bminute_candles)==0 and datediff<=10:
                     datediff += 1
                     bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                     bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
 
+                hour_candles = dticker.history(start=minute_start_date,end=bminute_candles[-1]['date'],interval='1h')
+                hour_candles['range'] = hour_candles['high'] - hour_candles['low']
+                hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
+                hour_candles = hour_candles.reset_index(level=[0,1])
+
                 datediff += 1
                 bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                 bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                 bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<bdate)]
-                while len(bbminute_candles)==0 and datediff<=5:
+                while len(bbminute_candles)==0 and datediff<=10:
                     datediff += 1
                     bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
@@ -157,7 +158,7 @@ def findgap():
 
                 latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
 
-                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,candles)
+                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,candles[:-2])
 
                 fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','gap','price']
                 row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
