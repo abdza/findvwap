@@ -1718,13 +1718,23 @@ def calc_marks(proparray,verbose=False):
 
     proparray['coor_marks'] = 0
     tickercoor = pd.read_csv(os.path.join(script_dir,'analyze_ticker_coor.csv'),index_col='ticker')
-    for ticker in proparray['ticker'].unique():
-        print("Updating coor marks for ",ticker)
-        coortickers = tickercoor[ticker].sort_values(ascending=False)
-        coortickers = coortickers.iloc[:10]
-        for cticker in coortickers.index:
-            print("Adding coor marks from ",cticker," with ",proparray.loc[proparray['ticker']==cticker,'marks'])
-            proparray.loc[proparray['ticker']==ticker,'coor_marks'] += proparray.loc[proparray['ticker']==cticker,'marks'].values
+
+
+    dates = proparray['date'].unique()
+    for cdate in dates:
+        daytrade = proparray[proparray['date']==cdate]
+
+        for ticker in daytrade['ticker'].unique():
+            print("Updating coor marks for ",ticker)
+            coortickers = tickercoor[ticker].sort_values(ascending=False)
+            coortickers = coortickers.iloc[:10]
+            for cticker in coortickers.index:
+                print("Adding coor marks from ",cticker," with ",daytrade.loc[daytrade['ticker']==cticker,'marks'])
+                ctmark = daytrade.loc[daytrade['ticker']==cticker,'marks'].values
+                if len(ctmark):
+                    print("Ctmark:",ctmark)
+                    propid = daytrade[daytrade['ticker']==ticker]
+                    proparray.loc[propid.index,'coor_marks'] += ctmark
 
     proparray['full_marks'] = proparray['marks'] + proparray['coor_marks']
 
