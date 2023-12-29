@@ -156,7 +156,10 @@ def findgap():
                     hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
                 hour_candles['range'] = hour_candles['high'] - hour_candles['low']
                 hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
-                hour_candles = hour_candles.reset_index(level=[0,1])
+                if len(hour_candles.index.shape)>1:
+                    hour_candles = hour_candles.reset_index(level=[0,1])
+                else:
+                    hour_candles = hour_candles.reset_index()
 
                 datediff += 1
                 bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
