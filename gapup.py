@@ -196,26 +196,26 @@ def findgap():
     return full_data
 
 starttest = datetime.now()
-# result = findgap()
-# result = pd.DataFrame.from_dict(result)
-#
-# result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
-# dates = result['date'].unique()
-# print("Dates:",dates)
-# dateperc = pd.DataFrame()
-# for cdate in dates:
-#     daytrade = result[result['date']==cdate]
-#     percdict = {}
-#     percdict['date'] = cdate
-#     for prop in prop_list:
-#         dayprop = daytrade[daytrade[prop]==1]
-#         propperc = round(len(dayprop)/len(daytrade),2)
-#         percdict['Perc ' + prop] = propperc
-#     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
-#     dateperc = pd.concat([dateperc,percdf])
-# result_perc = result.set_index('date').join(dateperc.set_index('date'))
-# result_perc.reset_index(inplace=True)
-# result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
+result = findgap()
+result = pd.DataFrame.from_dict(result)
+
+result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
+dates = result['date'].unique()
+print("Dates:",dates)
+dateperc = pd.DataFrame()
+for cdate in dates:
+    daytrade = result[result['date']==cdate]
+    percdict = {}
+    percdict['date'] = cdate
+    for prop in prop_list:
+        dayprop = daytrade[daytrade[prop]==1]
+        propperc = round(len(dayprop)/len(daytrade),2)
+        percdict['Perc ' + prop] = propperc
+    percdf = pd.DataFrame.from_dict(percdict,orient='index').T
+    dateperc = pd.concat([dateperc,percdf])
+result_perc = result.set_index('date').join(dateperc.set_index('date'))
+result_perc.reset_index(inplace=True)
+result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
 
 result_perc = pd.read_csv(os.path.join(script_dir,'results_perc.csv'))
 
