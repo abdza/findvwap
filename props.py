@@ -215,6 +215,24 @@ prop_list = [
 'Daily Red After 3 Days Of Green',
 'Daily Strong Reverse',
 'Hour Strong Reverse',
+'Hour Green More Than Red',
+'Hour Green Twice More Than Red',
+'Hour Green Quad More Than Red',
+'Hour Red More Than Green',
+'Hour Red Twice More Than Green',
+'Hour Red Quad More Than Green',
+'Hour General Higher Low',
+'Hour Twice More Higher Low',
+'Hour Quad More Higher Low',
+'Hour General Lower Low',
+'Hour Twice More Lower Low',
+'Hour Quad More Lower Low',
+'Hour General Higher High',
+'Hour Twice More Higher High',
+'Hour Quad More Higher High',
+'Hour General Lower High',
+'Hour Twice More Lower High',
+'Hour Quad More Lower High',
     ]
 
 hour_prop_list = [
@@ -229,6 +247,24 @@ hour_prop_list = [
 'Hour Green After 3 Hours Of Red',
 'Hour Red After 3 Hours Of Green',
 'Hour Strong Reverse',
+'Hour Green More Than Red',
+'Hour Green Twice More Than Red',
+'Hour Green Quad More Than Red',
+'Hour Red More Than Green',
+'Hour Red Twice More Than Green',
+'Hour Red Quad More Than Green',
+'Hour General Higher Low',
+'Hour Twice More Higher Low',
+'Hour Quad More Higher Low',
+'Hour General Lower Low',
+'Hour Twice More Lower Low',
+'Hour Quad More Lower Low',
+'Hour General Higher High',
+'Hour Twice More Higher High',
+'Hour Quad More Higher High',
+'Hour General Lower High',
+'Hour Twice More Lower High',
+'Hour Quad More Lower High',
 ]
 
 daily_prop_list = [
@@ -1495,6 +1531,66 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                 prop_data, tickers_data, all_props = set_params(ticker,'2 Days Ago Absolute Loss',prop_data,tickers_data,all_props)
 
     if len(hour_candles):
+        ghc = 0
+        rhc = 0
+
+        hhc = 0
+        hlc = 0
+        lhc = 0
+        llc = 0
+        for i in range(len(hour_candles)):
+            if green_candle(hour_candles.iloc[i]):
+                ghc += 1
+            else:
+                rhc += 1
+            if i>1:
+                if hour_candles.iloc[i]['low'] > hour_candles.iloc[i-1]['low']:
+                    hlc += 1
+                else:
+                    llc += 1
+                if hour_candles.iloc[i]['high'] > hour_candles.iloc[i-1]['high']:
+                    hhc += 1
+                else:
+                    lhc += 1
+        if ghc > rhc:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour Green More Than Red',prop_data,tickers_data,all_props)
+            if ghc > rhc*2:
+                prop_data, tickers_data, all_props = set_params(ticker,'Hour Green Twice More Than Red',prop_data,tickers_data,all_props)
+                if ghc > rhc*4:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hour Green Quad More Than Red',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour Red More Than Green',prop_data,tickers_data,all_props)
+            if rhc > ghc*2:
+                prop_data, tickers_data, all_props = set_params(ticker,'Hour Red Twice More Than Green',prop_data,tickers_data,all_props)
+                if rhc > ghc*4:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hour Red Quad More Than Green',prop_data,tickers_data,all_props)
+
+        if hlc > llc:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour General Higher Low',prop_data,tickers_data,all_props)
+            if hlc > llc * 2:
+                prop_data, tickers_data, all_props = set_params(ticker,'Hour Twice More Higher Low',prop_data,tickers_data,all_props)
+                if hlc > llc * 4:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hour Quad More Higher Low',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour General Lower Low',prop_data,tickers_data,all_props)
+            if llc > hlc * 2:
+                prop_data, tickers_data, all_props = set_params(ticker,'Hour Twice More Lower Low',prop_data,tickers_data,all_props)
+                if llc > hlc * 4:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hour Quad More Lower Low',prop_data,tickers_data,all_props)
+        if hhc > lhc:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour General Higher High',prop_data,tickers_data,all_props)
+            if hhc > lhc * 2:
+                prop_data, tickers_data, all_props = set_params(ticker,'Hour Twice More Higher High',prop_data,tickers_data,all_props)
+                if hhc > lhc * 4:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hour Quad More Higher High',prop_data,tickers_data,all_props)
+        else:
+            prop_data, tickers_data, all_props = set_params(ticker,'Hour General Lower High',prop_data,tickers_data,all_props)
+            if lhc > hhc * 2:
+                prop_data, tickers_data, all_props = set_params(ticker,'Hour Twice More Lower High',prop_data,tickers_data,all_props)
+                if lhc > hhc * 4:
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hour Quad More Lower High',prop_data,tickers_data,all_props)
+
+
         if green_candle(hour_candles.iloc[-1]):
             prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Green',prop_data,tickers_data,all_props)
             if len(hour_candles)>3:
@@ -1617,8 +1713,8 @@ def calc_marks(proparray,verbose=False):
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
             curarray['calc'] = cgmark.iloc[0]['Corr']
-            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
@@ -1637,8 +1733,8 @@ def calc_marks(proparray,verbose=False):
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
             curarray['calc'] = cgmark.iloc[0]['Corr']
-            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
@@ -1657,8 +1753,8 @@ def calc_marks(proparray,verbose=False):
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
             curarray['calc'] = cgmark.iloc[0]['Corr']
-            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
@@ -1678,8 +1774,8 @@ def calc_marks(proparray,verbose=False):
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
             curarray['calc'] = cgmark.iloc[0]['Corr']
-            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
@@ -1699,8 +1795,8 @@ def calc_marks(proparray,verbose=False):
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
             curarray['calc'] = cgmark.iloc[0]['Corr']
-            if cgmark.iloc[0]['Profitable'] > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 2
+            if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
+                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
@@ -1726,15 +1822,21 @@ def calc_marks(proparray,verbose=False):
 
         for ticker in daytrade['ticker'].unique():
             print("Updating coor marks for ",ticker)
-            coortickers = tickercoor[ticker].sort_values(ascending=False)
-            coortickers = coortickers.iloc[:10]
-            for cticker in coortickers.index:
-                print("Adding coor marks from ",cticker," with ",daytrade.loc[daytrade['ticker']==cticker,'marks'])
-                ctmark = daytrade.loc[daytrade['ticker']==cticker,'marks'].values
-                if len(ctmark):
-                    print("Ctmark:",ctmark)
-                    propid = daytrade[daytrade['ticker']==ticker]
-                    proparray.loc[propid.index,'coor_marks'] += ctmark
+            if ticker in tickercoor.columns:
+                coortickers = tickercoor[ticker].sort_values(ascending=False)
+                coortickers = coortickers.iloc[:10]
+                coorindexes = coortickers.index
+                print("Coor tickers:",coorindexes)
+                ctmarks = daytrade.loc[daytrade['ticker'].isin(coorindexes),'marks'].mean()
+                propid = daytrade[daytrade['ticker']==ticker]
+                proparray.loc[propid.index,'coor_marks'] += ctmarks
+                # for cticker in coortickers.index:
+                #     print("Adding coor marks from ",cticker," with ",daytrade.loc[daytrade['ticker']==cticker,'marks'])
+                #     ctmark = daytrade.loc[daytrade['ticker']==cticker,'marks'].values
+                #     if len(ctmark):
+                #         print("Ctmark:",ctmark)
+                #         propid = daytrade[daytrade['ticker']==ticker]
+                #         proparray.loc[propid.index,'coor_marks'] += ctmark
 
     proparray['full_marks'] = proparray['marks'] + proparray['coor_marks']
 

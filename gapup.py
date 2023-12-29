@@ -82,7 +82,6 @@ def findgap():
     maxmovement = {}
     levels = {}
     all_props = []
-    end_of_trading = False
 
     # tickercoor = pd.read_csv(os.path.join(script_dir,'analyze_ticker_coor.csv'),index_col='ticker')
     # print("Columns:",tickercoor.columns)
@@ -134,8 +133,6 @@ def findgap():
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
                 minute_candles = minute_candles.loc[(minute_candles['date']<fdate)]
                 nowdate = str(datetime.now().date())
-                if curkey!=nowdate:
-                    end_of_trading = True
 
                 if manualstocks:
                     print("Minute Candles:")
@@ -199,28 +196,28 @@ def findgap():
     return full_data
 
 starttest = datetime.now()
-result = findgap()
-result = pd.DataFrame.from_dict(result)
+# result = findgap()
+# result = pd.DataFrame.from_dict(result)
+#
+# result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
+# dates = result['date'].unique()
+# print("Dates:",dates)
+# dateperc = pd.DataFrame()
+# for cdate in dates:
+#     daytrade = result[result['date']==cdate]
+#     percdict = {}
+#     percdict['date'] = cdate
+#     for prop in prop_list:
+#         dayprop = daytrade[daytrade[prop]==1]
+#         propperc = round(len(dayprop)/len(daytrade),2)
+#         percdict['Perc ' + prop] = propperc
+#     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
+#     dateperc = pd.concat([dateperc,percdf])
+# result_perc = result.set_index('date').join(dateperc.set_index('date'))
+# result_perc.reset_index(inplace=True)
+# result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
 
-result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
-dates = result['date'].unique()
-print("Dates:",dates)
-dateperc = pd.DataFrame()
-for cdate in dates:
-    daytrade = result[result['date']==cdate]
-    percdict = {}
-    percdict['date'] = cdate
-    for prop in prop_list:
-        dayprop = daytrade[daytrade[prop]==1]
-        propperc = round(len(dayprop)/len(daytrade),2)
-        percdict['Perc ' + prop] = propperc
-    percdf = pd.DataFrame.from_dict(percdict,orient='index').T
-    dateperc = pd.concat([dateperc,percdf])
-result_perc = result.set_index('date').join(dateperc.set_index('date'))
-result_perc.reset_index(inplace=True)
-result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
-
-# result_perc = pd.read_csv(os.path.join(script_dir,'results_perc.csv'))
+result_perc = pd.read_csv(os.path.join(script_dir,'results_perc.csv'))
 
 if manualstocks:
     result_perc = calc_marks(result_perc,True)
@@ -250,7 +247,6 @@ file1.writelines(s + '\n' for s in profitablecsv.columns)
 file1.close()
 
 result_perc['predicted_profitable'] = profitable_model.predict(profitablefloat)
-
 
 diff_model = load_model(os.path.join(script_dir,"model_diff"), custom_objects=ak.CUSTOM_OBJECTS)
 diffcsv = result_perc.copy()
