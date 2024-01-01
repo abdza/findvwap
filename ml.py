@@ -34,6 +34,11 @@ for column_name in raw_data.columns:
         if column_name in prop_list:
             column_types[column_name] = 'categorical'
             column_types['Perc ' + column_name] = 'numerical'
+            column_types['Corr ' + column_name] = 'numerical'
+            column_types['Profitable ' + column_name] = 'numerical'
+            column_types['Good ' + column_name] = 'numerical'
+            column_types['Great ' + column_name] = 'numerical'
+            column_types['Total ' + column_name] = 'numerical'
         else:
             numerical_columns.append(column_name)
             column_types[column_name] = 'numerical'

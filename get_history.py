@@ -193,6 +193,7 @@ alldata.to_csv(os.path.join(script_dir,'raw_data.csv'),index=False)
 dates = alldata['date'].unique()
 print("Dates:",dates)
 dateperc = pd.DataFrame()
+global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
 for cdate in dates:
     daytrade = alldata[alldata['date']==cdate]
     percdict = {}
@@ -201,6 +202,12 @@ for cdate in dates:
         dayprop = daytrade[daytrade[prop]==1]
         propperc = round(len(dayprop)/len(daytrade),4)
         percdict['Perc ' + prop] = propperc
+        cgmark = global_marks[global_marks['Prop']==prop]
+        percdict['Corr ' + prop] = cgmark.iloc[0]['Corr']
+        percdict['Profitable ' + prop] = cgmark.iloc[0]['Profitable']
+        percdict['Good ' + prop] = cgmark.iloc[0]['Good']
+        percdict['Great ' + prop] = cgmark.iloc[0]['Great']
+        percdict['Total ' + prop] = len(alldata[alldata[prop]==1])
     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
     dateperc = pd.concat([dateperc,percdf])
 result_perc = alldata.set_index('date').join(dateperc.set_index('date'))
