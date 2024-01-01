@@ -181,7 +181,8 @@ def findgap():
 
 starttest = datetime.now()
 alldata = pd.DataFrame()
-for day in range(60):
+# for day in range(60):
+for day in range(10):
 # for day in range(5):
     instockdate = starttest - timedelta(days=day)
     result = findgap()
