@@ -1979,11 +1979,11 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
-                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
-                print('Prev up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
-            else:
-                curarray['calc'] = cgmark.iloc[0]['Corr']
+            # if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+            #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+            #     print('Prev up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            # else:
+            curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
@@ -2004,11 +2004,11 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
-                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
-                print('Opening up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
-            else:
-                curarray['calc'] = cgmark.iloc[0]['Corr']
+            # if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+            #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+            #     print('Opening up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            # else:
+            curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
@@ -2029,11 +2029,11 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
-                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
-                print('Late up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
-            else:
-                curarray['calc'] = cgmark.iloc[0]['Corr']
+            # if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+            #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+            #     print('Late up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            # else:
+            curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
@@ -2055,11 +2055,11 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
-                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
-                print('Hour up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
-            else:
-                curarray['calc'] = cgmark.iloc[0]['Corr']
+            # if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+            #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+            #     print('Hour up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            # else:
+            curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
@@ -2081,11 +2081,11 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
-                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
-                print('Daily up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
-            else:
-                curarray['calc'] = cgmark.iloc[0]['Corr']
+            # if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+            #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+            #     print('Daily up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            # else:
+            curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
             curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
