@@ -267,6 +267,42 @@ prop_list = [
 'Hourly End In Red For 10 Hours',
 'Hourly End In Red For 11 Hours',
 'Hourly End In Red For 12 Hours',
+'Daily Red After 1 Days Of Green',
+'Daily Red After 2 Days Of Green',
+'Daily Red After 3 Days Of Green',
+'Daily Red After 4 Days Of Green',
+'Daily Red After 5 Days Of Green',
+'Daily Red After 6 Days Of Green',
+'Daily Green After 1 Days Of Red',
+'Daily Green After 2 Days Of Red',
+'Daily Green After 3 Days Of Red',
+'Daily Green After 4 Days Of Red',
+'Daily Green After 5 Days Of Red',
+'Daily Green After 6 Days Of Red',
+'Hourly Red After 1 Hours Of Green',
+'Hourly Red After 2 Hours Of Green',
+'Hourly Red After 3 Hours Of Green',
+'Hourly Red After 4 Hours Of Green',
+'Hourly Red After 5 Hours Of Green',
+'Hourly Red After 6 Hours Of Green',
+'Hourly Red After 7 Hours Of Green',
+'Hourly Red After 8 Hours Of Green',
+'Hourly Red After 9 Hours Of Green',
+'Hourly Red After 10 Hours Of Green',
+'Hourly Red After 11 Hours Of Green',
+'Hourly Red After 12 Hours Of Green',
+'Hourly Green After 1 Hours Of Red',
+'Hourly Green After 2 Hours Of Red',
+'Hourly Green After 3 Hours Of Red',
+'Hourly Green After 4 Hours Of Red',
+'Hourly Green After 5 Hours Of Red',
+'Hourly Green After 6 Hours Of Red',
+'Hourly Green After 7 Hours Of Red',
+'Hourly Green After 8 Hours Of Red',
+'Hourly Green After 9 Hours Of Red',
+'Hourly Green After 10 Hours Of Red',
+'Hourly Green After 11 Hours Of Red',
+'Hourly Green After 12 Hours Of Red',
     ]
 
 hour_prop_list = [
@@ -323,6 +359,30 @@ hour_prop_list = [
 'Hourly End In Red For 10 Hours',
 'Hourly End In Red For 11 Hours',
 'Hourly End In Red For 12 Hours',
+'Hourly Red After 1 Hours Of Green',
+'Hourly Red After 2 Hours Of Green',
+'Hourly Red After 3 Hours Of Green',
+'Hourly Red After 4 Hours Of Green',
+'Hourly Red After 5 Hours Of Green',
+'Hourly Red After 6 Hours Of Green',
+'Hourly Red After 7 Hours Of Green',
+'Hourly Red After 8 Hours Of Green',
+'Hourly Red After 9 Hours Of Green',
+'Hourly Red After 10 Hours Of Green',
+'Hourly Red After 11 Hours Of Green',
+'Hourly Red After 12 Hours Of Green',
+'Hourly Green After 1 Hours Of Red',
+'Hourly Green After 2 Hours Of Red',
+'Hourly Green After 3 Hours Of Red',
+'Hourly Green After 4 Hours Of Red',
+'Hourly Green After 5 Hours Of Red',
+'Hourly Green After 6 Hours Of Red',
+'Hourly Green After 7 Hours Of Red',
+'Hourly Green After 8 Hours Of Red',
+'Hourly Green After 9 Hours Of Red',
+'Hourly Green After 10 Hours Of Red',
+'Hourly Green After 11 Hours Of Red',
+'Hourly Green After 12 Hours Of Red',
 ]
 
 daily_prop_list = [
@@ -349,6 +409,18 @@ daily_prop_list = [
 'Daily End In Red For 4 Days',
 'Daily End In Red For 5 Days',
 'Daily End In Red For 6 Days',
+'Daily Red After 1 Days Of Green',
+'Daily Red After 2 Days Of Green',
+'Daily Red After 3 Days Of Green',
+'Daily Red After 4 Days Of Green',
+'Daily Red After 5 Days Of Green',
+'Daily Red After 6 Days Of Green',
+'Daily Green After 1 Days Of Red',
+'Daily Green After 2 Days Of Red',
+'Daily Green After 3 Days Of Red',
+'Daily Green After 4 Days Of Red',
+'Daily Green After 5 Days Of Red',
+'Daily Green After 6 Days Of Red',
 ]
 
 late_prop_list = [
@@ -1697,6 +1769,25 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     prop_data, tickers_data, all_props = set_params(ticker,'Hour Green After 3 Hours Of Red',prop_data,tickers_data,all_props)
                     if hour_candles.iloc[-1]['range'] > hour_candles.iloc[-2]['range']:
                         prop_data, tickers_data, all_props = set_params(ticker,'Hour Strong Reverse',prop_data,tickers_data,all_props)
+            if len(hour_candles)>12:
+                curhour = -2
+                curcolor = None
+                hours = 0
+                while curhour > -12:
+                    if curcolor is None:
+                        if green_candle(hour_candles.iloc[curhour]):
+                            curcolor = 'Green'
+                        else:
+                            curcolor = 'Red'
+                        hours += 1
+                    else:
+                        if (green_candle(hour_candles.iloc[curhour]) and curcolor=='Green') or (red_candle(hour_candles.iloc[curhour]) and curcolor=='Red'):
+                            curhour -=1
+                            hours += 1
+                        else:
+                            curhour -=12
+                if hours>0 and curcolor=='Red':
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hourly Green After ' + str(hours) + ' Hours Of Red',prop_data,tickers_data,all_props)
         else:
             prop_data, tickers_data, all_props = set_params(ticker,'Hour End In Red',prop_data,tickers_data,all_props)
             if len(hour_candles)>3:
@@ -1706,6 +1797,25 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     prop_data, tickers_data, all_props = set_params(ticker,'Hour Red After 3 Hours Of Green',prop_data,tickers_data,all_props)
                     if hour_candles.iloc[-1]['range'] > hour_candles.iloc[-2]['range']:
                         prop_data, tickers_data, all_props = set_params(ticker,'Hour Strong Reverse',prop_data,tickers_data,all_props)
+            if len(hour_candles)>12:
+                curhour = -2
+                curcolor = None
+                hours = 0
+                while curhour > -12:
+                    if curcolor is None:
+                        if green_candle(hour_candles.iloc[curhour]):
+                            curcolor = 'Green'
+                        else:
+                            curcolor = 'Red'
+                        hours += 1
+                    else:
+                        if (green_candle(hour_candles.iloc[curhour]) and curcolor=='Green') or (red_candle(hour_candles.iloc[curhour]) and curcolor=='Red'):
+                            curhour -=1
+                            hours += 1
+                        else:
+                            curhour -=12
+                if hours>0 and curcolor=='Green':
+                    prop_data, tickers_data, all_props = set_params(ticker,'Hourly Red After ' + str(hours) + ' Hours Of Green',prop_data,tickers_data,all_props)
 
     hourpeaks,hourbottoms = gather_range(hour_candles)
     if len(hourpeaks) and len(hourbottoms):
@@ -1761,6 +1871,25 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     prop_data, tickers_data, all_props = set_params(ticker,'Daily Green After 3 Days Of Red',prop_data,tickers_data,all_props)
                     if daily_candles.iloc[-1]['range'] > daily_candles.iloc[-2]['range']:
                         prop_data, tickers_data, all_props = set_params(ticker,'Daily Strong Reverse',prop_data,tickers_data,all_props)
+            if len(daily_candles)>6:
+                curday = -2
+                curcolor = None
+                days = 0
+                while curday > -6:
+                    if curcolor is None:
+                        if green_candle(daily_candles.iloc[curday]):
+                            curcolor = 'Green'
+                        else:
+                            curcolor = 'Red'
+                        days += 1
+                    else:
+                        if (green_candle(daily_candles.iloc[curday]) and curcolor=='Green') or (red_candle(daily_candles.iloc[curday]) and curcolor=='Red'):
+                            curday -=1
+                            days += 1
+                        else:
+                            curday -=6
+                if days>0 and curcolor=='Red':
+                    prop_data, tickers_data, all_props = set_params(ticker,'Daily Green After ' + str(days) + ' Days Of Red',prop_data,tickers_data,all_props)
         else:
             prop_data, tickers_data, all_props = set_params(ticker,'Daily End In Red',prop_data,tickers_data,all_props)
             if len(daily_candles)>3:
@@ -1770,6 +1899,25 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     prop_data, tickers_data, all_props = set_params(ticker,'Daily Red After 3 Days Of Green',prop_data,tickers_data,all_props)
                     if daily_candles.iloc[-1]['range'] > daily_candles.iloc[-2]['range']:
                         prop_data, tickers_data, all_props = set_params(ticker,'Daily Strong Reverse',prop_data,tickers_data,all_props)
+            if len(daily_candles)>6:
+                curday = -2
+                curcolor = None
+                days = 0
+                while curday > -6:
+                    if curcolor is None:
+                        if green_candle(daily_candles.iloc[curday]):
+                            curcolor = 'Green'
+                        else:
+                            curcolor = 'Red'
+                        days += 1
+                    else:
+                        if (green_candle(daily_candles.iloc[curday]) and curcolor=='Green') or (red_candle(daily_candles.iloc[curday]) and curcolor=='Red'):
+                            curday -=1
+                            days += 1
+                        else:
+                            curday -=6
+                if days>0 and curcolor=='Green':
+                    prop_data, tickers_data, all_props = set_params(ticker,'Daily Red After ' + str(days) + ' Days Of Green',prop_data,tickers_data,all_props)
 
     dailypeaks,dailybottoms = gather_range(daily_candles,True)
     if len(dailypeaks) and len(dailybottoms):
