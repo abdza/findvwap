@@ -147,6 +147,7 @@ prop_list = [
 'Late Start',
 'Yesterday Status Great',
 'Yesterday Status Good',
+'Yesterday Status Profitable',
 'Yesterday Status Fair',
 'Yesterday Status Fail',
 'Yesterday Profitable',
@@ -154,6 +155,7 @@ prop_list = [
 'Yesterday Absolute Loss',
 '2 Days Ago Status Great',
 '2 Days Ago Status Good',
+'2 Days Ago Status Profitable',
 '2 Days Ago Status Fair',
 '2 Days Ago Status Fail',
 '2 Days Ago Profitable',
@@ -419,6 +421,7 @@ prev_prop_list = [
 'Continue Sluggish Ticker',
 'Yesterday Status Great',
 'Yesterday Status Good',
+'Yesterday Status Profitable',
 'Yesterday Status Fair',
 'Yesterday Status Fail',
 'Yesterday Profitable',
@@ -426,6 +429,7 @@ prev_prop_list = [
 'Yesterday Absolute Loss',
 '2 Days Ago Status Great',
 '2 Days Ago Status Good',
+'2 Days Ago Status Profitable',
 '2 Days Ago Status Fair',
 '2 Days Ago Status Fail',
 '2 Days Ago Profitable',
@@ -518,6 +522,7 @@ reward_prop = [
 'Limp Third Diff',
 'Third Huge Negative Range',
 'Yesterday Status Good',
+'Yesterday Status Profitable',
 'Yesterday Profitable',
 '2 Days Ago Status Fair',
 ]
@@ -1435,6 +1440,8 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     tcat = 'Great'
                 elif ydiff > 1:
                     tcat = 'Good'
+                elif ydiff > 0.7:
+                    tcat = 'Profitable'
                 elif ydiff > 0:
                     tcat = 'Fair'
                 else:
@@ -1517,6 +1524,8 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     tcat = 'Great'
                 elif ydiff > 1:
                     tcat = 'Good'
+                elif ydiff > 0.7:
+                    tcat = 'Profitable'
                 elif ydiff > 0:
                     tcat = 'Fair'
                 else:
@@ -1683,6 +1692,8 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
         tcat = 'Great'
     elif curdiff > 1:
         tcat = 'Good'
+    elif curdiff > 0.7:
+        tcat = 'Profitable'
     elif curdiff > 0:
         tcat = 'Fair'
     else:
@@ -1712,10 +1723,15 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+                print('Prev up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            else:
+                curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             proparray.loc[curarray.index,'prev_marks'] += curarray['calc']
@@ -1732,10 +1748,15 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+                print('Opening up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            else:
+                curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             #     curarray['calc'] *= cgmark.iloc[0]['Corr']
@@ -1752,10 +1773,15 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+                print('Late up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            else:
+                curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             #     curarray['calc'] *= cgmark.iloc[0]['Corr']
@@ -1773,10 +1799,15 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+                print('Hour up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            else:
+                curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             #     curarray['calc'] *= cgmark.iloc[0]['Corr']
@@ -1794,10 +1825,15 @@ def calc_marks(proparray,verbose=False):
         cgmark = global_marks[global_marks['Prop']==prop]
         if len(cgmark):
             curarray = proparray.loc[proparray[prop]==1]
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            if proparray['Perc ' + prop].max()>0.8 and cgmark.iloc[0]['Corr']<0:
+                curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
+                print('Daily up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
+            else:
+                curarray['calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
                 curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 4
+            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
+            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
             curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             #     curarray['calc'] *= cgmark.iloc[0]['Corr']
@@ -1812,33 +1848,33 @@ def calc_marks(proparray,verbose=False):
  
     proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks'] + proparray['hour_marks'] + proparray['daily_marks']
 
-    proparray['coor_marks'] = 0
-    tickercoor = pd.read_csv(os.path.join(script_dir,'analyze_ticker_coor.csv'),index_col='ticker')
-
-
-    dates = proparray['date'].unique()
-    for cdate in dates:
-        daytrade = proparray[proparray['date']==cdate]
-
-        for ticker in daytrade['ticker'].unique():
-            print("Updating coor marks for ",ticker)
-            if ticker in tickercoor.columns:
-                coortickers = tickercoor[ticker].sort_values(ascending=False)
-                coortickers = coortickers.iloc[:10]
-                coorindexes = coortickers.index
-                print("Coor tickers:",coorindexes)
-                ctmarks = daytrade.loc[daytrade['ticker'].isin(coorindexes),'marks'].mean()
-                propid = daytrade[daytrade['ticker']==ticker]
-                proparray.loc[propid.index,'coor_marks'] += ctmarks
-                # for cticker in coortickers.index:
-                #     print("Adding coor marks from ",cticker," with ",daytrade.loc[daytrade['ticker']==cticker,'marks'])
-                #     ctmark = daytrade.loc[daytrade['ticker']==cticker,'marks'].values
-                #     if len(ctmark):
-                #         print("Ctmark:",ctmark)
-                #         propid = daytrade[daytrade['ticker']==ticker]
-                #         proparray.loc[propid.index,'coor_marks'] += ctmark
-
-    proparray['full_marks'] = proparray['marks'] + proparray['coor_marks']
+    # proparray['coor_marks'] = 0
+    # tickercoor = pd.read_csv(os.path.join(script_dir,'analyze_ticker_coor.csv'),index_col='ticker')
+    #
+    #
+    # dates = proparray['date'].unique()
+    # for cdate in dates:
+    #     daytrade = proparray[proparray['date']==cdate]
+    #
+    #     for ticker in daytrade['ticker'].unique():
+    #         # print("Updating coor marks for ",ticker)
+    #         if ticker in tickercoor.columns:
+    #             coortickers = tickercoor[ticker].sort_values(ascending=False)
+    #             coortickers = coortickers.iloc[:10]
+    #             coorindexes = coortickers.index
+    #             # print("Coor tickers:",coorindexes)
+    #             ctmarks = daytrade.loc[daytrade['ticker'].isin(coorindexes),'marks'].mean()
+    #             propid = daytrade[daytrade['ticker']==ticker]
+    #             proparray.loc[propid.index,'coor_marks'] += ctmarks
+    #             # for cticker in coortickers.index:
+    #             #     print("Adding coor marks from ",cticker," with ",daytrade.loc[daytrade['ticker']==cticker,'marks'])
+    #             #     ctmark = daytrade.loc[daytrade['ticker']==cticker,'marks'].values
+    #             #     if len(ctmark):
+    #             #         print("Ctmark:",ctmark)
+    #             #         propid = daytrade[daytrade['ticker']==ticker]
+    #             #         proparray.loc[propid.index,'coor_marks'] += ctmark
+    #
+    # proparray['full_marks'] = proparray['marks'] + proparray['coor_marks']
 
     if verbose:
         print("Total Marks:",proparray['marks'].values)
