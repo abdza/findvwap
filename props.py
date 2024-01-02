@@ -1972,14 +1972,14 @@ def calc_marks(proparray,verbose=False):
             #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
             #     print('Prev up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
             # else:
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
-            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
+                proparray.loc[curarray.index,'calc'] += cgmark.iloc[0]['Profitable'] * 3
+            proparray.loc[curarray.loc[curarray['performance']=='Profitable'].index,'calc'] += cgmark.iloc[0]['Profitable'] * 4
+            proparray.loc[curarray.loc[curarray['performance']=='Good'].index,'calc'] += cgmark.iloc[0]['Good'] * 6
+            proparray.loc[curarray.loc[curarray['performance']=='Great'].index,'calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
-            proparray.loc[curarray.index,'prev_marks'] += curarray['calc']
+            proparray['prev_marks'] += proparray['calc']
             if verbose:
                 print("Prop: ",prop," --> Prev Marks: ",proparray.loc[curarray.index,'prev_marks'])
                 # print(tabulate(curarray.T,headers="keys"))
@@ -1997,15 +1997,16 @@ def calc_marks(proparray,verbose=False):
             #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
             #     print('Opening up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
             # else:
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            # curarray['calc'] = cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
-            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
+                proparray.loc[curarray.index,'calc'] += cgmark.iloc[0]['Profitable'] * 3
+            proparray.loc[curarray.loc[curarray['performance']=='Profitable'].index,'calc'] += cgmark.iloc[0]['Profitable'] * 4
+            proparray.loc[curarray.loc[curarray['performance']=='Good'].index,'calc'] += cgmark.iloc[0]['Good'] * 6
+            proparray.loc[curarray.loc[curarray['performance']=='Great'].index,'calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             #     curarray['calc'] *= cgmark.iloc[0]['Corr']
-            proparray.loc[curarray.index,'opening_marks'] += curarray['calc']
+            proparray['opening_marks'] += proparray['calc']
             if verbose:
                 print("Prop: ",prop," --> Opening Marks: ",proparray.loc[curarray.index,'opening_marks'])
     if verbose:
@@ -2022,15 +2023,16 @@ def calc_marks(proparray,verbose=False):
             #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
             #     print('Late up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
             # else:
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            # curarray['calc'] = cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
-            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
+                proparray.loc[curarray.index,'calc'] += cgmark.iloc[0]['Profitable'] * 3
+            proparray.loc[curarray.loc[curarray['performance']=='Profitable'].index,'calc'] += cgmark.iloc[0]['Profitable'] * 4
+            proparray.loc[curarray.loc[curarray['performance']=='Good'].index,'calc'] += cgmark.iloc[0]['Good'] * 6
+            proparray.loc[curarray.loc[curarray['performance']=='Great'].index,'calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             #     curarray['calc'] *= cgmark.iloc[0]['Corr']
-            proparray.loc[curarray.index,'late_marks'] += curarray['calc']
+            proparray['late_marks'] += proparray['calc']
             if verbose:
                 print("Prop: ",prop," --> Late Marks: ",proparray.loc[curarray.index,'late_marks'])
     if verbose:
@@ -2048,15 +2050,15 @@ def calc_marks(proparray,verbose=False):
             #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
             #     print('Hour up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
             # else:
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
-            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
+                proparray.loc[curarray.index,'calc'] += cgmark.iloc[0]['Profitable'] * 3
+            proparray.loc[curarray.loc[curarray['performance']=='Profitable'].index,'calc'] += cgmark.iloc[0]['Profitable'] * 4
+            proparray.loc[curarray.loc[curarray['performance']=='Good'].index,'calc'] += cgmark.iloc[0]['Good'] * 6
+            proparray.loc[curarray.loc[curarray['performance']=='Great'].index,'calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             #     curarray['calc'] *= cgmark.iloc[0]['Corr']
-            proparray.loc[curarray.index,'hour_marks'] += curarray['calc']
+            proparray['hour_marks'] += proparray['calc']
             if verbose:
                 print("Prop: ",prop," --> Hour Marks: ",proparray.loc[curarray.index,'hour_marks'])
     if verbose:
@@ -2074,15 +2076,15 @@ def calc_marks(proparray,verbose=False):
             #     curarray['calc'] = cgmark.iloc[0]['Corr'] * -2
             #     print('Daily up(',prop,'):',cgmark.iloc[0]['Corr'] * -2)
             # else:
-            curarray['calc'] = cgmark.iloc[0]['Corr']
+            proparray.loc[curarray.index,'calc'] = cgmark.iloc[0]['Corr']
             if cgmark.iloc[0]['Profitable'] * 0.8 > global_marks['Profitable'].mean():
-                curarray['calc'] += cgmark.iloc[0]['Profitable'] * 3
-            curarray.loc[curarray['performance']=='Profitable','calc'] += cgmark.iloc[0]['Profitable'] * 4
-            curarray.loc[curarray['performance']=='Good','calc'] += cgmark.iloc[0]['Good'] * 6
-            curarray.loc[curarray['performance']=='Great','calc'] += cgmark.iloc[0]['Great'] * 8
+                proparray.loc[curarray.index,'calc'] += cgmark.iloc[0]['Profitable'] * 3
+            proparray.loc[curarray.loc[curarray['performance']=='Profitable'].index,'calc'] += cgmark.iloc[0]['Profitable'] * 4
+            proparray.loc[curarray.loc[curarray['performance']=='Good'].index,'calc'] += cgmark.iloc[0]['Good'] * 6
+            proparray.loc[curarray.loc[curarray['performance']=='Great'].index,'calc'] += cgmark.iloc[0]['Great'] * 8
             # if cgmark.iloc[0]['Corr']!=0:
             #     curarray['calc'] *= cgmark.iloc[0]['Corr']
-            proparray.loc[curarray.index,'daily_marks'] += curarray['calc']
+            proparray['daily_marks'] += proparray['calc']
             if verbose:
                 print("Prop: ",prop," --> Daily Marks: ",proparray.loc[curarray.index,'daily_marks'])
     if verbose:
