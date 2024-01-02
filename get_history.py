@@ -201,6 +201,7 @@ for cdate in dates:
         dayprop = daytrade[daytrade[prop]==1]
         propperc = round(len(dayprop)/len(daytrade),4)
         percdict['Perc ' + prop] = propperc
+        percdict['Total ' + prop] = len(dayprop)
     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
     dateperc = pd.concat([dateperc,percdf])
 result_perc = alldata.set_index('date').join(dateperc.set_index('date'))

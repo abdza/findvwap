@@ -38,9 +38,7 @@ for cdate in dates:
     for prop in prop_list:
         dayprop = daytrade[daytrade[prop]==1]
         propperc = round(len(dayprop)/len(daytrade),4)
-        percdict['Perc ' + prop] = propperc
         cgmark = global_marks[global_marks['Prop']==prop]
-        percdict['Total ' + prop] = len(result_perc[result_perc[prop]==1])
         if len(cgmark)>0:
             percdict['Corr ' + prop] = cgmark.iloc[0]['Corr']
             percdict['Profitable ' + prop] = cgmark.iloc[0]['Profitable']
@@ -57,6 +55,7 @@ result_perc = result_perc.set_index('date').join(dateperc.set_index('date'))
 result_perc.to_csv(os.path.join(script_dir,'raw_data_corr.csv'))
 
 result_perc = calc_marks(result_perc)
+result_perc = result_perc.reset_index()
 
 fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
