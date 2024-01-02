@@ -55,46 +55,60 @@ for prop in prop_list:
 profitable = datas.copy()
 propsprofitable = profitable[fieldnames]
 corrprofit = propsprofitable.corr()
+corrprofit.index.names = ['prop']
+corrprofit.to_csv(os.path.join(script_dir,"analyze_global_corr.csv"))
+most_corr_prop = {}
+for prop in prop_list:
+    if prop!='diff_level':
+        print('prop:',prop)
+        curval = corrprofit.loc['diff_level',prop]
+        print('curval:',curval)
+        if math.isnan(curval):
+            most_corr_prop[prop] = 0
+        else:
+            most_corr_prop[prop] = curval
+
 # corrprofit.index.names = ['Prop']
-upper_corr_mat = corrprofit.where( 
-    np.triu(np.ones(corrprofit.shape), k=1).astype(bool)) 
+# upper_corr_mat = corrprofit.where( 
+#     np.triu(np.ones(corrprofit.shape), k=1).astype(bool)) 
   
 # Convert to 1-D series and drop Null values 
-unique_corr_pairs = upper_corr_mat.unstack().dropna() 
+# unique_corr_pairs = upper_corr_mat.unstack().dropna() 
   
 # Sort correlation pairs 
-sorted_mat = unique_corr_pairs.sort_values(ascending=False) 
-most_corr_prop = {}
-for index,value in sorted_mat.items():
-    if index[1]=='diff_level':
-        if index[0] in prop_list:
-            most_corr_prop[index[0]] = value*100
-        print("Index:",index," Value:",value)
-corrprofit.to_csv(os.path.join(script_dir,"analyze_global_corr.csv"))
-print("Most corr:",most_corr_prop)
+# sorted_mat = unique_corr_pairs.sort_values(ascending=False) 
+# most_corr_prop = {}
+# for index,value in sorted_mat.items():
+#     if index[1]=='diff_level':
+#         if index[0] in prop_list:
+#             most_corr_prop[index[0]] = value*100
+#         print("Index:",index," Value:",value)
+# print("Most corr:",most_corr_prop)
 
-propsprofitable = datas[['profitable'] + fieldnames]
+# propsprofitable = datas[['profitable'] + fieldnames]
+propsprofitable = datas
+print(propsprofitable.columns)
 # propsprofitable = propsprofitable[propsprofitable['First Green']==1]
 for prop in prop_list:
-    propsprofitable['Profit ' + prop] = 0
+    datas.loc[:,'Profit ' + prop] = 0
     appear = propsprofitable[propsprofitable[prop]==1]
     appearprofit = appear[appear['profitable']==1]
     if len(appearprofit):
-        propsprofitable.loc[appearprofit.index,'Profit ' + prop] = 1
+        datas.loc[appearprofit.index,'Profit ' + prop] = 1
 
-group_by_diff = propsprofitable.groupby('diff_level').sum()
-group_by_diff.reset_index(inplace=True)
-group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_numbers.csv"),index=False)
-group_by_diff = group_by_diff.corr()
-group_by_diff.index.names = ['Prop']
-group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_corr.csv"))
+# group_by_diff = propsprofitable.groupby('diff_level').sum()
+# group_by_diff.reset_index(inplace=True)
+# group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_numbers.csv"),index=False)
+# group_by_diff = group_by_diff.corr()
+# group_by_diff.index.names = ['Prop']
+# group_by_diff.to_csv(os.path.join(script_dir,"analyze_global_group_corr.csv"))
 
-tickerprice = datas.copy()
-tickerprice = tickerprice[['date','ticker','diff']]
-pivot_tickerprice = tickerprice.pivot(index='date',columns='ticker',values='diff')
+# tickerprice = datas.copy()
+# tickerprice = tickerprice[['date','ticker','diff']]
+# pivot_tickerprice = tickerprice.pivot(index='date',columns='ticker',values='diff')
 # tickerprice['ticker'] = tickerprice['ticker'].astype('category')
-tickercoor = pivot_tickerprice.corr()
-tickercoor.to_csv(os.path.join(script_dir,"analyze_ticker_coor.csv"))
+# tickercoor = pivot_tickerprice.corr()
+# tickercoor.to_csv(os.path.join(script_dir,"analyze_ticker_coor.csv"))
 
 pair_prop = [
 ['First Red','First Green'],
@@ -180,6 +194,8 @@ for pl in prop_list:
         currow['Good'] = len(good)
         if pl in most_corr_prop.keys():
             currow['Corr'] = most_corr_prop[pl]
+        else:
+            currow['Corr'] = 0
         global_prop.append(currow)
 
 outdata = pd.DataFrame.from_dict(global_prop)

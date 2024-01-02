@@ -215,12 +215,18 @@ for cdate in dates:
         dayprop = daytrade[daytrade[prop]==1]
         propperc = round(len(dayprop)/len(daytrade),2)
         percdict['Perc ' + prop] = propperc
-        cgmark = global_marks[global_marks['Prop']==prop]
-        percdict['Corr ' + prop] = cgmark.iloc[0]['Corr']
-        percdict['Profitable ' + prop] = cgmark.iloc[0]['Profitable']
-        percdict['Good ' + prop] = cgmark.iloc[0]['Good']
-        percdict['Great ' + prop] = cgmark.iloc[0]['Great']
         percdict['Total ' + prop] = len(result[result[prop]==1])
+        cgmark = global_marks[global_marks['Prop']==prop]
+        if len(cgmark):
+            percdict['Corr ' + prop] = cgmark.iloc[0]['Corr']
+            percdict['Profitable ' + prop] = cgmark.iloc[0]['Profitable']
+            percdict['Good ' + prop] = cgmark.iloc[0]['Good']
+            percdict['Great ' + prop] = cgmark.iloc[0]['Great']
+        else:
+            percdict['Corr ' + prop] = 0
+            percdict['Profitable ' + prop] = 0
+            percdict['Good ' + prop] = 0
+            percdict['Great ' + prop] = 0
     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
     dateperc = pd.concat([dateperc,percdf])
 result_perc = result.set_index('date').join(dateperc.set_index('date'))
