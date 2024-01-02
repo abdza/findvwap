@@ -42,6 +42,7 @@ for column_name in raw_data.columns:
         else:
             numerical_columns.append(column_name)
             column_types[column_name] = 'numerical'
+print("Numerical columns:",numerical_columns)
 raw_data[numerical_columns] = scaler.fit_transform(raw_data[numerical_columns])
 train_size = int(raw_data.shape[0] * 0.9)
 print("Train size:",train_size)
