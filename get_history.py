@@ -163,11 +163,48 @@ def findgap():
                     print("Previous NaN Check:",bminute_candles['open'].isnull().sum())
 
                 latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
+                day_candles = candles[:-2]
 
-                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,candles[:-2])
+                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,day_candles)
 
                 fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','gap','price']
                 row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
+                fieldnames.append('Minute Start')
+                row['Minute Start'] = minute_candles.iloc[0]['date']
+                fieldnames.append('Minute End')
+                row['Minute End'] = minute_candles.iloc[-1]['date']
+                fieldnames.append('Yesterday Start')
+                fieldnames.append('Yesterday End')
+                if len(bminute_candles):
+                    row['Yesterday Start'] = bminute_candles.iloc[0]['date']
+                    row['Yesterday End'] = bminute_candles.iloc[-1]['date']
+                else:
+                    row['Yesterday Start'] = 'None'
+                    row['Yesterday End'] = 'None'
+                fieldnames.append('2 Days Start')
+                fieldnames.append('2 Days End')
+                if len(bbminute_candles):
+                    row['2 Days Start'] = bbminute_candles.iloc[0]['date']
+                    row['2 Days End'] = bminute_candles.iloc[-1]['date']
+                else:
+                    row['2 Days Start'] = 'None'
+                    row['2 Days End'] = 'None'
+                fieldnames.append('Hourly Start')
+                fieldnames.append('Hourly End')
+                if len(hour_candles):
+                    row['Hourly Start'] = hour_candles.iloc[0]['date']
+                    row['Hourly End'] = hour_candles.iloc[-1]['date']
+                else:
+                    row['Hourly Start'] = 'None'
+                    row['Hourly End'] = 'None'
+                fieldnames.append('Daily Start')
+                fieldnames.append('Daily End')
+                if len(day_candles):
+                    row['Daily Start'] = day_candles.iloc[0]['date']
+                    row['Daily End'] = day_candles.iloc[-1]['date']
+                else:
+                    row['Daily Start'] = 'None'
+                    row['Daily End'] = 'None'
                 for pp in prop_list:
                     fieldnames.append(pp)
                     if pp in tickers_data[ticker]:

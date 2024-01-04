@@ -17,7 +17,7 @@ starttest = datetime.now()
 scaler = MinMaxScaler()
 
 raw_data = pd.read_csv(os.path.join(script_dir,'raw_data_perc_marks.csv'))
-topop = ['ticker','date','day','diff','diff_level','performance']
+topop = ['ticker','date','day','diff','diff_level','performance','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
 for tp in topop:
     raw_data.pop(tp)
 for tp in ignore_prop:
@@ -73,7 +73,7 @@ except Exception:
     model.save(os.path.join(script_dir,"model_profitable.h5"))
 
 raw_data = pd.read_csv(os.path.join(script_dir,'raw_data_perc_marks.csv'))
-topop = ['ticker','date','day','profitable','diff_level','performance']
+topop = ['ticker','date','day','profitable','diff_level','performance','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
 for tp in topop:
     raw_data.pop(tp)
 for tp in ignore_prop:

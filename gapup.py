@@ -171,7 +171,9 @@ def findgap():
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
                     bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
 
-                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,candles[:-2])
+                day_candles = candles[:-2]
+
+                prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,day_candles)
 
                 if len(candles)>100:
                     levels[ticker] = find_levels(candles)
@@ -187,6 +189,42 @@ def findgap():
                     print("Diff:",summary['diff']," Profitable:",summary['profitable'])
                 fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','gap','price']
                 row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
+                fieldnames.append('Minute Start')
+                row['Minute Start'] = minute_candles.iloc[0]['date']
+                fieldnames.append('Minute End')
+                row['Minute End'] = minute_candles.iloc[-1]['date']
+                fieldnames.append('Yesterday Start')
+                fieldnames.append('Yesterday End')
+                if len(bminute_candles):
+                    row['Yesterday Start'] = bminute_candles.iloc[0]['date']
+                    row['Yesterday End'] = bminute_candles.iloc[-1]['date']
+                else:
+                    row['Yesterday Start'] = 'None'
+                    row['Yesterday End'] = 'None'
+                fieldnames.append('2 Days Start')
+                fieldnames.append('2 Days End')
+                if len(bbminute_candles):
+                    row['2 Days Start'] = bbminute_candles.iloc[0]['date']
+                    row['2 Days End'] = bminute_candles.iloc[-1]['date']
+                else:
+                    row['2 Days Start'] = 'None'
+                    row['2 Days End'] = 'None'
+                fieldnames.append('Hourly Start')
+                fieldnames.append('Hourly End')
+                if len(hour_candles):
+                    row['Hourly Start'] = hour_candles.iloc[0]['date']
+                    row['Hourly End'] = hour_candles.iloc[-1]['date']
+                else:
+                    row['Hourly Start'] = 'None'
+                    row['Hourly End'] = 'None'
+                fieldnames.append('Daily Start')
+                fieldnames.append('Daily End')
+                if len(day_candles):
+                    row['Daily Start'] = day_candles.iloc[0]['date']
+                    row['Daily End'] = day_candles.iloc[-1]['date']
+                else:
+                    row['Daily Start'] = 'None'
+                    row['Daily End'] = 'None'
                 for pp in prop_list:
                     fieldnames.append(pp)
                     if pp in tickers_data[ticker]:
@@ -241,12 +279,11 @@ else:
     result_perc = calc_marks(result_perc)
 result_perc.to_csv(os.path.join(script_dir,'results_marks.csv'),index=False)
 
-
 profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
 profitablecsv = result_perc.copy()
 
 # print("Prepop Columns:",profitablecsv.columns)
-topop = ['ticker','date','day','diff','diff_level','performance','profitable']
+topop = ['ticker','date','day','diff','diff_level','performance','profitable','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
 for tp in topop:
     profitablecsv.pop(tp)
 for tp in ignore_prop:
@@ -268,7 +305,7 @@ diff_model = load_model(os.path.join(script_dir,"model_diff"), custom_objects=ak
 diffcsv = result_perc.copy()
 
 # print("Prepop Columns:",diffcsv.columns)
-topop = ['ticker','date','day','diff','diff_level','performance','profitable','predicted_profitable']
+topop = ['ticker','date','day','diff','diff_level','performance','profitable','predicted_profitable','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
 for tp in topop:
     diffcsv.pop(tp)
 for tp in ignore_prop:
