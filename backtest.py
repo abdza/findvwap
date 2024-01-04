@@ -57,7 +57,7 @@ result_perc.to_csv(os.path.join(script_dir,'raw_data_corr.csv'))
 result_perc = calc_marks(result_perc)
 result_perc = result_perc.reset_index()
 
-fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap']
+fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
 finalcolumns = fieldnames + sorted(minuscolumns)
 

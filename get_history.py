@@ -220,7 +220,7 @@ starttest = datetime.now()
 alldata = pd.DataFrame()
 # for day in range(60):
 for day in range(10):
-# for day in range(5):
+# for day in range(2):
     instockdate = starttest - timedelta(days=day)
     result = findgap()
     result = pd.DataFrame.from_dict(result)

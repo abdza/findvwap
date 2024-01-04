@@ -2093,6 +2093,7 @@ def calc_marks(proparray,verbose=False):
     proparray.pop('calc')
 
  
+    proparray = proparray.copy()
     proparray['marks'] = proparray['prev_marks'] + proparray['opening_marks'] + proparray['late_marks'] + proparray['hour_marks'] + proparray['daily_marks']
 
     # proparray['coor_marks'] = 0

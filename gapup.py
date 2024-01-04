@@ -320,7 +320,7 @@ difffloat = np.asarray(diffcsv).astype(np.float32)
 result_perc['predicted_diff'] = diff_model.predict(difffloat)
 
 
-fieldnames = ['date','ticker','diff_level','performance','profitable','marks','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap']
+fieldnames = ['date','ticker','diff_level','performance','profitable','marks','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
 # fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
 finalcolumns = fieldnames + sorted(minuscolumns)
