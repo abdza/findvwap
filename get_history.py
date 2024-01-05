@@ -89,7 +89,9 @@ def findgap():
         else:
             continue
 
-        if len(candles):
+        if len(candles)<3:
+            continue
+        else:
             candles = candles.reset_index(level=[0,1])
             candles['range'] = candles['high'] - candles['low']
             candles['body_length'] = candles['close'] - candles['open']
@@ -115,17 +117,15 @@ def findgap():
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
                 minute_candles = minute_candles.loc[(minute_candles['date']<fdate)]
-                nowdate = str(datetime.now().date())
                 latest_date[ticker] = minute_candles.iloc[-1]['date']
-                if curkey!=nowdate:
-                    end_of_trading = True
 
                 if manualstocks:
                     print("Minute Candles:")
                     print(tabulate(minute_candles,headers='keys'))
 
                 datediff = 1
-                bdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
+                bdate = str(minute_candles.iloc[0]['date'].date()-timedelta(days=datediff))
+                print("Bdate:",bdate," Ldate:",ldate)
                 bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                 bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
                 while len(bminute_candles)==0 and datediff<=10:
@@ -134,10 +134,7 @@ def findgap():
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                     bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
 
-                if len(bminute_candles):
-                    hour_candles = dticker.history(start=minute_start_date,end=bminute_candles.iloc[-1]['date'],interval='1h')
-                else:
-                    hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
+                hour_candles = dticker.history(start=minute_start_date,end=ldate,interval='1h')
                 hour_candles['range'] = hour_candles['high'] - hour_candles['low']
                 hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
                 if len(hour_candles.index.shape)>1:
@@ -145,15 +142,22 @@ def findgap():
                 else:
                     hour_candles = hour_candles.reset_index()
 
-                datediff += 1
-                bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
-                bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
-                bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<bdate)]
+                datediff = 1
+                bbdate = str(bminute_candles.iloc[0]['date'].date()-timedelta(days=datediff))
+                twodaystart = bbdate
+                # twodayend = str(bminute_candles.iloc[0]['date'].date())
+                twodayend = bbdate + ' 23:00:00'
+                print("2 day start:",twodaystart," 2 day end:",twodayend)
+                bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>twodaystart)]
+                bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<twodayend)]
+                print("Len of bbminute:",len(bbminute_candles))
                 while len(bbminute_candles)==0 and datediff<=10:
                     datediff += 1
-                    bbdate = str(datetime.date(minutelastcandle['date'])-timedelta(days=datediff))
-                    bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bbdate)]
-                    bbminute_candles = bbminute_candles.loc[(full_minute_candles['date']<bdate)]
+                    bbdate = str(bminute_candles.iloc[0]['date']-timedelta(days=datediff))
+                    bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>twodaystart)]
+                    bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<twodayend)]
+
+                day_candles = candles[:-1]
 
                 if manualstocks:
                     print("First candle:",minute_candles.iloc[0]['date'].hour,':',minute_candles.iloc[0]['date'].minute)
@@ -163,7 +167,6 @@ def findgap():
                     print("Previous NaN Check:",bminute_candles['open'].isnull().sum())
 
                 latest_price = append_hash_set(latest_price,ticker,minute_candles.iloc[-1]['close'])
-                day_candles = candles[:-2]
 
                 prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,day_candles)
 
