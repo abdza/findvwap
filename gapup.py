@@ -155,19 +155,6 @@ def findgap():
 
                 print("Yesterday start:",bminute_candles.iloc[0]['date']," Yesterday end:",bminute_candles.iloc[-1]['date'])
 
-                hour_candles = dticker.history(start=minute_start_date,end=ldate,interval='1h')
-                # if len(bminute_candles):
-                #     hour_candles = dticker.history(start=minute_start_date,end=bminute_candles.iloc[-1]['date'],interval='1h')
-                # else:
-                #     hour_candles = dticker.history(start=minute_start_date,end=minute_end_date,interval='1h')
-
-                hour_candles['range'] = hour_candles['high'] - hour_candles['low']
-                hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
-                if len(hour_candles.index.shape)>1:
-                    hour_candles = hour_candles.reset_index(level=[0,1])
-                else:
-                    hour_candles = hour_candles.reset_index()
-
                 datediff = 1
                 bbdate = str(bminute_candles.iloc[0]['date'].date()-timedelta(days=datediff))
                 twodaystart = bbdate
@@ -184,6 +171,17 @@ def findgap():
                     bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<twodayend)]
 
                 day_candles = candles[:-1]
+                hourdate = str(day_candles.iloc[-1]['date']-timedelta(days=10))
+
+                print("Hour start:",hourdate)
+                hour_candles = dticker.history(period='7d',start=hourdate,interval='1h')
+                hour_candles['range'] = hour_candles['high'] - hour_candles['low']
+                hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
+                if len(hour_candles.index.shape)>1:
+                    hour_candles = hour_candles.reset_index(level=[0,1])
+                else:
+                    hour_candles = hour_candles.reset_index()
+                hour_candles = hour_candles.loc[(hour_candles['date']<ldate)]
 
                 prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,day_candles)
 
@@ -217,7 +215,7 @@ def findgap():
                 fieldnames.append('2 Days End')
                 if len(bbminute_candles):
                     row['2 Days Start'] = bbminute_candles.iloc[0]['date']
-                    row['2 Days End'] = bminute_candles.iloc[-1]['date']
+                    row['2 Days End'] = bbminute_candles.iloc[-1]['date']
                 else:
                     row['2 Days Start'] = 'None'
                     row['2 Days End'] = 'None'
