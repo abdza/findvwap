@@ -1959,6 +1959,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
 
 def calc_marks(proparray,verbose=False):
     global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
+    proparray = proparray.copy()
     proparray['prev_marks'] = 1.0
     print("Mean profitable:",global_marks['Profitable'].mean())
     if verbose:
@@ -1985,6 +1986,8 @@ def calc_marks(proparray,verbose=False):
                 # print(tabulate(curarray.T,headers="keys"))
     if verbose:
         print("Total Prev Mark:",proparray['prev_marks'].values)
+
+    proparray = proparray.copy()
     proparray['opening_marks'] = 1.0
     if verbose:
         print("Opening Marks")
@@ -2011,6 +2014,8 @@ def calc_marks(proparray,verbose=False):
                 print("Prop: ",prop," --> Opening Marks: ",proparray.loc[curarray.index,'opening_marks'])
     if verbose:
         print("Total Opening Mark:",proparray['opening_marks'].values)
+
+    proparray = proparray.copy()
     proparray['late_marks'] = 1.0
     if verbose:
         print("Late Marks")
@@ -2038,6 +2043,7 @@ def calc_marks(proparray,verbose=False):
     if verbose:
         print("Total Late Mark:",proparray['late_marks'].values)
 
+    proparray = proparray.copy()
     proparray['hour_marks'] = 1.0
     if verbose:
         print("Hour Marks")
@@ -2064,6 +2070,7 @@ def calc_marks(proparray,verbose=False):
     if verbose:
         print("Total Hour Mark:",proparray['hour_marks'].values)
 
+    proparray = proparray.copy()
     proparray['daily_marks'] = 1.0
     if verbose:
         print("Daily Marks")
