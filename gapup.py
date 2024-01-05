@@ -155,20 +155,23 @@ def findgap():
 
                 print("Yesterday start:",bminute_candles.iloc[0]['date']," Yesterday end:",bminute_candles.iloc[-1]['date'])
 
-                datediff = 1
-                bbdate = str(bminute_candles.iloc[0]['date'].date()-timedelta(days=datediff))
-                twodaystart = bbdate
-                # twodayend = str(bminute_candles.iloc[0]['date'].date())
-                twodayend = bbdate + ' 23:00:00'
-                print("2 day start:",twodaystart," 2 day end:",twodayend)
-                bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>twodaystart)]
-                bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<twodayend)]
-                print("Len of bbminute:",len(bbminute_candles))
-                while len(bbminute_candles)==0 and datediff<=10:
-                    datediff += 1
-                    bbdate = str(bminute_candles.iloc[0]['date']-timedelta(days=datediff))
+                if len(bminute_candles):
+                    datediff = 1
+                    bbdate = str(bminute_candles.iloc[0]['date'].date()-timedelta(days=datediff))
+                    twodaystart = bbdate
+                    # twodayend = str(bminute_candles.iloc[0]['date'].date())
+                    twodayend = bbdate + ' 23:00:00'
+                    print("2 day start:",twodaystart," 2 day end:",twodayend)
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>twodaystart)]
                     bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<twodayend)]
+                    print("Len of bbminute:",len(bbminute_candles))
+                    while len(bbminute_candles)==0 and datediff<=10:
+                        datediff += 1
+                        bbdate = str(bminute_candles.iloc[0]['date']-timedelta(days=datediff))
+                        bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>twodaystart)]
+                        bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<twodayend)]
+                else:
+                    bbminute_candles = pd.DataFrame()
 
                 day_candles = candles[:-1]
                 hourdate = str(day_candles.iloc[-1]['date']-timedelta(days=10))
