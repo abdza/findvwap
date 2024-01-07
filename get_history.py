@@ -187,32 +187,32 @@ def findgap():
                     row['Yesterday Start'] = bminute_candles.iloc[0]['date']
                     row['Yesterday End'] = bminute_candles.iloc[-1]['date']
                 else:
-                    row['Yesterday Start'] = 'None'
-                    row['Yesterday End'] = 'None'
+                    row['Yesterday Start'] = ''
+                    row['Yesterday End'] = ''
                 fieldnames.append('2 Days Start')
                 fieldnames.append('2 Days End')
                 if len(bbminute_candles):
                     row['2 Days Start'] = bbminute_candles.iloc[0]['date']
                     row['2 Days End'] = bbminute_candles.iloc[-1]['date']
                 else:
-                    row['2 Days Start'] = 'None'
-                    row['2 Days End'] = 'None'
+                    row['2 Days Start'] = ''
+                    row['2 Days End'] = ''
                 fieldnames.append('Hourly Start')
                 fieldnames.append('Hourly End')
                 if len(hour_candles):
                     row['Hourly Start'] = hour_candles.iloc[0]['date']
                     row['Hourly End'] = hour_candles.iloc[-1]['date']
                 else:
-                    row['Hourly Start'] = 'None'
-                    row['Hourly End'] = 'None'
+                    row['Hourly Start'] = ''
+                    row['Hourly End'] = ''
                 fieldnames.append('Daily Start')
                 fieldnames.append('Daily End')
                 if len(day_candles):
                     row['Daily Start'] = day_candles.iloc[0]['date']
                     row['Daily End'] = day_candles.iloc[-1]['date']
                 else:
-                    row['Daily Start'] = 'None'
-                    row['Daily End'] = 'None'
+                    row['Daily Start'] = ''
+                    row['Daily End'] = ''
                 for pp in prop_list:
                     fieldnames.append(pp)
                     if pp in tickers_data[ticker]:
