@@ -1726,7 +1726,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     tcat = 'Good'
                 elif ydiff > 0.7:
                     tcat = 'Profitable'
-                elif ydiff > 0.3:
+                elif ydiff > 0.2:
                     tcat = 'Barely'
                 elif ydiff > 0:
                     tcat = 'Fair'
@@ -1812,7 +1812,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     tcat = 'Good'
                 elif ydiff > 0.7:
                     tcat = 'Profitable'
-                elif ydiff > 0.3:
+                elif ydiff > 0.2:
                     tcat = 'Barely'
                 elif ydiff > 0:
                     tcat = 'Fair'
