@@ -147,6 +147,7 @@ prop_list = [
 'Late Start',
 'Yesterday Status Great',
 'Yesterday Status Good',
+'Yesterday Status Barely',
 'Yesterday Status Profitable',
 'Yesterday Status Fair',
 'Yesterday Status Fail',
@@ -155,6 +156,7 @@ prop_list = [
 'Yesterday Absolute Loss',
 '2 Days Ago Status Great',
 '2 Days Ago Status Good',
+'2 Days Ago Status Barely',
 '2 Days Ago Status Profitable',
 '2 Days Ago Status Fair',
 '2 Days Ago Status Fail',
@@ -701,6 +703,7 @@ prev_prop_list = [
 'Continue Sluggish Ticker',
 'Yesterday Status Great',
 'Yesterday Status Good',
+'Yesterday Status Barely',
 'Yesterday Status Profitable',
 'Yesterday Status Fair',
 'Yesterday Status Fail',
@@ -710,6 +713,7 @@ prev_prop_list = [
 '2 Days Ago Status Great',
 '2 Days Ago Status Good',
 '2 Days Ago Status Profitable',
+'2 Days Ago Status Barely',
 '2 Days Ago Status Fair',
 '2 Days Ago Status Fail',
 '2 Days Ago Profitable',
@@ -1722,6 +1726,8 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     tcat = 'Good'
                 elif ydiff > 0.7:
                     tcat = 'Profitable'
+                elif ydiff > 0.3:
+                    tcat = 'Barely'
                 elif ydiff > 0:
                     tcat = 'Fair'
                 else:
@@ -1806,6 +1812,8 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                     tcat = 'Good'
                 elif ydiff > 0.7:
                     tcat = 'Profitable'
+                elif ydiff > 0.3:
+                    tcat = 'Barely'
                 elif ydiff > 0:
                     tcat = 'Fair'
                 else:
