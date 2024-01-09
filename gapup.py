@@ -238,6 +238,10 @@ def findgap():
                 else:
                     row['Daily Start'] = ''
                     row['Daily End'] = ''
+                fieldnames.append('First Range')
+                row['first_range'] = minute_candles.iloc[0]['range']
+                fieldnames.append('First Body')
+                row['first_body'] = minute_candles.iloc[0]['body_length']
                 for pp in prop_list:
                     fieldnames.append(pp)
                     if pp in tickers_data[ticker]:
