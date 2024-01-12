@@ -213,6 +213,7 @@ def findgap():
                 else:
                     row['Daily Start'] = ''
                     row['Daily End'] = ''
+                row['range'] = curcandle['range']
                 for pp in prop_list:
                     fieldnames.append(pp)
                     if pp in tickers_data[ticker]:
