@@ -6,12 +6,12 @@ from tabulate import tabulate
 
 stocks = pd.read_csv('stocks.csv')
 end_date = datetime.now()
-start_date = end_date - timedelta(days=10)
+start_date = end_date - timedelta(days=60)
 max_candles = 0
 for i in range(len(stocks)):
     cstock = stocks.iloc[i]
     dticker = yq.Ticker(cstock['Ticker'])
-    candles = dticker.history(start=start_date,end=end_date,interval='15m')
+    candles = dticker.history(start=start_date,end=end_date,interval='1d')
     if len(candles)>max_candles:
         max_candles=len(candles)
     candles['body_length'] = candles['close'] - candles['open']
@@ -28,4 +28,4 @@ zero_index = stocks[stocks['zero_count']>10].index
 stocks = stocks.drop(zero_index)
 candles_index = stocks[stocks['candles_count']<max_candles-10].index
 stocks = stocks.drop(candles_index)
-stocks.to_csv('stocks.csv',index=False)
+stocks.to_csv('filtered.csv',index=False)

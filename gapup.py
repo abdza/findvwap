@@ -23,7 +23,7 @@ import autokeras as ak
 from props import *
 from sklearn.preprocessing import MinMaxScaler
 
-inputfile = 'stocks.csv'
+inputfile = 'filtered.csv'
 outfile = 'shorts.csv'
 instockdate = None
 openrangelimit = 1

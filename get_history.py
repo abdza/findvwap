@@ -20,7 +20,7 @@ from streamlit_calendar import calendar
 from props import *
 from sklearn.preprocessing import MinMaxScaler
 
-inputfile = 'stocks.csv'
+inputfile = 'filtered.csv'
 outfile = 'backtest.json'
 instockdate = None
 openrangelimit = 1
