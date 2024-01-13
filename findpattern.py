@@ -12,7 +12,7 @@ import math
 from tabulate import tabulate
 from props import *
 
-def double_bottom(candles,peaks,bottoms):
+def double_bottom(peaks,bottoms):
     lastpeak = peaks[-1]
     lastbottom = bottoms[-1]
     secondlastbottom = bottoms[-2]
@@ -29,7 +29,7 @@ def double_bottom(candles,peaks,bottoms):
             score += 1
     return score
 
-def higher_high(candles,peaks,bottoms):
+def higher_high(peaks,bottoms):
     lastpeak = peaks[-1]
     lastbottom = bottoms[-1]
     secondlastbottom = bottoms[-2]
@@ -48,11 +48,22 @@ def higher_high(candles,peaks,bottoms):
             score += 1
     return score
 
+def supernova(candles):
+    candles['range'] = candles['high'] - candles['low']
+    score = 0
+    for i in range(len(candles)):
+        curcandle = candles.iloc[-i]
+        if curcandle['range'] > candles['range'].mean() * 10:
+            score += 1
+    return score
+
+
 def findpattern(stocks,end_date):
     days = 30
     start_date = end_date - timedelta(days=days)
     possible_double = []
     possible_up = []
+    possible_nova = []
     for i in range(len(stocks.index)):
         try:
             ticker = stocks.iloc[i]['Ticker'].upper()
@@ -60,27 +71,28 @@ def findpattern(stocks,end_date):
             candles = dticker.history(start=start_date,end=end_date,interval='1d')
             candles = candles.reset_index(level=[0,1])
             peaks,bottoms = gather_range(candles)
-            print("Testing:",ticker)
-            print("Peaks")
-            print(tabulate(peaks,headers="keys"))
-            print("Bottoms")
-            print(tabulate(bottoms,headers="keys"))
 
-            score = double_bottom(candles,peaks,bottoms)
+            score = double_bottom(peaks,bottoms)
             if score>2:
                 possible_double.append({'ticker':ticker,'score':score})
             possible_double = sorted(possible_double,key=lambda x:x['score'],reverse=True)
 
-            score = higher_high(candles,peaks,bottoms)
+            score = higher_high(peaks,bottoms)
             if score>2:
                 possible_up.append({'ticker':ticker,'score':score})
             possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
+
+            score = supernova(candles)
+            if score>2:
+                possible_nova.append({'ticker':ticker,'score':score})
+            possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
         except Exception as exp:
             print("Error downloading candles:",exp)
 
 
     print("Possible double bottom:",tabulate(possible_double,headers="keys"))
     print("Possible up:",tabulate(possible_up,headers="keys"))
+    print("Possible Nova:",tabulate(possible_nova,headers="keys"))
 
 end_date = None
 stockdate = None
