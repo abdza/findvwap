@@ -79,8 +79,8 @@ def findpattern(stocks,end_date):
             print("Error downloading candles:",exp)
 
 
-    print("Possible double bottom:",possible_double)
-    print("Possible up:",possible_up)
+    print("Possible double bottom:",tabulate(possible_double,headers="keys"))
+    print("Possible up:",tabulate(possible_up,headers="keys"))
 
 end_date = None
 stockdate = None
