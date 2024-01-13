@@ -29,10 +29,30 @@ def double_bottom(candles,peaks,bottoms):
                 score += 1
     return score
 
+def higher_high(candles,peaks,bottoms):
+    lastpeak = peaks[-1]
+    lastbottom = bottoms[-1]
+    secondlastbottom = bottoms[-2]
+    secondlastpeak = peaks[-2]
+    thirdlastbottom = bottoms[-3]
+    thirdlastpeak = peaks[-3]
+    score = 0
+    if thirdlastbottom['date'] < thirdlastpeak['date'] < secondlastbottom['date'] < secondlastpeak['date'] < lastbottom['date'] < lastpeak['date']:
+        print("Sequence is correct")
+        score += 1
+        if thirdlastbottom['low'] < secondlastbottom['low'] and thirdlastpeak['high'] < secondlastpeak['high']:
+            print("Higher low")
+            score += 1
+        if secondlastbottom['low'] < lastbottom['low'] and secondlastpeak['high'] < lastpeak['high']:
+            print("Confirm Higher low")
+            score += 1
+    return score
+
 def findpattern(stocks,end_date):
     days = 30
     start_date = end_date - timedelta(days=days)
-    possible_tickers = []
+    possible_double = []
+    possible_up = []
     for i in range(len(stocks.index)):
         try:
             ticker = stocks.iloc[i]['Ticker'].upper()
@@ -45,13 +65,22 @@ def findpattern(stocks,end_date):
             print(tabulate(peaks,headers="keys"))
             print("Bottoms")
             print(tabulate(bottoms,headers="keys"))
+
             score = double_bottom(candles,peaks,bottoms)
-            possible_tickers.append({'ticker':ticker,'score':score})
+            if score>0:
+                possible_double.append({'ticker':ticker,'score':score})
+            possible_double = sorted(possible_double,key=lambda x:x['score'],reverse=True)
+
+            score = higher_high(candles,peaks,bottoms)
+            if score>0:
+                possible_up.append({'ticker':ticker,'score':score})
+            possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
         except Exception as exp:
             print("Error downloading candles:",exp)
 
-    possible_tickers = sorted(possible_tickers,key=lambda x:x['score'],reverse=True)
-    print("Possible tickers:",possible_tickers)
+
+    print("Possible double bottom:",possible_double)
+    print("Possible up:",possible_up)
 
 end_date = None
 stockdate = None
