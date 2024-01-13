@@ -24,9 +24,9 @@ def double_bottom(candles,peaks,bottoms):
         if lastpeak['close'] > secondlastpeak['high']:
             print("Last peak confirmed double bottom")
             score += 1
-            if abs(secondlastbottom['low'] - lastbottom['low']) < 0.1:
-                print("Bottom is close enough")
-                score += 1
+        if abs(secondlastbottom['low'] - lastbottom['low']) < 0.1:
+            print("Bottom is close enough")
+            score += 1
     return score
 
 def higher_high(candles,peaks,bottoms):
@@ -67,12 +67,12 @@ def findpattern(stocks,end_date):
             print(tabulate(bottoms,headers="keys"))
 
             score = double_bottom(candles,peaks,bottoms)
-            if score>0:
+            if score>2:
                 possible_double.append({'ticker':ticker,'score':score})
             possible_double = sorted(possible_double,key=lambda x:x['score'],reverse=True)
 
             score = higher_high(candles,peaks,bottoms)
-            if score>0:
+            if score>2:
                 possible_up.append({'ticker':ticker,'score':score})
             possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
         except Exception as exp:
