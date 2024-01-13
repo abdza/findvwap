@@ -51,6 +51,14 @@ def supernova(candles):
             score += 1
     return score
 
+def volumesupernova(candles):
+    score = 0
+    for i in range(len(candles)):
+        curcandle = candles.iloc[-i]
+        if curcandle['volume'] > candles['volume'].mean() * 5:
+            score += 1
+    return score
+
 
 def findpattern(stocks,end_date):
     days = 30
@@ -58,6 +66,7 @@ def findpattern(stocks,end_date):
     possible_double = []
     possible_up = []
     possible_nova = []
+    possible_volumenova = []
     for i in range(len(stocks.index)):
         try:
             ticker = stocks.iloc[i]['Ticker'].upper()
@@ -80,6 +89,11 @@ def findpattern(stocks,end_date):
             if score>0:
                 possible_nova.append({'ticker':ticker,'score':score})
             possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
+
+            score = volumesupernova(candles)
+            if score>0:
+                possible_volumenova.append({'ticker':ticker,'score':score})
+            possible_volumenova = sorted(possible_volumenova,key=lambda x:x['score'],reverse=True)
         except Exception as exp:
             print("Error downloading candles:",exp)
 
@@ -87,6 +101,7 @@ def findpattern(stocks,end_date):
     print("Possible double bottom:",tabulate(possible_double,headers="keys"))
     print("Possible up:",tabulate(possible_up,headers="keys"))
     print("Possible Nova:",tabulate(possible_nova,headers="keys"))
+    print("Possible Volume Nova:",tabulate(possible_volumenova,headers="keys"))
 
 end_date = None
 stockdate = None
