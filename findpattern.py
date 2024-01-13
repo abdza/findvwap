@@ -85,7 +85,7 @@ def findpattern(stocks,end_date):
 end_date = None
 stockdate = None
 manualstocks = None
-inputfile = 'stocks.csv'
+inputfile = 'filtered.csv'
 opts, args = getopt.getopt(sys.argv[1:],"i:d:s:",["input=","date=","stock="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
