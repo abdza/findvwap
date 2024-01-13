@@ -102,6 +102,20 @@ def findpattern(stocks,end_date):
     print("Possible up:",tabulate(possible_up,headers="keys"))
     print("Possible Nova:",tabulate(possible_nova,headers="keys"))
     print("Possible Volume Nova:",tabulate(possible_volumenova,headers="keys"))
+    fullresult = pd.DataFrame()
+    result = pd.DataFrame.from_dict(possible_double)
+    result['type'] = 'double'
+    fullresult = pd.concat([fullresult,result])
+    result = pd.DataFrame.from_dict(possible_up)
+    result['type'] = 'up'
+    fullresult = pd.concat([fullresult,result])
+    result = pd.DataFrame.from_dict(possible_nova)
+    result['type'] = 'nova'
+    fullresult = pd.concat([fullresult,result])
+    result = pd.DataFrame.from_dict(possible_volumenova)
+    result['type'] = 'volumenova'
+    fullresult = pd.concat([fullresult,result])
+    fullresult.to_csv(os.path.join(script_dir,'pattern.csv'),index=False)
 
 end_date = None
 stockdate = None
