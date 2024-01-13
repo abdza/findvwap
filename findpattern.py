@@ -53,7 +53,7 @@ def supernova(candles):
 
 def volumesupernova(candles):
     score = 0
-    for i in range(len(candles)):
+    for i in range(3):
         curcandle = candles.iloc[-i]
         if curcandle['volume'] > candles['volume'].mean() * 10:
             score += 1
