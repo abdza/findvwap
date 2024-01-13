@@ -19,13 +19,10 @@ def double_bottom(peaks,bottoms):
     secondlastpeak = peaks[-2]
     score = 0
     if secondlastbottom['date'] < secondlastpeak['date'] < lastbottom['date'] < lastpeak['date']:
-        print("Sequence is correct")
         score += 1
         if lastpeak['close'] > secondlastpeak['high']:
-            print("Last peak confirmed double bottom")
             score += 1
         if abs(secondlastbottom['low'] - lastbottom['low']) < 0.1:
-            print("Bottom is close enough")
             score += 1
     return score
 
@@ -38,13 +35,10 @@ def higher_high(peaks,bottoms):
     thirdlastpeak = peaks[-3]
     score = 0
     if thirdlastbottom['date'] < thirdlastpeak['date'] < secondlastbottom['date'] < secondlastpeak['date'] < lastbottom['date'] < lastpeak['date']:
-        print("Sequence is correct")
         score += 1
         if thirdlastbottom['low'] < secondlastbottom['low'] and thirdlastpeak['high'] < secondlastpeak['high']:
-            print("Higher low")
             score += 1
         if secondlastbottom['low'] < lastbottom['low'] and secondlastpeak['high'] < lastpeak['high']:
-            print("Confirm Higher low")
             score += 1
     return score
 
@@ -53,7 +47,7 @@ def supernova(candles):
     score = 0
     for i in range(len(candles)):
         curcandle = candles.iloc[-i]
-        if curcandle['range'] > candles['range'].mean() * 10:
+        if curcandle['range'] > candles['range'].mean() * 5:
             score += 1
     return score
 
@@ -83,7 +77,7 @@ def findpattern(stocks,end_date):
             possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
 
             score = supernova(candles)
-            if score>2:
+            if score>0:
                 possible_nova.append({'ticker':ticker,'score':score})
             possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
         except Exception as exp:
