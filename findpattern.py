@@ -47,7 +47,7 @@ def supernova(candles):
     score = 0
     for i in range(len(candles)):
         curcandle = candles.iloc[-i]
-        if curcandle['range'] > candles['range'].mean() * 5:
+        if curcandle['range'] > candles['range'].mean() * 2:
             score += 1
     return score
 
