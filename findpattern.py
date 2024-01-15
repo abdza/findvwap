@@ -45,11 +45,13 @@ def higher_high(peaks,bottoms):
 def supernova(candles):
     candles['range'] = abs(candles['close'] - candles['open'])
     score = 0
+    ranges = []
     for i in range(len(candles)):
         curcandle = candles.iloc[-i]
         if curcandle['range'] > candles['range'].mean() * 5:
             score += 1
-    return score
+            ranges.append(str(curcandle['range']))
+    return score,','.join(ranges)
 
 def volumesupernova(candles):
     score = 0
@@ -85,9 +87,9 @@ def findpattern(stocks,end_date):
                 possible_up.append({'ticker':ticker,'score':score})
             possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
 
-            score = supernova(candles)
+            score,ranges = supernova(candles)
             if score>0:
-                possible_nova.append({'ticker':ticker,'score':score})
+                possible_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
 
             score = volumesupernova(candles)
