@@ -43,7 +43,7 @@ def higher_high(peaks,bottoms):
     return score
 
 def supernova(candles):
-    candles['range'] = candles['high'] - candles['low']
+    candles['range'] = abs(candles['close'] - candles['open'])
     score = 0
     for i in range(len(candles)):
         curcandle = candles.iloc[-i]
