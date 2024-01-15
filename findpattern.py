@@ -79,14 +79,14 @@ def findpattern(stocks,end_date):
             candles = candles.reset_index(level=[0,1])
             peaks,bottoms = gather_range(candles)
 
-            score = double_bottom(peaks,bottoms)
+            score,ranges = double_bottom(peaks,bottoms)
             if score>2:
-                possible_double.append({'ticker':ticker,'score':score})
+                possible_double.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_double = sorted(possible_double,key=lambda x:x['score'],reverse=True)
 
-            score = higher_high(peaks,bottoms)
+            score,ranges = higher_high(peaks,bottoms)
             if score>2:
-                possible_up.append({'ticker':ticker,'score':score})
+                possible_up.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
 
             score,ranges = supernova(candles)
@@ -94,9 +94,9 @@ def findpattern(stocks,end_date):
                 possible_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
 
-            score = volumesupernova(candles)
+            score,ranges = volumesupernova(candles)
             if score>0:
-                possible_volumenova.append({'ticker':ticker,'score':score})
+                possible_volumenova.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_volumenova = sorted(possible_volumenova,key=lambda x:x['score'],reverse=True)
         except Exception as exp:
             print("Error downloading candles:",exp)
