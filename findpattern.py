@@ -101,7 +101,7 @@ def findpattern(stocks,end_date):
                 possible_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
 
-            score,ranges = supernova(candles,1)
+            score,ranges = supernova(candles,4)
             if score>0:
                 recent_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
             recent_nova = sorted(recent_nova,key=lambda x:x['score'],reverse=True)
