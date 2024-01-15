@@ -105,7 +105,7 @@ def findpattern(stocks,end_date):
             score,ranges = supernova(candles,1)
             if score>0:
                 recent_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
-            recent_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
+            recent_nova = sorted(recent_nova,key=lambda x:x['score'],reverse=True)
 
             score,ranges = volumesupernova(candles)
             if score>0:
