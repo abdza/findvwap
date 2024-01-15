@@ -48,21 +48,20 @@ def supernova(candles,limit=None):
     ranges = []
     if limit is None:
         limit = len(candles)
-    print("Limit:",limit," Mean:",candles['range'].mean()*5)
     for i in range(limit):
         pos = (i + 1) * -1
         curcandle = candles.iloc[pos]
-        print("Pos:",pos," Curcandle:",curcandle)
         if curcandle['range'] > candles['range'].mean() * 5:
-            print("Range higher than mean")
             score += 1
             ranges.append(str(curcandle['range']))
     return score,','.join(ranges)
 
-def volumesupernova(candles):
+def volumesupernova(candles,limit=None):
     score = 0
     ranges = []
-    for i in range(3):
+    if limit is None:
+        limit = 3
+    for i in range(limit):
         pos = (i + 1) * -1
         curcandle = candles.iloc[pos]
         if curcandle['volume'] > candles['volume'].mean() * 10:
