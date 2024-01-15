@@ -24,7 +24,7 @@ def double_bottom(peaks,bottoms):
             score += 1
         if abs(secondlastbottom['low'] - lastbottom['low']) < 0.1:
             score += 1
-    return score
+    return score,str(lastpeak['close'])
 
 def higher_high(peaks,bottoms):
     lastpeak = peaks[-1]
@@ -40,7 +40,7 @@ def higher_high(peaks,bottoms):
             score += 1
         if secondlastbottom['low'] < lastbottom['low'] and secondlastpeak['high'] < lastpeak['high']:
             score += 1
-    return score
+    return score,str(lastpeak['close'])
 
 def supernova(candles):
     candles['range'] = abs(candles['close'] - candles['open'])
@@ -55,11 +55,13 @@ def supernova(candles):
 
 def volumesupernova(candles):
     score = 0
+    ranges = []
     for i in range(3):
         curcandle = candles.iloc[-i]
         if curcandle['volume'] > candles['volume'].mean() * 10:
             score += 1
-    return score
+            ranges.append(str(curcandle['range']))
+    return score,','.join(ranges)
 
 
 def findpattern(stocks,end_date):
