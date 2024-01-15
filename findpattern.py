@@ -42,11 +42,13 @@ def higher_high(peaks,bottoms):
             score += 1
     return score,str(lastpeak['close'])
 
-def supernova(candles):
+def supernova(candles,limit=None):
     candles['range'] = abs(candles['close'] - candles['open'])
     score = 0
     ranges = []
-    for i in range(len(candles)):
+    if limit is None:
+        limit = len(candles)
+    for i in range(limit):
         curcandle = candles.iloc[-i]
         if curcandle['range'] > candles['range'].mean() * 5:
             score += 1
@@ -70,6 +72,7 @@ def findpattern(stocks,end_date):
     possible_double = []
     possible_up = []
     possible_nova = []
+    recent_nova = []
     possible_volumenova = []
     for i in range(len(stocks.index)):
         try:
@@ -94,6 +97,11 @@ def findpattern(stocks,end_date):
                 possible_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
 
+            score,ranges = supernova(candles,3)
+            if score>0:
+                recent_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
+            recent_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
+
             score,ranges = volumesupernova(candles)
             if score>0:
                 possible_volumenova.append({'ticker':ticker,'score':score,'ranges':ranges})
@@ -115,6 +123,9 @@ def findpattern(stocks,end_date):
     fullresult = pd.concat([fullresult,result])
     result = pd.DataFrame.from_dict(possible_nova)
     result['type'] = 'nova'
+    fullresult = pd.concat([fullresult,result])
+    result = pd.DataFrame.from_dict(recent_nova)
+    result['type'] = 'recentnova'
     fullresult = pd.concat([fullresult,result])
     result = pd.DataFrame.from_dict(possible_volumenova)
     result['type'] = 'volumenova'
