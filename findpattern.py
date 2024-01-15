@@ -77,7 +77,7 @@ def findpattern(stocks,end_date):
             dticker = yq.Ticker(ticker)
             candles = dticker.history(start=start_date,end=end_date,interval='1d')
             candles = candles.reset_index(level=[0,1])
-            peaks,bottoms = gather_range(candles)
+            peaks,bottoms = gather_range_unit('close',candles)
 
             score,ranges = double_bottom(peaks,bottoms)
             if score>2:
