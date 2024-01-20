@@ -42,7 +42,7 @@ def higher_high(peaks,bottoms):
             score += 1
     return score,str(lastpeak['close'])
 
-def supernova(candles,limit=None):
+def supernova(candles,limit=None,meanlimit=5):
     candles['range'] = abs(candles['close'] - candles['open'])
     score = 0
     ranges = []
@@ -51,12 +51,12 @@ def supernova(candles,limit=None):
     for i in range(limit):
         pos = (i + 1) * -1
         curcandle = candles.iloc[pos]
-        if curcandle['range'] > candles['range'].mean() * 5:
+        if curcandle['range'] > candles['range'].mean() * meanlimit:
             score += 1
             ranges.append(str(curcandle['range']))
     return score,','.join(ranges)
 
-def volumesupernova(candles,limit=None):
+def volumesupernova(candles,limit=None,meanlimit=10):
     score = 0
     ranges = []
     if limit is None:
@@ -64,14 +64,17 @@ def volumesupernova(candles,limit=None):
     for i in range(limit):
         pos = (i + 1) * -1
         curcandle = candles.iloc[pos]
-        if curcandle['volume'] > candles['volume'].mean() * 10:
+        if curcandle['volume'] > candles['volume'].mean() * meanlimit:
             score += 1
             ranges.append(str(curcandle['close']))
     return score,','.join(ranges)
 
 
 def findpattern(stocks,end_date,interval='1d'):
-    days = 30
+    if interval=='1d':
+        days = 30
+    else:
+        days = 4
     start_date = end_date - timedelta(days=days)
     possible_double = []
     possible_up = []
@@ -96,7 +99,10 @@ def findpattern(stocks,end_date,interval='1d'):
                 possible_up.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
 
-            score,ranges = supernova(candles)
+            if interval=='1d':
+                score,ranges = supernova(candles)
+            else:
+                score,ranges = supernova(candles,None,10)
             if score>0:
                 possible_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
