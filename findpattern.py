@@ -70,7 +70,7 @@ def volumesupernova(candles,limit=None):
     return score,','.join(ranges)
 
 
-def findpattern(stocks,end_date):
+def findpattern(stocks,end_date,interval='1d'):
     days = 30
     start_date = end_date - timedelta(days=days)
     possible_double = []
@@ -82,7 +82,7 @@ def findpattern(stocks,end_date):
         try:
             ticker = stocks.iloc[i]['Ticker'].upper()
             dticker = yq.Ticker(ticker)
-            candles = dticker.history(start=start_date,end=end_date,interval='1d')
+            candles = dticker.history(start=start_date,end=end_date,interval=interval)
             candles = candles.reset_index(level=[0,1])
             peaks,bottoms = gather_range(candles)
 
@@ -139,11 +139,14 @@ def findpattern(stocks,end_date):
 end_date = None
 stockdate = None
 manualstocks = None
+interval = '1d'
 inputfile = 'filtered.csv'
-opts, args = getopt.getopt(sys.argv[1:],"i:d:s:",["input=","date=","stock="])
+opts, args = getopt.getopt(sys.argv[1:],"i:d:s:v:",["input=","date=","stock=","interval="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
+    if opt in ("-v", "--interval"):
+        interval = arg
     if opt in ("-d", "--date"):
         stockdate = datetime.strptime(arg + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
     if opt in ("-s", "--stocks"):
@@ -161,4 +164,4 @@ else:
     stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 
 
-findpattern(stocks,end_date)
+findpattern(stocks,end_date,interval)
