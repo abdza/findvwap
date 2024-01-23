@@ -116,13 +116,14 @@ def findpattern(stocks,end_date,interval='1d'):
             dticker = yq.Ticker(ticker)
             candles = dticker.history(start=start_date,end=end_date,interval=interval)
             candles = candles.reset_index(level=[0,1])
-            peaks,bottoms = gather_range(candles)
 
+            peaks,bottoms = gather_range_unit('close',candles)
             score,ranges = inverse_head_and_shoulders(peaks,bottoms)
             if score>2:
                 possible_hns.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_hns = sorted(possible_hns,key=lambda x:x['score'],reverse=True)
 
+            peaks,bottoms = gather_range(candles)
             score,ranges = double_bottom(peaks,bottoms)
             if score>2:
                 possible_double.append({'ticker':ticker,'score':score,'ranges':ranges})
