@@ -12,6 +12,25 @@ import math
 from tabulate import tabulate
 from props import *
 
+def inverse_head_and_shoulders(peaks,bottoms):
+    rightelbow = peaks[-1]
+    rightshoulder = bottoms[-1]
+    rightneck = peaks[-2]
+    head = bottoms[-2]
+    leftneck = peaks[-3]
+    leftshoulder = bottoms[-3]
+    leftelbow = peaks[-4]
+    score = 0
+    if leftelbow['date'] < leftshoulder['date'] < leftneck['date'] < head['date'] < rightneck['date'] < rightshoulder['date'] < rightelbow['date']:
+        score += 1
+    if abs(rightshoulder['low'] - leftshoulder['low']) < 0.1:
+        score += 1
+    if head['low'] < rightshoulder['low'] and head['low'] < leftshoulder['low']:
+        score += 1
+    if rightelbow['high'] > rightneck['high'] and leftelbow['high'] > leftneck['high']:
+        score += 1
+    return score,str(rightelbow['close'])
+
 def double_bottom(peaks,bottoms):
     lastpeak = peaks[-1]
     lastbottom = bottoms[-1]
@@ -76,6 +95,7 @@ def findpattern(stocks,end_date,interval='1d'):
     else:
         days = 4
     start_date = end_date - timedelta(days=days)
+    possible_hns = []
     possible_double = []
     possible_up = []
     possible_nova = []
@@ -88,6 +108,11 @@ def findpattern(stocks,end_date,interval='1d'):
             candles = dticker.history(start=start_date,end=end_date,interval=interval)
             candles = candles.reset_index(level=[0,1])
             peaks,bottoms = gather_range(candles)
+
+            score,ranges = inverse_head_and_shoulders(peaks,bottoms)
+            if score>2:
+                possible_hns.append({'ticker':ticker,'score':score,'ranges':ranges})
+            possible_hns = sorted(possible_hns,key=lambda x:x['score'],reverse=True)
 
             score,ranges = double_bottom(peaks,bottoms)
             if score>2:
@@ -120,11 +145,15 @@ def findpattern(stocks,end_date,interval='1d'):
             print("Error downloading candles:",exp)
 
 
+    print("Possible head and shoulders:",tabulate(possible_hns,headers="keys"))
     print("Possible double bottom:",tabulate(possible_double,headers="keys"))
     print("Possible up:",tabulate(possible_up,headers="keys"))
     print("Possible Nova:",tabulate(possible_nova,headers="keys"))
     print("Possible Volume Nova:",tabulate(possible_volumenova,headers="keys"))
     fullresult = pd.DataFrame()
+    result = pd.DataFrame.from_dict(possible_hns)
+    result['type'] = 'hns'
+    fullresult = pd.concat([fullresult,result])
     result = pd.DataFrame.from_dict(possible_double)
     result['type'] = 'double'
     fullresult = pd.concat([fullresult,result])
