@@ -33,6 +33,10 @@ def inverse_head_and_shoulders(peaks,bottoms):
     if rightelbow['high'] > rightneck['high'] and leftelbow['high'] > leftneck['high']:
         score += 1
         print("Elbow higher than necks")
+    print("Head:",head)
+    print("Right Shoulder:",rightshoulder," Left Shoulder:",leftshoulder)
+    print("Right Elbow:",rightelbow," Left Elbow:",leftelbow)
+    print("Right Neck:",rightneck," Left Neck:",leftneck)
     return score,str(rightelbow['close'])
 
 def double_bottom(peaks,bottoms):
