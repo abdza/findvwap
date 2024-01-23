@@ -17,11 +17,11 @@ from sklearn.cluster import KMeans
 from ta.trend import EMAIndicator
 import streamlit as st
 from streamlit_calendar import calendar
-from tensorflow.keras.models import load_model
-import tensorflow as tf
-import autokeras as ak
+# from tensorflow.keras.models import load_model
+# import tensorflow as tf
+# import autokeras as ak
 from props import *
-from sklearn.preprocessing import MinMaxScaler
+# from sklearn.preprocessing import MinMaxScaler
 
 inputfile = 'filtered.csv'
 outfile = 'shorts.csv'
@@ -256,7 +256,8 @@ def findgap():
 starttest = datetime.now()
 result = findgap()
 result = pd.DataFrame.from_dict(result)
-result.dropna(inplace=True)
+#result.dropna(inplace=True)
+print("Results:",result)
 
 result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
 dates = result['date'].unique()
@@ -285,6 +286,7 @@ for cdate in dates:
             percdict['Great ' + prop] = 0
     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
     dateperc = pd.concat([dateperc,percdf])
+
 result_perc = result.set_index('date').join(dateperc.set_index('date'))
 result_perc.reset_index(inplace=True)
 result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
