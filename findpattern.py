@@ -23,12 +23,16 @@ def inverse_head_and_shoulders(peaks,bottoms):
     score = 0
     if leftelbow['date'] < leftshoulder['date'] < leftneck['date'] < head['date'] < rightneck['date'] < rightshoulder['date'] < rightelbow['date']:
         score += 1
+        print("Points met")
     if abs(rightshoulder['low'] - leftshoulder['low']) < 0.1:
         score += 1
+        print("Shouders level")
     if head['low'] < rightshoulder['low'] and head['low'] < leftshoulder['low']:
         score += 1
+        print("Head lower than shoulders")
     if rightelbow['high'] > rightneck['high'] and leftelbow['high'] > leftneck['high']:
         score += 1
+        print("Elbow higher than necks")
     return score,str(rightelbow['close'])
 
 def double_bottom(peaks,bottoms):
@@ -104,6 +108,7 @@ def findpattern(stocks,end_date,interval='1d'):
     for i in range(len(stocks.index)):
         try:
             ticker = stocks.iloc[i]['Ticker'].upper()
+            print("Testing ticker:",ticker)
             dticker = yq.Ticker(ticker)
             candles = dticker.history(start=start_date,end=end_date,interval=interval)
             candles = candles.reset_index(level=[0,1])
