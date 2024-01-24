@@ -2116,11 +2116,11 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
 
         if green_candle(daily_candles.iloc[-1]):
             prop_data, tickers_data, all_props = set_params(ticker,'Daily End In Green',prop_data,tickers_data,all_props)
-            if len(daily_candles)>6:
+            if len(daily_candles)>7:
                 curday = -2
                 curcolor = None
                 days = 0
-                while curday > -6:
+                while curday > -7:
                     if curcolor is None:
                         if green_candle(daily_candles.iloc[curday]):
                             curcolor = 'Green'
@@ -2132,7 +2132,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                             curday -=1
                             days += 1
                         else:
-                            curday -=6
+                            curday -=7
                 if days>0 and curcolor=='Red':
                     prop_data, tickers_data, all_props = set_params(ticker,'Daily Green After ' + str(days) + ' Days Of Red',prop_data,tickers_data,all_props)
                     if daily_candles.iloc[-1]['range'] > daily_candles.iloc[-2]['range']:
@@ -2142,11 +2142,11 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
             if len(daily_candles)>3:
                 if red_candle(daily_candles.iloc[-2]) and red_candle(daily_candles.iloc[-3]):
                     prop_data, tickers_data, all_props = set_params(ticker,'Last 3 Days End In Red',prop_data,tickers_data,all_props)
-            if len(daily_candles)>6:
+            if len(daily_candles)>7:
                 curday = -2
                 curcolor = None
                 days = 0
-                while curday > -6:
+                while curday > -7:
                     if curcolor is None:
                         if green_candle(daily_candles.iloc[curday]):
                             curcolor = 'Green'
@@ -2158,7 +2158,7 @@ def analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_c
                             curday -=1
                             days += 1
                         else:
-                            curday -=6
+                            curday -=7
                 if days>0 and curcolor=='Green':
                     prop_data, tickers_data, all_props = set_params(ticker,'Daily Red After ' + str(days) + ' Days Of Green',prop_data,tickers_data,all_props)
                     if daily_candles.iloc[-1]['range'] > daily_candles.iloc[-2]['range']:

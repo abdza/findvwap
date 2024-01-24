@@ -173,7 +173,8 @@ def findgap():
                 else:
                     bbminute_candles = pd.DataFrame()
 
-                day_candles = candles[:-1]
+                # day_candles = candles[:-1]
+                day_candles = candles
                 hourdate = str(day_candles.iloc[-1]['date']-timedelta(days=10))
 
                 print("Hour start:",hourdate)
