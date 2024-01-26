@@ -24,7 +24,7 @@ def inverse_head_and_shoulders(peaks,bottoms):
     if leftelbow['date'] < leftshoulder['date'] < leftneck['date'] < head['date'] < rightneck['date'] < rightshoulder['date'] < rightelbow['date']:
         score += 1
         print("Points met")
-    if abs(rightshoulder['low'] - leftshoulder['low']) < 0.1:
+    if abs(rightshoulder['low'] - leftshoulder['low']) < 0.05:
         score += 1
         print("Shouders level")
     if head['low'] < rightshoulder['low'] and head['low'] < leftshoulder['low']:
@@ -49,7 +49,7 @@ def double_bottom(peaks,bottoms):
         score += 1
         if lastpeak['close'] > secondlastpeak['high']:
             score += 1
-        if abs(secondlastbottom['low'] - lastbottom['low']) < 0.1:
+        if abs(secondlastbottom['low'] - lastbottom['low']) < 0.05:
             score += 1
     return score,str(lastpeak['close'])
 
@@ -66,6 +66,22 @@ def higher_high(peaks,bottoms):
         if thirdlastbottom['low'] < secondlastbottom['low'] and thirdlastpeak['high'] < secondlastpeak['high']:
             score += 1
         if secondlastbottom['low'] < lastbottom['low'] and secondlastpeak['high'] < lastpeak['high']:
+            score += 1
+    return score,str(lastpeak['close'])
+
+def lower_low(peaks,bottoms):
+    lastpeak = peaks[-1]
+    lastbottom = bottoms[-1]
+    secondlastbottom = bottoms[-2]
+    secondlastpeak = peaks[-2]
+    thirdlastbottom = bottoms[-3]
+    thirdlastpeak = peaks[-3]
+    score = 0
+    if thirdlastbottom['date'] < thirdlastpeak['date'] < secondlastbottom['date'] < secondlastpeak['date'] < lastbottom['date'] < lastpeak['date']:
+        score += 1
+        if thirdlastbottom['low'] > secondlastbottom['low'] and thirdlastpeak['high'] > secondlastpeak['high']:
+            score += 1
+        if secondlastbottom['low'] > lastbottom['low'] and secondlastpeak['high'] > lastpeak['high']:
             score += 1
     return score,str(lastpeak['close'])
 
@@ -106,6 +122,7 @@ def findpattern(stocks,end_date,interval='1d'):
     possible_hns = []
     possible_double = []
     possible_up = []
+    possible_down = []
     possible_nova = []
     recent_nova = []
     possible_volumenova = []
@@ -134,6 +151,11 @@ def findpattern(stocks,end_date,interval='1d'):
                 possible_up.append({'ticker':ticker,'score':score,'ranges':ranges})
             possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
 
+            score,ranges = lower_low(peaks,bottoms)
+            if score>2:
+                possible_down.append({'ticker':ticker,'score':score,'ranges':ranges})
+            possible_down = sorted(possible_down,key=lambda x:x['score'],reverse=True)
+
             if interval=='1d':
                 score,ranges = supernova(candles)
             else:
@@ -158,6 +180,7 @@ def findpattern(stocks,end_date,interval='1d'):
     print("Possible head and shoulders:",tabulate(possible_hns,headers="keys"))
     print("Possible double bottom:",tabulate(possible_double,headers="keys"))
     print("Possible up:",tabulate(possible_up,headers="keys"))
+    print("Possible down:",tabulate(possible_down,headers="keys"))
     print("Possible Nova:",tabulate(possible_nova,headers="keys"))
     print("Possible Volume Nova:",tabulate(possible_volumenova,headers="keys"))
     fullresult = pd.DataFrame()
@@ -169,6 +192,9 @@ def findpattern(stocks,end_date,interval='1d'):
     fullresult = pd.concat([fullresult,result])
     result = pd.DataFrame.from_dict(possible_up)
     result['type'] = 'up'
+    fullresult = pd.concat([fullresult,result])
+    result = pd.DataFrame.from_dict(possible_down)
+    result['type'] = 'down'
     fullresult = pd.concat([fullresult,result])
     result = pd.DataFrame.from_dict(possible_nova)
     result['type'] = 'nova'
