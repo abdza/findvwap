@@ -24,7 +24,7 @@ from props import *
 # from sklearn.preprocessing import MinMaxScaler
 
 inputfile = 'filtered.csv'
-outfile = 'shorts.csv'
+outfile = 'results.csv'
 instockdate = None
 openrangelimit = 1
 purchaselimit = 300
@@ -93,6 +93,7 @@ def findgap():
         if isinstance(stocks.iloc[i]['Ticker'], str):
             try:
                 ticker = stocks.iloc[i]['Ticker'].upper()
+                desc = stocks.iloc[i]['Description']
                 dticker = yq.Ticker(ticker)
                 candles = dticker.history(start=start_date,end=end_date,interval='1d')
                 candles = candles.loc[(candles['volume']>0)]
@@ -201,8 +202,9 @@ def findgap():
                 if manualstocks:
                     print("Max Price:",summary['max_price']," First Price:",summary['first_price'])
                     print("Diff:",summary['diff']," Profitable:",summary['profitable'])
-                fieldnames = ['ticker','date','day','diff','diff_level','performance','profitable','gap','price']
-                row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
+                fieldnames = ['ticker','desc','date','day','diff','diff_level','performance','profitable','gap','price']
+                row = {'ticker':ticker,'desc':desc,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
+                print("Row:",row)
                 fieldnames.append('Minute Start')
                 row['Minute Start'] = minute_candles.iloc[0]['date']
                 fieldnames.append('Minute End')
@@ -260,7 +262,7 @@ result = pd.DataFrame.from_dict(result)
 #result.dropna(inplace=True)
 print("Results:",result)
 
-result.to_csv(os.path.join(script_dir,'results.csv'),index=False)
+result.to_csv(os.path.join(script_dir,outfile),index=False)
 dates = result['date'].unique()
 print("Dates:",dates)
 dateperc = pd.DataFrame()
@@ -341,7 +343,7 @@ result_perc.to_csv(os.path.join(script_dir,'results_marks.csv'),index=False)
 # result_perc['predicted_diff'] = diff_model.predict(difffloat)
 
 
-fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
+fieldnames = ['date','ticker','desc','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
 # fieldnames = ['date','ticker','diff_level','performance','profitable','marks','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
 # fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap']
 minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
@@ -352,7 +354,7 @@ result_perc = result_perc[finalcolumns]
 result_perc.sort_values(by=['marks'],ascending=False,inplace=True)
 result_perc.to_csv(os.path.join(script_dir,'results_profitability.csv'),index=False)
 # todisp = result_perc[['ticker','date','profitable','marks','full_marks','late_marks','predicted_profitable','predicted_diff','diff_level','performance']]
-todisp = result_perc[['ticker','date','profitable','marks','diff_level','performance']]
+todisp = result_perc[['ticker','desc','date','profitable','marks','diff_level','performance']]
 print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
 endtest = datetime.now()
 print("Start:",starttest)

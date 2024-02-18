@@ -21,7 +21,7 @@ from props import *
 from sklearn.preprocessing import MinMaxScaler
 
 inputfile = 'filtered.csv'
-outfile = 'backtest.json'
+outfile = 'raw_data.csv'
 instockdate = None
 openrangelimit = 1
 purchaselimit = 300
@@ -29,7 +29,8 @@ completelist = False
 trackunit = None
 manualstocks = None
 perctarget = 10
-opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:u:x:s:",["input=","out=","date=","range=","purchaselimit=","complete=","unit=","perctarget=","stocks="])
+history = 90
+opts, args = getopt.getopt(sys.argv[1:],"i:o:d:r:p:c:u:x:s:h:",["input=","out=","date=","range=","purchaselimit=","complete=","unit=","perctarget=","stocks=","history="])
 for opt, arg in opts:
     if opt in ("-i", "--input"):
         inputfile = arg
@@ -45,6 +46,8 @@ for opt, arg in opts:
         purchaselimit = float(arg)
     if opt in ("-c", "--complete"):
         completelist = True
+    if opt in ("-h", "--history"):
+        history = int(arg)
     if opt in ("-u", "--unit"):
         if arg in ['close','high','low','open']:
             trackunit = arg
@@ -226,15 +229,15 @@ def findgap():
 
 starttest = datetime.now()
 alldata = pd.DataFrame()
-for day in range(90):
 # for day in range(10):
 # for day in range(2):
+for day in range(history):
     instockdate = starttest - timedelta(days=day)
     result = findgap()
     result = pd.DataFrame.from_dict(result)
     alldata = pd.concat([alldata,result])
 
-alldata.to_csv(os.path.join(script_dir,'raw_data.csv'),index=False)
+alldata.to_csv(os.path.join(script_dir,outfile),index=False)
 dates = alldata['date'].unique()
 print("Dates:",dates)
 dateperc = pd.DataFrame()
