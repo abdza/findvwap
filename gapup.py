@@ -263,100 +263,101 @@ result = pd.DataFrame.from_dict(result)
 print("Results:",result)
 
 result.to_csv(os.path.join(script_dir,outfile),index=False)
-dates = result['date'].unique()
-print("Dates:",dates)
-dateperc = pd.DataFrame()
-global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
-for cdate in dates:
-    daytrade = result[result['date']==cdate]
-    percdict = {}
-    percdict['date'] = cdate
-    for prop in prop_list:
-        dayprop = daytrade[daytrade[prop]==1]
-        propperc = round(len(dayprop)/len(daytrade),2)
-        percdict['Perc ' + prop] = propperc
-        percdict['Total ' + prop] = len(result[result[prop]==1])
-        cgmark = global_marks[global_marks['Prop']==prop]
-        if len(cgmark):
-            percdict['Corr ' + prop] = cgmark.iloc[0]['Corr']
-            percdict['Profitable ' + prop] = cgmark.iloc[0]['Profitable']
-            percdict['Good ' + prop] = cgmark.iloc[0]['Good']
-            percdict['Great ' + prop] = cgmark.iloc[0]['Great']
-        else:
-            percdict['Corr ' + prop] = 0
-            percdict['Profitable ' + prop] = 0
-            percdict['Good ' + prop] = 0
-            percdict['Great ' + prop] = 0
-    percdf = pd.DataFrame.from_dict(percdict,orient='index').T
-    dateperc = pd.concat([dateperc,percdf])
 
-result_perc = result.set_index('date').join(dateperc.set_index('date'))
-result_perc.reset_index(inplace=True)
-result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
-
-# result_perc = pd.read_csv(os.path.join(script_dir,'results_perc.csv'))
-
-if manualstocks:
-    result_perc = calc_marks(result_perc,True)
-else:
-    result_perc = calc_marks(result_perc)
-result_perc.to_csv(os.path.join(script_dir,'results_marks.csv'),index=False)
-
-# profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
-# profitablecsv = result_perc.copy()
+# dates = result['date'].unique()
+# print("Dates:",dates)
+# dateperc = pd.DataFrame()
+# global_marks = pd.read_csv(os.path.join(script_dir,'analyze_global.csv'))
+# for cdate in dates:
+#     daytrade = result[result['date']==cdate]
+#     percdict = {}
+#     percdict['date'] = cdate
+#     for prop in prop_list:
+#         dayprop = daytrade[daytrade[prop]==1]
+#         propperc = round(len(dayprop)/len(daytrade),2)
+#         percdict['Perc ' + prop] = propperc
+#         percdict['Total ' + prop] = len(result[result[prop]==1])
+#         cgmark = global_marks[global_marks['Prop']==prop]
+#         if len(cgmark):
+#             percdict['Corr ' + prop] = cgmark.iloc[0]['Corr']
+#             percdict['Profitable ' + prop] = cgmark.iloc[0]['Profitable']
+#             percdict['Good ' + prop] = cgmark.iloc[0]['Good']
+#             percdict['Great ' + prop] = cgmark.iloc[0]['Great']
+#         else:
+#             percdict['Corr ' + prop] = 0
+#             percdict['Profitable ' + prop] = 0
+#             percdict['Good ' + prop] = 0
+#             percdict['Great ' + prop] = 0
+#     percdf = pd.DataFrame.from_dict(percdict,orient='index').T
+#     dateperc = pd.concat([dateperc,percdf])
 #
-# # print("Prepop Columns:",profitablecsv.columns)
-# topop = ['ticker','date','day','diff','diff_level','performance','profitable','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
-# for tp in topop:
-#     profitablecsv.pop(tp)
-# for tp in ignore_prop:
-#     profitablecsv.pop(tp)
-# # todrop = ['prev_marks','opening_marks','late_marks','marks','gap','price']
-# todrop = ['gap']
-# for tp in todrop:
-#     profitablecsv.pop(tp)
-# # print("Columns:",profitablecsv.columns)
-# profitablefloat = np.asarray(profitablecsv).astype(np.float32)
+# result_perc = result.set_index('date').join(dateperc.set_index('date'))
+# result_perc.reset_index(inplace=True)
+# result_perc.to_csv(os.path.join(script_dir,'results_perc.csv'),index=False)
 #
-# file1 = open('gapup_columns.csv', 'w')
-# file1.writelines(s + '\n' for s in profitablecsv.columns)
-# file1.close()
+# # result_perc = pd.read_csv(os.path.join(script_dir,'results_perc.csv'))
 #
-# result_perc['predicted_profitable'] = profitable_model.predict(profitablefloat)
+# if manualstocks:
+#     result_perc = calc_marks(result_perc,True)
+# else:
+#     result_perc = calc_marks(result_perc)
+# result_perc.to_csv(os.path.join(script_dir,'results_marks.csv'),index=False)
 #
-# diff_model = load_model(os.path.join(script_dir,"model_diff"), custom_objects=ak.CUSTOM_OBJECTS)
-# diffcsv = result_perc.copy()
+# # profitable_model = load_model(os.path.join(script_dir,"model_profitable"), custom_objects=ak.CUSTOM_OBJECTS)
+# # profitablecsv = result_perc.copy()
+# #
+# # # print("Prepop Columns:",profitablecsv.columns)
+# # topop = ['ticker','date','day','diff','diff_level','performance','profitable','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
+# # for tp in topop:
+# #     profitablecsv.pop(tp)
+# # for tp in ignore_prop:
+# #     profitablecsv.pop(tp)
+# # # todrop = ['prev_marks','opening_marks','late_marks','marks','gap','price']
+# # todrop = ['gap']
+# # for tp in todrop:
+# #     profitablecsv.pop(tp)
+# # # print("Columns:",profitablecsv.columns)
+# # profitablefloat = np.asarray(profitablecsv).astype(np.float32)
+# #
+# # file1 = open('gapup_columns.csv', 'w')
+# # file1.writelines(s + '\n' for s in profitablecsv.columns)
+# # file1.close()
+# #
+# # result_perc['predicted_profitable'] = profitable_model.predict(profitablefloat)
+# #
+# # diff_model = load_model(os.path.join(script_dir,"model_diff"), custom_objects=ak.CUSTOM_OBJECTS)
+# # diffcsv = result_perc.copy()
+# #
+# # # print("Prepop Columns:",diffcsv.columns)
+# # topop = ['ticker','date','day','diff','diff_level','performance','profitable','predicted_profitable','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
+# # for tp in topop:
+# #     diffcsv.pop(tp)
+# # for tp in ignore_prop:
+# #     diffcsv.pop(tp)
+# # # todrop = ['prev_marks','opening_marks','late_marks','marks','gap','price']
+# # todrop = ['gap']
+# # for tp in todrop:
+# #     diffcsv.pop(tp)
+# # # print("Columns:",diffcsv.columns)
+# # difffloat = np.asarray(diffcsv).astype(np.float32)
+# #
+# # result_perc['predicted_diff'] = diff_model.predict(difffloat)
 #
-# # print("Prepop Columns:",diffcsv.columns)
-# topop = ['ticker','date','day','diff','diff_level','performance','profitable','predicted_profitable','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
-# for tp in topop:
-#     diffcsv.pop(tp)
-# for tp in ignore_prop:
-#     diffcsv.pop(tp)
-# # todrop = ['prev_marks','opening_marks','late_marks','marks','gap','price']
-# todrop = ['gap']
-# for tp in todrop:
-#     diffcsv.pop(tp)
-# # print("Columns:",diffcsv.columns)
-# difffloat = np.asarray(diffcsv).astype(np.float32)
 #
-# result_perc['predicted_diff'] = diff_model.predict(difffloat)
-
-
-fieldnames = ['date','ticker','desc','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
-# fieldnames = ['date','ticker','diff_level','performance','profitable','marks','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
-# fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap']
-minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
-finalcolumns = fieldnames + sorted(minuscolumns)
-
-result_perc = result_perc[finalcolumns]
-
-result_perc.sort_values(by=['marks'],ascending=False,inplace=True)
-result_perc.to_csv(os.path.join(script_dir,'results_profitability.csv'),index=False)
-# todisp = result_perc[['ticker','date','profitable','marks','full_marks','late_marks','predicted_profitable','predicted_diff','diff_level','performance']]
-todisp = result_perc[['ticker','desc','date','profitable','marks','diff_level','performance']]
-print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
-endtest = datetime.now()
-print("Start:",starttest)
-print("End:",endtest)
-print("Time:",endtest-starttest)
+# fieldnames = ['date','ticker','desc','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
+# # fieldnames = ['date','ticker','diff_level','performance','profitable','marks','predicted_profitable','predicted_diff','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap','Minute Start','Minute End','Yesterday Start','Yesterday End','2 Days Start','2 Days End','Hourly Start','Hourly End','Daily Start','Daily End']
+# # fieldnames = ['date','ticker','diff_level','performance','profitable','marks','prev_marks','opening_marks','late_marks','hour_marks','daily_marks','gap']
+# minuscolumns = list(set(result_perc.columns.to_list()) - set(fieldnames))
+# finalcolumns = fieldnames + sorted(minuscolumns)
+#
+# result_perc = result_perc[finalcolumns]
+#
+# result_perc.sort_values(by=['marks'],ascending=False,inplace=True)
+# result_perc.to_csv(os.path.join(script_dir,'results_profitability.csv'),index=False)
+# # todisp = result_perc[['ticker','date','profitable','marks','full_marks','late_marks','predicted_profitable','predicted_diff','diff_level','performance']]
+# todisp = result_perc[['ticker','desc','date','profitable','marks','diff_level','performance']]
+# print(tabulate(todisp[:10],headers="keys",tablefmt="grid"))
+# endtest = datetime.now()
+# print("Start:",starttest)
+# print("End:",endtest)
+# print("Time:",endtest-starttest)
