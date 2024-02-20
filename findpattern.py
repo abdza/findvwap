@@ -117,7 +117,7 @@ def findpattern(stocks,end_date,interval='1d'):
     if interval=='1d':
         days = 30
     else:
-        days = 4
+        days = 5
     start_date = end_date - timedelta(days=days)
     possible_hns = []
     possible_double = []
