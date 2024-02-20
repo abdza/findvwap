@@ -133,7 +133,7 @@ def findgap():
                 minutelastcandle = full_minute_candles.iloc[-2]
                 ldate = str(minutelastcandle['date'].date())
                 fdate = str(datetime.date(minutelastcandle['date'])+timedelta(days=1))
-                print("Ldate:",ldate," Fdate:",fdate)
+                # print("Ldate:",ldate," Fdate:",fdate)
                 minute_candles = full_minute_candles.loc[(full_minute_candles['date']>ldate)]
                 minute_candles = minute_candles.loc[(minute_candles['date']<fdate)]
 
@@ -145,7 +145,7 @@ def findgap():
 
                 datediff = 1
                 bdate = str(minute_candles.iloc[0]['date'].date()-timedelta(days=datediff))
-                print("Bdate:",bdate," Ldate:",ldate)
+                # print("Bdate:",bdate," Ldate:",ldate)
                 bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                 bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
                 while len(bminute_candles)==0 and datediff<=10:
@@ -154,7 +154,7 @@ def findgap():
                     bminute_candles = full_minute_candles.loc[(full_minute_candles['date']>bdate)]
                     bminute_candles = bminute_candles.loc[(bminute_candles['date']<ldate)]
 
-                print("Yesterday start:",bminute_candles.iloc[0]['date']," Yesterday end:",bminute_candles.iloc[-1]['date'])
+                # print("Yesterday start:",bminute_candles.iloc[0]['date']," Yesterday end:",bminute_candles.iloc[-1]['date'])
 
                 if len(bminute_candles):
                     datediff = 1
@@ -162,10 +162,10 @@ def findgap():
                     twodaystart = bbdate
                     # twodayend = str(bminute_candles.iloc[0]['date'].date())
                     twodayend = bbdate + ' 23:00:00'
-                    print("2 day start:",twodaystart," 2 day end:",twodayend)
+                    # print("2 day start:",twodaystart," 2 day end:",twodayend)
                     bbminute_candles = full_minute_candles.loc[(full_minute_candles['date']>twodaystart)]
                     bbminute_candles = bbminute_candles.loc[(bbminute_candles['date']<twodayend)]
-                    print("Len of bbminute:",len(bbminute_candles))
+                    # print("Len of bbminute:",len(bbminute_candles))
                     while len(bbminute_candles)==0 and datediff<=10:
                         datediff += 1
                         bbdate = str(bminute_candles.iloc[0]['date']-timedelta(days=datediff))
@@ -178,7 +178,7 @@ def findgap():
                 day_candles = candles
                 hourdate = str(day_candles.iloc[-1]['date']-timedelta(days=10))
 
-                print("Hour start:",hourdate)
+                # print("Hour start:",hourdate)
                 hour_candles = dticker.history(period='7d',start=hourdate,interval='1h')
                 hour_candles['range'] = hour_candles['high'] - hour_candles['low']
                 hour_candles['body_length'] = hour_candles['close'] - hour_candles['open']
@@ -204,7 +204,6 @@ def findgap():
                     print("Diff:",summary['diff']," Profitable:",summary['profitable'])
                 fieldnames = ['ticker','desc','date','day','diff','diff_level','performance','profitable','gap','price']
                 row = {'ticker':ticker,'desc':desc,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
-                print("Row:",row)
                 fieldnames.append('Minute Start')
                 row['Minute Start'] = minute_candles.iloc[0]['date']
                 fieldnames.append('Minute End')
@@ -251,6 +250,7 @@ def findgap():
                         row[pp] = 1
                     else:
                         row[pp] = 0
+                # print("Row:",row)
                 full_data.append(row)
 
     print("End date:",end_date)
@@ -259,7 +259,7 @@ def findgap():
 starttest = datetime.now()
 result = findgap()
 result = pd.DataFrame.from_dict(result)
-#result.dropna(inplace=True)
+result.dropna(inplace=True)
 print("Results:",result)
 
 result.to_csv(os.path.join(script_dir,outfile),index=False)

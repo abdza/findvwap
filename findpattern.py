@@ -129,6 +129,7 @@ def findpattern(stocks,end_date,interval='1d'):
     for i in range(len(stocks.index)):
         try:
             ticker = stocks.iloc[i]['Ticker'].upper()
+            desc = stocks.iloc[i]['Description']
             print("Testing ticker:",ticker)
             dticker = yq.Ticker(ticker)
             candles = dticker.history(start=start_date,end=end_date,interval=interval)
@@ -137,23 +138,23 @@ def findpattern(stocks,end_date,interval='1d'):
             peaks,bottoms = gather_range_unit('close',candles)
             score,ranges = inverse_head_and_shoulders(peaks,bottoms)
             if score>2:
-                possible_hns.append({'ticker':ticker,'score':score,'ranges':ranges})
+                possible_hns.append({'ticker':ticker,'desc':desc,'score':score,'ranges':ranges})
             possible_hns = sorted(possible_hns,key=lambda x:x['score'],reverse=True)
 
             peaks,bottoms = gather_range(candles)
             score,ranges = double_bottom(peaks,bottoms)
             if score>2:
-                possible_double.append({'ticker':ticker,'score':score,'ranges':ranges})
+                possible_double.append({'ticker':ticker,'desc':desc,'score':score,'ranges':ranges})
             possible_double = sorted(possible_double,key=lambda x:x['score'],reverse=True)
 
             score,ranges = higher_high(peaks,bottoms)
             if score>2:
-                possible_up.append({'ticker':ticker,'score':score,'ranges':ranges})
+                possible_up.append({'ticker':ticker,'desc':desc,'score':score,'ranges':ranges})
             possible_up = sorted(possible_up,key=lambda x:x['score'],reverse=True)
 
             score,ranges = lower_low(peaks,bottoms)
             if score>2:
-                possible_down.append({'ticker':ticker,'score':score,'ranges':ranges})
+                possible_down.append({'ticker':ticker,'desc':desc,'score':score,'ranges':ranges})
             possible_down = sorted(possible_down,key=lambda x:x['score'],reverse=True)
 
             if interval=='1d':
@@ -161,17 +162,17 @@ def findpattern(stocks,end_date,interval='1d'):
             else:
                 score,ranges = supernova(candles,None,10)
             if score>0:
-                possible_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
+                possible_nova.append({'ticker':ticker,'desc':desc,'score':score,'ranges':ranges})
             possible_nova = sorted(possible_nova,key=lambda x:x['score'],reverse=True)
 
             score,ranges = supernova(candles,10)
             if score>0:
-                recent_nova.append({'ticker':ticker,'score':score,'ranges':ranges})
+                recent_nova.append({'ticker':ticker,'desc':desc,'score':score,'ranges':ranges})
             recent_nova = sorted(recent_nova,key=lambda x:x['score'],reverse=True)
 
             score,ranges = volumesupernova(candles)
             if score>0:
-                possible_volumenova.append({'ticker':ticker,'score':score,'ranges':ranges})
+                possible_volumenova.append({'ticker':ticker,'desc':desc,'score':score,'ranges':ranges})
             possible_volumenova = sorted(possible_volumenova,key=lambda x:x['score'],reverse=True)
         except Exception as exp:
             print("Error downloading candles:",exp)
@@ -230,7 +231,7 @@ if stockdate:
 else:
     end_date = datetime.now()
 if manualstocks:
-    stocks = pd.DataFrame({'Ticker':manualstocks})
+    stocks = pd.DataFrame({'Ticker':manualstocks,'Description':'Manual stock'})
 else:
     stocks = pd.read_csv(os.path.join(script_dir,inputfile),header=0)
 

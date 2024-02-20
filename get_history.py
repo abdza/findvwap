@@ -85,6 +85,7 @@ def findgap():
     # for i in range(5):
         if isinstance(stocks.iloc[i]['Ticker'], str):
             ticker = stocks.iloc[i]['Ticker'].upper()
+            desc = stocks.iloc[i]['Description']
             dticker = yq.Ticker(ticker)
             candles = dticker.history(start=start_date,end=end_date,interval='1d')
             candles = candles.loc[(candles['volume']>0)]
@@ -178,8 +179,8 @@ def findgap():
 
                 prop_data, tickers_data, all_props, summary = analyze_minute(ticker,minute_candles,bminute_candles,bbminute_candles,hour_candles,day_candles)
 
-                fieldnames = ['ticker','date','day','range','diff','diff_level','performance','profitable','gap','price']
-                row = {'ticker':ticker,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'range':curcandle['range'],'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
+                fieldnames = ['ticker','desc','date','day','range','diff','diff_level','performance','profitable','gap','price']
+                row = {'ticker':ticker,'desc':desc,'date':ldate,'day':datetime.strptime(ldate,'%Y-%m-%d').strftime('%A'),'range':curcandle['range'],'diff':summary['diff'],'diff_level':summary['diff_level'],'performance':summary['category'],'profitable':summary['profitable'],'gap':summary['gap'],'price':summary['final_price']}
                 fieldnames.append('Minute Start')
                 row['Minute Start'] = minute_candles.iloc[0]['date']
                 fieldnames.append('Minute End')
